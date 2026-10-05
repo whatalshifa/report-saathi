@@ -25,3 +25,22 @@ typed end to end, and it deploys cleanly to Amplify or Vercel.
 
 **Storage behind a small interface.** `LocalStorage` today, `S3Storage` at deployment; nothing else in
 the app changes.
+
+## Phase 2
+
+**A hand-written test catalog instead of letting the AI match tests.** Matching "HGB" to "Haemoglobin"
+and converting g/L to g/dL has to be right every time. A list of aliases and conversion factors is
+predictable and testable; Claude's suggestion is only a fallback, limited to the catalog's keys.
+
+**Not converting unknown units.** A value with a unit we don't recognise stays off the chart rather
+than being guessed at.
+
+**A hand-drawn SVG chart instead of a chart library.** The chart is small and specific (a range band,
+coloured points, a tooltip). Writing it directly keeps the bundle small and shows how charts work.
+
+**Saving explanations and brief snapshots.** Each explanation is written once per language and
+reused, which saves money. Each brief keeps the numbers it was written from, so its text and table
+can never disagree.
+
+**Grouping by printed name for now.** It's the simplest thing that works for one family. Login and
+proper family profiles come in Phase 3.

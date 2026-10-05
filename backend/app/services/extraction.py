@@ -6,17 +6,22 @@ reply is always valid JSON in the shape below, never free text to parse.
 """
 
 import base64
-from typing import Protocol
+from typing import Literal, Protocol
 
 import anthropic
 from pydantic import BaseModel, Field
 
-from app.config import get_settings
+from app.services.catalog import CATALOG_KEYS
+from app.services.claude import AIError, ask_structured, make_client
+
+# The catalog keys Claude may choose from, plus "other" for anything else.
+CatalogKey = Literal[(*CATALOG_KEYS, "other")]
 
 
 class ExtractedTest(BaseModel):
     section: str | None = Field(description="Panel heading the test sits under, e.g. 'Complete Blood Count'")
     name: str = Field(description="Test name exactly as printed, e.g. 'Haemoglobin (Hb)'")
+    catalog_key: CatalogKey = Field(description="The standard test this is, or 'other' if none fits")
     value_text: str = Field(description="Result exactly as printed, e.g. '11.2', '<0.5', 'Positive'")
     numeric_value: float | None = Field(description="The result as a number, or null if it is a word")
     unit: str | None
@@ -48,12 +53,15 @@ prints several ranges (by sex, by age, or tiers like Desirable/Borderline/High),
 the one for this patient, or the desirable/normal tier. Leave them null when there is \
 no numeric range.
 
+For catalog_key, pick the standard test this line measures (for example 'Hb' and \
+'Haemoglobin' are both hemoglobin). Use 'other' when none fits; never force a match.
+
 If a value is unreadable, leave it out rather than guessing. If the file is not a lab \
 report, set is_lab_report to false and return no tests."""
 
 
-class ExtractionError(Exception):
-    """A failure we can explain to the user in plain words."""
+# Kept as a name of its own so the processing code reads clearly.
+ExtractionError = AIError
 
 
 class Extractor(Protocol):
@@ -69,46 +77,18 @@ def _file_block(data: bytes, content_type: str) -> dict:
 
 class ClaudeExtractor:
     def __init__(self, client: anthropic.Anthropic | None = None):
-        self.settings = get_settings()
-        self.client = client or anthropic.Anthropic(api_key=self.settings.anthropic_api_key)
+        self.client = client or make_client()
 
     def extract(self, data: bytes, content_type: str) -> ExtractedReport:
-        try:
-            # Streaming keeps long reports from hitting HTTP timeouts.
-            with self.client.beta.messages.stream(
-                model=self.settings.claude_model,
-                max_tokens=64000,
-                system=SYSTEM_PROMPT,
-                messages=[
-                    {
-                        "role": "user",
-                        "content": [
-                            _file_block(data, content_type),
-                            {"type": "text", "text": "Transcribe this lab report."},
-                        ],
-                    }
-                ],
-                output_format=ExtractedReport,
-                output_config={"effort": self.settings.claude_effort},
-                # If a safety check declines, the API retries on a fallback model by itself.
-                betas=["server-side-fallback-2026-07-01"],
-                fallbacks="default",
-            ) as stream:
-                message = stream.get_final_message()
-        except anthropic.RateLimitError as exc:
-            raise ExtractionError("The AI service is busy right now. Please try again in a minute.") from exc
-        except anthropic.APIStatusError as exc:
-            raise ExtractionError(f"The AI service returned an error ({exc.status_code}).") from exc
-        except anthropic.APIConnectionError as exc:
-            raise ExtractionError("Could not reach the AI service.") from exc
-
-        if message.stop_reason == "refusal":
-            raise ExtractionError("The AI declined to read this file.")
-        if message.stop_reason == "max_tokens":
-            raise ExtractionError("This report is too long to read in one go.")
-        if message.parsed_output is None:
-            raise ExtractionError("The AI reply could not be understood.")
-        return message.parsed_output
+        return ask_structured(
+            self.client,
+            system=SYSTEM_PROMPT,
+            content=[
+                _file_block(data, content_type),
+                {"type": "text", "text": "Transcribe this lab report."},
+            ],
+            output_format=ExtractedReport,
+        )
 
 
 def get_extractor() -> Extractor:

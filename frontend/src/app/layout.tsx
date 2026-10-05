@@ -17,14 +17,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${geistSans.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
-        <header className="border-b border-slate-200 bg-white/80 backdrop-blur dark:border-slate-800 dark:bg-slate-950/80">
+        <header className="border-b print:hidden border-slate-200 bg-white/80 backdrop-blur dark:border-slate-800 dark:bg-slate-950/80">
           <div className="mx-auto flex max-w-4xl items-center px-4 py-4">
             <Link href="/" className="text-lg font-bold text-teal-700 dark:text-teal-400">
               ReportSaathi
             </Link>
           </div>
         </header>
-        <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-10">{children}</main>
+        <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-10 print:py-0">{children}</main>
       </body>
     </html>
   );

@@ -7,17 +7,21 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.config import Settings, get_settings
 from app.db import get_session, get_session_factory
-from app.models import Report
-from app.schemas import ReportDetail, ReportSummary
+from app.models import Explanation, JobStatus, Report
+from app.schemas import ExplanationOut, ExplanationRequest, ReportDetail, ReportSummary
 from app.services.extraction import Extractor, get_extractor
+from app.services.jobs import run_explanation
 from app.services.processing import process_report
 from app.services.storage import Storage, get_storage
 from app.services.uploads import UploadError, prepare_upload
+from app.services.writing import Writer, get_writer
 
 router = APIRouter(prefix="/api/reports", tags=["reports"])
 
 SessionDep = Annotated[Session, Depends(get_session)]
 StorageDep = Annotated[Storage, Depends(get_storage)]
+FactoryDep = Annotated[sessionmaker[Session], Depends(get_session_factory)]
+WriterDep = Annotated[Writer, Depends(get_writer)]
 
 _EXTENSIONS = {"application/pdf": "pdf", "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp"}
 
@@ -35,7 +39,7 @@ def upload_report(
     background: BackgroundTasks,
     session: SessionDep,
     storage: StorageDep,
-    factory: Annotated[sessionmaker[Session], Depends(get_session_factory)],
+    factory: FactoryDep,
     extractor: Annotated[Extractor, Depends(get_extractor)],
     settings: Annotated[Settings, Depends(get_settings)],
 ) -> Report:
@@ -79,3 +83,42 @@ def delete_report(report_id: str, session: SessionDep, storage: StorageDep) -> N
     storage.delete(report.storage_key)
     session.delete(report)
     session.commit()
+
+
+@router.post("/{report_id}/explanations", status_code=status.HTTP_202_ACCEPTED, response_model=ExplanationOut)
+def request_explanation(
+    report_id: str,
+    body: ExplanationRequest,
+    background: BackgroundTasks,
+    session: SessionDep,
+    factory: FactoryDep,
+    writer: WriterDep,
+) -> Explanation:
+    """Start writing a plain-language explanation, or return the one already made."""
+    report = _get_report(session, report_id)
+    if report.status != JobStatus.done:
+        raise HTTPException(status.HTTP_409_CONFLICT, "This report hasn't been read yet")
+
+    explanation = session.scalar(
+        select(Explanation).where(Explanation.report_id == report_id, Explanation.language == body.language)
+    )
+    if explanation is not None and explanation.status != JobStatus.failed:
+        return explanation
+    if explanation is None:
+        explanation = Explanation(report_id=report_id, language=body.language)
+        session.add(explanation)
+    explanation.status, explanation.error = JobStatus.queued, None
+    session.commit()
+
+    background.add_task(run_explanation, explanation.id, factory, writer)
+    return explanation
+
+
+@router.get("/{report_id}/explanations/{language}", response_model=ExplanationOut)
+def get_explanation(report_id: str, language: str, session: SessionDep) -> Explanation:
+    explanation = session.scalar(
+        select(Explanation).where(Explanation.report_id == report_id, Explanation.language == language)
+    )
+    if explanation is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "No explanation yet")
+    return explanation
