@@ -305,5 +305,6 @@ so every copy of the database, on a laptop or on AWS, ends up identical.
 | SQLite | RDS Postgres |
 | `RS_MASTER_KEY` | AWS KMS key |
 
-Each row is a swap behind an existing boundary (`Storage`, `process_report`, `RS_DATABASE_URL`), which
+The code for the S3 and KMS rows is already in (`S3Storage`, `KmsKeyWrapper`); they switch on with
+settings, described in [DEPLOY.md](DEPLOY.md). Each row is a swap behind an existing boundary (`Storage`, `process_report`, `RS_DATABASE_URL`), which
 is why the code is split the way it is.

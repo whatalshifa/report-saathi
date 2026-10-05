@@ -66,6 +66,30 @@ class LocalKeyWrapper:
             raise DecryptionError("The file's key could not be unwrapped") from exc
 
 
+class KmsKeyWrapper:
+    """Wraps data keys with an AWS KMS key. The master key never leaves AWS's hardware,
+    and every unwrap is recorded in CloudTrail."""
+
+    def __init__(self, key_id: str, client):
+        self.key_id = key_id
+        self.client = client
+
+    def wrap(self, data_key: bytes, context: bytes) -> bytes:
+        response = self.client.encrypt(
+            KeyId=self.key_id, Plaintext=data_key, EncryptionContext={"file": context.decode()}
+        )
+        return response["CiphertextBlob"]
+
+    def unwrap(self, wrapped: bytes, context: bytes) -> bytes:
+        try:
+            response = self.client.decrypt(
+                KeyId=self.key_id, CiphertextBlob=wrapped, EncryptionContext={"file": context.decode()}
+            )
+        except Exception as exc:  # botocore raises its own error types; any failure means "can't open"
+            raise DecryptionError("KMS could not unwrap the file's key") from exc
+        return response["Plaintext"]
+
+
 def encrypt(plaintext: bytes, wrapper: KeyWrapper, context: str) -> bytes:
     """`context` (the file's storage key) is bound in, so a file can't be swapped for another."""
     aad = context.encode()

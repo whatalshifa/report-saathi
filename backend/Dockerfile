@@ -13,5 +13,6 @@ RUN useradd --create-home appuser && mkdir -p /app/uploads /app/keys && chown ap
 USER appuser
 
 EXPOSE 8000
-# Apply any new database migrations, then start the API.
-CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+# Apply any new database migrations, then start the API. Hosting platforms set $PORT;
+# --proxy-headers makes the app see the real client and https behind their load balancer.
+CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --proxy-headers --forwarded-allow-ips='*'"]
