@@ -114,13 +114,13 @@ docker compose up --build
 
 ## Deploying
 
-[docs/DEPLOY.md](docs/DEPLOY.md) covers every setting, plus two routes: Railway + Vercel + Neon, or AWS
+[docs/DEPLOY.md](docs/DEPLOY.md) covers every setting, plus two routes: Render + Vercel + Neon on free tiers, or AWS
 (Amplify, App Runner, RDS, S3, KMS).
 
 ## Tests
 
 ```bash
-cd backend && pytest        # 151 tests: flags, units, trends, sign-in, privacy, encryption, accuracy scoring
+cd backend && pytest        # 155 tests: flags, units, trends, sign-in, privacy, encryption, accuracy scoring
 cd frontend && npm run lint && npm run build
 ```
 

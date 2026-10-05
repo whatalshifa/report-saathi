@@ -1,0 +1,35 @@
+# Render Blueprint for the ReportSaathi API. In Render: New > Blueprint > pick this repo.
+# The website runs on Vercel and the database and file bucket on Neon; see docs/DEPLOY.md.
+services:
+  - type: web
+    name: report-saathi-api
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    region: singapore
+    healthCheckPath: /api/health
+    envVars:
+      - key: RS_ENV
+        value: production
+      - key: RS_STORAGE
+        value: s3
+      - key: RS_S3_BUCKET
+        value: reports
+      - key: RS_S3_REGION
+        value: ap-southeast-1
+      # Render makes a random 32-byte key once. Copy it somewhere safe: the files can't be opened without it.
+      - key: RS_MASTER_KEY
+        generateValue: true
+      # Render asks for these when the Blueprint is first created.
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: RS_DATABASE_URL
+        sync: false
+      - key: RS_S3_ENDPOINT_URL
+        sync: false
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false

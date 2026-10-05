@@ -7,7 +7,7 @@ The app is three pieces, and each can live on a different platform:
 | Website (`frontend/`) | Any host that runs Next.js. Set `API_URL` to the API's address **at build time**. |
 | API (`backend/`) | Runs the Docker image. Migrations run automatically on start. |
 | Database | Postgres. |
-| Files | An S3-compatible bucket (AWS S3, Railway buckets, Cloudflare R2), or a disk. |
+| Files | An S3-compatible bucket (AWS S3, Neon Object Storage, Cloudflare R2), or a disk. |
 
 The browser only ever talks to the website. The website forwards `/api/*` to the API, so the sign-in
 cookie stays first-party and no CORS setup is needed.
@@ -18,7 +18,7 @@ cookie stays first-party and no CORS setup is needed.
 |---|---|
 | `ANTHROPIC_API_KEY` | Your Anthropic key |
 | `RS_ENV` | `production` (secure cookies; refuses to start without an encryption key) |
-| `RS_DATABASE_URL` | `postgresql+psycopg://USER:PASSWORD@HOST/DB?sslmode=require` |
+| `RS_DATABASE_URL` | `postgresql://USER:PASSWORD@HOST/DB?sslmode=require` (pasted as given; the app picks the psycopg driver itself) |
 | `RS_MASTER_KEY` | 32 random bytes, base64: `python -c "import base64, secrets; print(base64.b64encode(secrets.token_bytes(32)).decode())"` |
 | `RS_STORAGE` | `s3` |
 | `RS_S3_BUCKET` | Bucket name |
@@ -35,19 +35,25 @@ The API answers `GET /api/health` only when the database answers; point the plat
 it. Run one copy of the API: background jobs run inside it, and a restarted API re-reads any report it
 was in the middle of (`RS_RECOVER_JOBS_ON_START`).
 
-## Option A: Railway + Vercel + Neon
+## Option A: Render + Vercel + Neon (free)
 
-Free or hobby tiers, a live link in minutes.
+Everything here is on a free tier. The catch: Render's free API sleeps after 15 idle minutes, so the
+first request after a quiet spell takes about a minute while it wakes.
 
-1. **Neon**: create a project, copy the connection string, change `postgresql://` to
-   `postgresql+psycopg://`.
-2. **Railway**: new project → deploy from the GitHub repo → root directory `backend` (it finds the
-   Dockerfile). Add a **Bucket** to the project and copy its S3 credentials. Set the variables above,
-   then generate a public domain.
-3. **Vercel**: import the repo → root directory `frontend` → add `API_URL=https://<railway domain>`
-   → deploy.
+1. **Neon** (database and files): create a project. Copy the connection string from **Connect**.
+   On the same branch, open **Storage**, create a private bucket named `reports`, then under
+   **Connect → Storage → Parameters only** copy the endpoint, access key id and secret.
+2. **Render** (API): **New → Blueprint** → pick the repo. Render reads [`render.yaml`](../render.yaml),
+   generates `RS_MASTER_KEY`, and asks for the five values it can't know: `ANTHROPIC_API_KEY`,
+   `RS_DATABASE_URL`, `RS_S3_ENDPOINT_URL`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`.
+   Afterwards, copy `RS_MASTER_KEY` from the service's Environment tab to a password manager.
+3. **Vercel** (website): import the repo → root directory `frontend` → add
+   `API_URL=https://<your service>.onrender.com` → deploy.
 
-Both Railway and Vercel need their GitHub app installed on the repository's account.
+Render and Vercel each need their GitHub app allowed on the repository.
+
+Railway works the same way as Render (root directory `backend`, the variables above, a Railway
+bucket for files), but needs its paid Hobby plan once the trial ends.
 
 ## Option B: AWS
 

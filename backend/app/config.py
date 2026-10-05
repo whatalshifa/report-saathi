@@ -8,7 +8,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field, SecretStr
+from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./reportsaathi.db"
 
     # Where uploaded files are kept: a local folder, or any S3-compatible bucket
-    # (AWS S3, Railway buckets, Cloudflare R2). S3 credentials come from the standard
+    # (AWS S3, Neon Object Storage, Cloudflare R2). S3 credentials come from the standard
     # AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY variables, or the server's IAM role on AWS.
     storage: Literal["local", "s3"] = "local"
     upload_dir: Path = Path("./uploads")
@@ -55,6 +55,16 @@ class Settings(BaseSettings):
 
     # Re-run reports a restart interrupted. Off when several API copies run at once.
     recover_jobs_on_start: bool = True
+
+    @field_validator("database_url")
+    @classmethod
+    def _use_psycopg(cls, url: str) -> str:
+        # Neon, Render and Heroku hand out "postgres://" or "postgresql://" URLs. SQLAlchemy reads
+        # those as the old psycopg2 driver, so point them at psycopg 3, which is what we install.
+        for prefix in ("postgres://", "postgresql://"):
+            if url.startswith(prefix):
+                return "postgresql+psycopg://" + url[len(prefix) :]
+        return url
 
     @property
     def cookie_secure(self) -> bool:
