@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { ExplanationPanel } from "@/components/ExplanationPanel";
 import { FlagBadge } from "@/components/FlagBadge";
 import { RangeBar } from "@/components/RangeBar";
 import { deleteReport, getReport, isOutOfRange, type ReportDetail, type TestResult } from "@/lib/api";
@@ -75,6 +76,14 @@ export function ReportView({ id }: { id: string }) {
               .filter(Boolean)
               .join(" · ")}
           </p>
+          {report.person_key && (
+            <Link
+              href={`/people/${encodeURIComponent(report.person_key)}`}
+              className="mt-2 inline-block text-sm font-medium text-teal-700 hover:underline dark:text-teal-400"
+            >
+              See all reports for {report.patient_name ?? "this person"} over time →
+            </Link>
+          )}
         </div>
         <button
           onClick={handleDelete}
@@ -115,6 +124,8 @@ export function ReportView({ id }: { id: string }) {
           </ul>
         </section>
       )}
+
+      <ExplanationPanel reportId={report.id} />
 
       <section className="space-y-6">
         <h2 className="text-lg font-semibold">All results</h2>

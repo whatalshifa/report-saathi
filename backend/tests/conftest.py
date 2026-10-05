@@ -6,56 +6,54 @@ from app.db import Base, get_session_factory, make_engine
 from app.main import app
 from app.services.extraction import ExtractedReport, ExtractedTest, get_extractor
 from app.services.storage import LocalStorage, get_storage
+from app.services.writing import BriefFinding, DoctorBrief, ExplainedTest, ReportExplanation, get_writer
 
 PDF_BYTES = b"%PDF-1.4\n% fake test pdf\n"
 
 
+def make_test(
+    name: str,
+    value_text: str,
+    unit: str | None,
+    reference_text: str | None,
+    *,
+    section: str | None = None,
+    catalog_key: str = "other",
+    numeric_value: float | None = None,
+    ref_low: float | None = None,
+    ref_high: float | None = None,
+    lab_flag: str | None = None,
+) -> ExtractedTest:
+    return ExtractedTest(
+        section=section,
+        name=name,
+        catalog_key=catalog_key,
+        value_text=value_text,
+        numeric_value=numeric_value,
+        unit=unit,
+        reference_text=reference_text,
+        ref_low=ref_low,
+        ref_high=ref_high,
+        lab_flag=lab_flag,
+    )
+
+
 def sample_report(**overrides) -> ExtractedReport:
     tests = [
-        ExtractedTest(
-            section="Complete Blood Count",
-            name="Haemoglobin",
-            value_text="11.2",
-            numeric_value=11.2,
-            unit="g/dL",
-            reference_text="13.0 - 17.0",
-            ref_low=13.0,
-            ref_high=17.0,
-            lab_flag="L",
+        make_test("Haemoglobin", "11.2", "g/dL", "13.0 - 17.0", section="Complete Blood Count", lab_flag="L"),
+        make_test(
+            "Platelet Count", "2,50,000", "/cumm", "1,50,000 - 4,50,000", section="Complete Blood Count"
         ),
-        ExtractedTest(
-            section="Complete Blood Count",
-            name="Platelet Count",
-            value_text="2,50,000",
-            numeric_value=250000,
-            unit="/cumm",
-            reference_text="1,50,000 - 4,50,000",
-            ref_low=150000,
-            ref_high=450000,
-            lab_flag=None,
-        ),
-        ExtractedTest(
+        make_test(
+            "Total Cholesterol",
+            "232",
+            "mg/dL",
+            "Desirable: <200; Borderline: 200-239; High: >=240",
             section="Lipid Profile",
-            name="Total Cholesterol",
-            value_text="232",
-            numeric_value=232,
-            unit="mg/dL",
-            reference_text="Desirable: <200; Borderline: 200-239; High: >=240",
-            ref_low=None,
             ref_high=200,
             lab_flag="H",
         ),
-        ExtractedTest(
-            section="Urine Routine",
-            name="Urine Sugar",
-            value_text="Positive (+)",
-            numeric_value=None,
-            unit=None,
-            reference_text="Negative",
-            ref_low=None,
-            ref_high=None,
-            lab_flag=None,
-        ),
+        make_test("Urine Sugar", "Positive (+)", None, "Negative", section="Urine Routine"),
     ]
     data = dict(
         is_lab_report=True,
@@ -71,15 +69,56 @@ def sample_report(**overrides) -> ExtractedReport:
 
 
 class FakeExtractor:
-    def __init__(self, result: ExtractedReport | Exception):
-        self.result = result
+    """Returns the given results in turn, one per uploaded file."""
+
+    def __init__(self, *results: ExtractedReport | Exception):
+        self.results = list(results)
         self.calls: list[str] = []
 
     def extract(self, data: bytes, content_type: str) -> ExtractedReport:
         self.calls.append(content_type)
-        if isinstance(self.result, Exception):
-            raise self.result
-        return self.result
+        result = self.results[min(len(self.calls), len(self.results)) - 1]
+        if isinstance(result, Exception):
+            raise result
+        return result
+
+
+class FakeWriter:
+    def __init__(self, error: Exception | None = None):
+        self.error = error
+        self.explained: list[tuple[str, str]] = []
+        self.briefed: list = []
+
+    def explain(self, report, language):
+        if self.error:
+            raise self.error
+        self.explained.append((report.id, language))
+        return ReportExplanation(
+            summary=f"Summary in {language}",
+            see_doctor_soon=False,
+            see_doctor_reason=None,
+            flagged=[
+                ExplainedTest(
+                    test_name="Haemoglobin",
+                    what_it_measures="Oxygen-carrying protein",
+                    what_your_result_means="A little low",
+                    common_reasons=["Low iron"],
+                    what_you_can_do="Eat iron-rich food",
+                )
+            ],
+            normal_summary="The rest is fine.",
+            questions_for_doctor=["Do I need iron tablets?"],
+        )
+
+    def brief(self, trends):
+        if self.error:
+            raise self.error
+        self.briefed.append(trends)
+        return DoctorBrief(
+            overview="Haemoglobin is falling.",
+            key_findings=[BriefFinding(test="Haemoglobin", finding="Fell from 12.1 to 11.2 g/dL.")],
+            questions_for_doctor=["Why is it falling?"],
+        )
 
 
 @pytest.fixture
@@ -101,10 +140,20 @@ def extractor():
 
 
 @pytest.fixture
-def client(session_factory, storage, extractor):
+def writer():
+    return FakeWriter()
+
+
+@pytest.fixture
+def client(session_factory, storage, extractor, writer):
     app.dependency_overrides[get_session_factory] = lambda: session_factory
     app.dependency_overrides[get_storage] = lambda: storage
     app.dependency_overrides[get_extractor] = lambda: extractor
+    app.dependency_overrides[get_writer] = lambda: writer
     with TestClient(app) as test_client:
         yield test_client
     app.dependency_overrides.clear()
+
+
+def upload(client, data=PDF_BYTES, name="report.pdf"):
+    return client.post("/api/reports", files={"file": (name, data, "application/octet-stream")})

@@ -1,0 +1,54 @@
+"""Background jobs for the AI writing features, run the same way as report reading."""
+
+import logging
+from collections.abc import Callable
+
+from sqlalchemy.orm import Session, sessionmaker
+
+from app.models import Brief, Explanation, JobStatus, Report
+from app.services.claude import AIError
+from app.services.trends import build_trends
+from app.services.writing import Writer
+
+log = logging.getLogger(__name__)
+
+GENERIC_ERROR = "Something went wrong while writing this. Please try again."
+
+
+def _run(job: Explanation | Brief, session: Session, work: Callable[[], dict]) -> None:
+    job.status = JobStatus.processing
+    session.commit()
+    try:
+        job.content = work()
+        job.status, job.error = JobStatus.done, None
+    except AIError as exc:
+        job.status, job.error = JobStatus.failed, str(exc)
+    except Exception:
+        log.exception("Unexpected failure in %s %s", type(job).__name__, job.id)
+        job.status, job.error = JobStatus.failed, GENERIC_ERROR
+    session.commit()
+
+
+def run_explanation(explanation_id: str, session_factory: sessionmaker[Session], writer: Writer) -> None:
+    with session_factory() as session:
+        explanation = session.get(Explanation, explanation_id)
+        if explanation is None:
+            return
+        report = session.get(Report, explanation.report_id)
+        _run(explanation, session, lambda: writer.explain(report, explanation.language).model_dump())
+
+
+def run_brief(brief_id: str, session_factory: sessionmaker[Session], writer: Writer) -> None:
+    with session_factory() as session:
+        brief = session.get(Brief, brief_id)
+        if brief is None:
+            return
+
+        def work() -> dict:
+            trends = build_trends(session, brief.person_key)
+            if trends is None:
+                raise AIError("There are no finished reports for this person yet.")
+            # Keep the numbers the brief was written from, so the page always matches its text.
+            return {"brief": writer.brief(trends).model_dump(), "snapshot": trends.model_dump(mode="json")}
+
+        _run(brief, session, work)

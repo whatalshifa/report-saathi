@@ -4,11 +4,7 @@ import pytest
 from PIL import Image
 
 from app.services.extraction import ExtractionError
-from tests.conftest import PDF_BYTES, FakeExtractor, sample_report
-
-
-def upload(client, data=PDF_BYTES, name="report.pdf"):
-    return client.post("/api/reports", files={"file": (name, data, "application/octet-stream")})
+from tests.conftest import FakeExtractor, sample_report, upload
 
 
 def test_health(client):
