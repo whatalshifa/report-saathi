@@ -1,5 +1,8 @@
 import os
 
+# Tests start their own jobs; don't let the app's restart recovery run alongside them.
+os.environ.setdefault("RS_RECOVER_JOBS_ON_START", "false")
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import sessionmaker
