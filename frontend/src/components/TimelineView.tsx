@@ -7,12 +7,12 @@ import { useCallback, useState } from "react";
 import { FlagBadge } from "@/components/FlagBadge";
 import { TrendChart } from "@/components/TrendChart";
 import { getTrends, isOutOfRange, requestBrief, type TrendSeries } from "@/lib/api";
-import { formatDate, formatNumber, formatRange } from "@/lib/format";
+import { formatDate, formatNumber, formatRange, possessive } from "@/lib/format";
 import { usePoll } from "@/lib/usePoll";
 
-export function PersonView({ personKey }: { personKey: string }) {
+export function TimelineView({ profileId }: { profileId: string }) {
   const router = useRouter();
-  const load = useCallback(() => getTrends(personKey), [personKey]);
+  const load = useCallback(() => getTrends(profileId), [profileId]);
   const { data: trends, error } = usePoll(load, () => false);
   const [briefError, setBriefError] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
@@ -21,7 +21,7 @@ export function PersonView({ personKey }: { personKey: string }) {
     setStarting(true);
     setBriefError(null);
     try {
-      const brief = await requestBrief(personKey);
+      const brief = await requestBrief(profileId);
       router.push(`/briefs/${brief.id}`);
     } catch (err) {
       setBriefError(err instanceof Error ? err.message : "Could not start the brief");
@@ -32,7 +32,7 @@ export function PersonView({ personKey }: { personKey: string }) {
   if (error) return <p className="text-rose-700 dark:text-rose-300">{error}</p>;
   if (!trends) return <p className="text-slate-500">Loading…</p>;
 
-  const { person, series } = trends;
+  const { profile: person, series } = trends;
   const charted = series.filter((s) => s.points.length > 1);
   const single = series.filter((s) => s.points.length === 1);
   const flagged = series.filter((s) => isOutOfRange(s.latest_flag)).length;
@@ -41,8 +41,8 @@ export function PersonView({ personKey }: { personKey: string }) {
     <div className="space-y-8">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <Link href="/" className="text-sm font-medium text-teal-700 dark:text-teal-400">
-            ← All reports
+          <Link href={`/?profile=${profileId}`} className="text-sm font-medium text-teal-700 dark:text-teal-400">
+            ← {possessive(person.name)} reports
           </Link>
           <h1 className="mt-2 text-2xl font-bold">{person.name}</h1>
           <p className="mt-1 text-slate-600 dark:text-slate-400">

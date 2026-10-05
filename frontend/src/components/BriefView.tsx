@@ -32,13 +32,13 @@ export function BriefView({ id }: { id: string }) {
 
 function Brief({ content, createdAt }: { content: BriefContent; createdAt: string }) {
   const { brief, snapshot } = content;
-  const { person, series } = snapshot;
+  const { profile: person, series } = snapshot;
 
   return (
     <article className="space-y-6 rounded-2xl border border-slate-200 bg-white p-6 print:border-0 print:p-0 sm:p-8 dark:border-slate-800 dark:bg-slate-900">
       <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
         <Link
-          href={`/people/${encodeURIComponent(person.key)}`}
+          href={`/profiles/${person.profile_id}`}
           className="text-sm font-medium text-teal-700 dark:text-teal-400"
         >
           ← Back to timeline

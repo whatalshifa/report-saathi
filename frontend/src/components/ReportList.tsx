@@ -13,19 +13,19 @@ const STATUS_LABEL: Record<ReportSummary["status"], string> = {
   failed: "Failed",
 };
 
-export function ReportList() {
+export function ReportList({ profileId }: { profileId: string }) {
   const [reports, setReports] = useState<ReportSummary[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    listReports()
+    listReports(profileId)
       .then(setReports)
       .catch(() => setError("Could not reach the server. Is the backend running?"));
-  }, []);
+  }, [profileId]);
 
   if (error) return <p className="text-sm text-rose-700 dark:text-rose-300">{error}</p>;
   if (reports === null) return <p className="text-sm text-slate-500">Loading…</p>;
-  if (reports.length === 0) return <p className="text-sm text-slate-500">No reports yet.</p>;
+  if (reports.length === 0) return <p className="text-sm text-slate-500">No reports yet. Upload one above.</p>;
 
   return (
     <ul className="divide-y divide-slate-200 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900">

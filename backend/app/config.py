@@ -6,13 +6,17 @@ from the environment, so the same code runs on a laptop and on AWS.
 
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_prefix="RS_", extra="ignore")
+
+    # "production" turns on secure cookies and refuses to start without a real encryption key.
+    env: Literal["development", "production"] = "development"
 
     # SQLite for local development; Postgres (RDS) in production.
     database_url: str = "sqlite:///./reportsaathi.db"
@@ -30,6 +34,20 @@ class Settings(BaseSettings):
 
     # The web app's address, so the browser is allowed to call this API.
     cors_origins: list[str] = ["http://localhost:3000"]
+
+    # Encrypts every uploaded file: 32 random bytes, base64-encoded. See docs/ARCHITECTURE.md.
+    # In development a key is created in master_key_file if this is empty.
+    master_key: SecretStr | None = None
+    master_key_file: Path = Path("./.dev-master-key")
+
+    # How long a login lasts, and how many wrong passwords lock an account for a while.
+    session_days: int = 30
+    max_failed_logins: int = 5
+    lockout_minutes: int = 15
+
+    @property
+    def cookie_secure(self) -> bool:
+        return self.env == "production"
 
 
 @lru_cache

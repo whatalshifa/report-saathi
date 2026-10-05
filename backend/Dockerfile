@@ -9,7 +9,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Run as a normal user, not root.
-RUN useradd --create-home appuser && mkdir -p /app/uploads && chown appuser /app/uploads
+RUN useradd --create-home appuser && mkdir -p /app/uploads /app/keys && chown appuser /app/uploads /app/keys
 USER appuser
 
 EXPOSE 8000

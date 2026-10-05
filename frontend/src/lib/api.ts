@@ -1,6 +1,6 @@
 // Talks to the FastAPI backend. Types mirror backend/app/schemas.py.
-
-export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+// Requests go to /api/* on this website, and next.config.ts forwards them to FastAPI,
+// so the browser sends the sign-in cookie automatically.
 
 export type Flag = "low" | "high" | "normal" | "abnormal" | "unknown";
 export type ReportStatus = "queued" | "processing" | "done" | "failed";
@@ -27,13 +27,16 @@ export interface ReportSummary {
   lab_name: string | null;
   patient_name: string | null;
   report_date: string | null;
-  person_key: string | null;
+  profile_id: string;
   created_at: string;
 }
 
 export interface ReportDetail extends ReportSummary {
   patient_age: string | null;
   patient_sex: string | null;
+  profile: { id: string; name: string };
+  /** False when the name printed on the report looks like someone else's; null when there is no name. */
+  name_matches_profile: boolean | null;
   results: TestResult[];
   out_of_range: number;
 }
@@ -48,7 +51,13 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`, { cache: "no-store", ...init });
+  const response = await fetch(path, { cache: "no-store", credentials: "same-origin", ...init });
+  if (response.status === 401 && !path.startsWith("/api/auth/") && typeof window !== "undefined") {
+    // Signed out (or the session expired): go to sign-in, then come back here.
+    // A full page load on purpose, so no signed-in state survives in memory.
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+    window.location.assign(`/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}`);
+  }
   if (!response.ok) {
     const body = await response.json().catch(() => null);
     const detail = typeof body?.detail === "string" ? body.detail : `Request failed (${response.status})`;
@@ -57,13 +66,74 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return response.status === 204 ? (undefined as T) : response.json();
 }
 
-export function uploadReport(file: File): Promise<ReportDetail> {
+const json = (method: string, body: unknown): RequestInit => ({
+  method,
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(body),
+});
+
+// ---------- Accounts ----------
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+}
+
+export const signup = (name: string, email: string, password: string) =>
+  request<User>("/api/auth/signup", json("POST", { name, email, password }));
+export const login = (email: string, password: string) =>
+  request<User>("/api/auth/login", json("POST", { email, password }));
+export const logout = () => request<void>("/api/auth/logout", { method: "POST" });
+export const deleteAccount = () => request<void>("/api/auth/me", { method: "DELETE" });
+
+/** The signed-in user, or null when nobody is signed in. */
+export async function getMe(): Promise<User | null> {
+  try {
+    return await request<User>("/api/auth/me");
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 401) return null;
+    throw err;
+  }
+}
+
+// ---------- Family profiles ----------
+
+export type Relation = "self" | "spouse" | "parent" | "child" | "sibling" | "grandparent" | "other";
+export type Sex = "female" | "male" | "other";
+
+export interface ProfileInput {
+  name: string;
+  relation: Relation;
+  birth_year: number | null;
+  sex: Sex | null;
+}
+
+export interface Profile extends ProfileInput {
+  id: string;
+  report_count: number;
+  last_report_date: string | null;
+}
+
+export const listProfiles = () => request<Profile[]>("/api/profiles");
+export const createProfile = (input: ProfileInput) => request<Profile>("/api/profiles", json("POST", input));
+export const updateProfile = (id: string, input: ProfileInput) =>
+  request<Profile>(`/api/profiles/${id}`, json("PUT", input));
+export const deleteProfile = (id: string) => request<void>(`/api/profiles/${id}`, { method: "DELETE" });
+
+// ---------- Reports ----------
+
+export function uploadReport(file: File, profileId: string): Promise<ReportDetail> {
   const form = new FormData();
   form.append("file", file);
+  form.append("profile_id", profileId);
   return request("/api/reports", { method: "POST", body: form });
 }
 
-export const listReports = () => request<ReportSummary[]>("/api/reports");
+export const listReports = (profileId?: string) =>
+  request<ReportSummary[]>(profileId ? `/api/reports?profile_id=${profileId}` : "/api/reports");
+export const moveReport = (id: string, profileId: string) =>
+  request<ReportDetail>(`/api/reports/${id}`, json("PATCH", { profile_id: profileId }));
 export const getReport = (id: string) => request<ReportDetail>(`/api/reports/${id}`);
 export const deleteReport = (id: string) => request<void>(`/api/reports/${id}`, { method: "DELETE" });
 
@@ -71,9 +141,10 @@ export const isOutOfRange = (flag: Flag) => flag === "low" || flag === "high" ||
 
 // ---------- Phase 2: trends, explanations, doctor briefs ----------
 
-export interface PersonSummary {
-  key: string;
+export interface TimelineSummary {
+  profile_id: string;
   name: string;
+  relation: Relation;
   age: string | null;
   sex: string | null;
   report_count: number;
@@ -104,7 +175,7 @@ export interface TrendSeries {
 }
 
 export interface Trends {
-  person: PersonSummary;
+  profile: TimelineSummary;
   series: TrendSeries[];
 }
 
@@ -146,21 +217,14 @@ export interface BriefContent {
   snapshot: Trends;
 }
 
-const personPath = (key: string) => `/api/people/${encodeURIComponent(key)}`;
+export const getTrends = (profileId: string) => request<Trends>(`/api/profiles/${profileId}/trends`);
 
-export const listPeople = () => request<PersonSummary[]>("/api/people");
-export const getTrends = (key: string) => request<Trends>(`${personPath(key)}/trends`);
-
-export const requestBrief = (key: string) =>
-  request<Job<BriefContent>>(`${personPath(key)}/briefs`, { method: "POST" });
+export const requestBrief = (profileId: string) =>
+  request<Job<BriefContent>>(`/api/profiles/${profileId}/briefs`, { method: "POST" });
 export const getBrief = (id: string) => request<Job<BriefContent>>(`/api/briefs/${id}`);
 
 export const requestExplanation = (reportId: string, language: Language) =>
-  request<Job<ReportExplanation>>(`/api/reports/${reportId}/explanations`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ language }),
-  });
+  request<Job<ReportExplanation>>(`/api/reports/${reportId}/explanations`, json("POST", { language }));
 
 /** Returns null when no explanation has been asked for in this language yet. */
 export async function getExplanation(reportId: string, language: Language) {

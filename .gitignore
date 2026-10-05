@@ -1,6 +1,10 @@
 # Secrets
 .env
 .env.local
+.dev-master-key
+
+# Real lab reports for the accuracy test never go in git
+backend/accuracy/data/
 
 # Python
 __pycache__/

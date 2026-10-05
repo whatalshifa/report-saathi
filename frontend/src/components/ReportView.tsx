@@ -7,8 +7,17 @@ import { useEffect, useState } from "react";
 import { ExplanationPanel } from "@/components/ExplanationPanel";
 import { FlagBadge } from "@/components/FlagBadge";
 import { RangeBar } from "@/components/RangeBar";
-import { deleteReport, getReport, isOutOfRange, type ReportDetail, type TestResult } from "@/lib/api";
-import { formatDate, formatRange } from "@/lib/format";
+import {
+  deleteReport,
+  getReport,
+  isOutOfRange,
+  listProfiles,
+  moveReport,
+  type Profile,
+  type ReportDetail,
+  type TestResult,
+} from "@/lib/api";
+import { formatDate, formatRange, possessive } from "@/lib/format";
 
 const POLL_MS = 2000;
 
@@ -41,7 +50,7 @@ export function ReportView({ id }: { id: string }) {
   async function handleDelete() {
     if (!confirm("Delete this report and its file?")) return;
     await deleteReport(id);
-    router.push("/");
+    router.push(`/?profile=${report?.profile_id ?? ""}`);
   }
 
   if (error) return <Notice title="Something went wrong" body={error} />;
@@ -76,14 +85,12 @@ export function ReportView({ id }: { id: string }) {
               .filter(Boolean)
               .join(" · ")}
           </p>
-          {report.person_key && (
-            <Link
-              href={`/people/${encodeURIComponent(report.person_key)}`}
-              className="mt-2 inline-block text-sm font-medium text-teal-700 hover:underline dark:text-teal-400"
-            >
-              See all reports for {report.patient_name ?? "this person"} over time →
-            </Link>
-          )}
+          <Link
+            href={`/profiles/${report.profile.id}`}
+            className="mt-2 inline-block text-sm font-medium text-teal-700 hover:underline dark:text-teal-400"
+          >
+            See {possessive(report.profile.name)} reports over time →
+          </Link>
         </div>
         <button
           onClick={handleDelete}
@@ -92,6 +99,8 @@ export function ReportView({ id }: { id: string }) {
           Delete
         </button>
       </header>
+
+      {report.name_matches_profile === false && <WrongPersonWarning report={report} onMoved={setReport} />}
 
       <section className="grid grid-cols-3 gap-3">
         <Stat label="Values read" value={report.results.length} />
@@ -233,5 +242,62 @@ function Notice({ title, body, spinner = false }: { title: string; body?: string
         ← Back to all reports
       </Link>
     </div>
+  );
+}
+
+function WrongPersonWarning({ report, onMoved }: { report: ReportDetail; onMoved: (r: ReportDetail) => void }) {
+  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [target, setTarget] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    listProfiles().then((all) => setProfiles(all.filter((p) => p.id !== report.profile_id)));
+  }, [report.profile_id]);
+
+  async function move() {
+    try {
+      onMoved(await moveReport(report.id, target));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not move the report");
+    }
+  }
+
+  return (
+    <section
+      role="status"
+      className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm dark:border-amber-800 dark:bg-amber-950/40"
+    >
+      <p className="font-medium text-amber-900 dark:text-amber-200">
+        This report is in {possessive(report.profile.name)} reports, but the name on it is {report.patient_name}.
+      </p>
+      <p className="mt-1 text-amber-900/80 dark:text-amber-200/80">
+        If it belongs to someone else, move it so their timeline stays right.
+      </p>
+      {profiles.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          <select
+            value={target}
+            onChange={(e) => setTarget(e.target.value)}
+            aria-label="Move to"
+            className="rounded-lg border border-amber-300 bg-white px-3 py-1.5 dark:border-amber-800 dark:bg-slate-900"
+          >
+            <option value="">Move to…</option>
+            {profiles.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+          <button
+            disabled={!target}
+            onClick={move}
+            className="rounded-lg bg-amber-700 px-3 py-1.5 font-semibold text-white hover:bg-amber-800 disabled:opacity-50"
+          >
+            Move
+          </button>
+        </div>
+      )}
+      {error && <p className="mt-2 text-rose-700 dark:text-rose-300">{error}</p>}
+    </section>
   );
 }

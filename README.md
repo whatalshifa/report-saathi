@@ -2,13 +2,31 @@
 
 Upload lab reports from any Indian lab, as PDFs or phone photos. ReportSaathi reads every value,
 flags the ones outside the normal range, explains them in plain English, Hindi or Marathi, and lines
-up reports from different labs into one health timeline you can hand to your doctor.
+up reports from different labs into one health timeline you can hand to your doctor. One account
+keeps the whole family's reports, privately and encrypted.
 
 ![Health timeline](docs/screenshots/timeline.png)
 
 > Screenshots use sample data.
 
 ## What works today
+
+### Phase 3: accounts, family profiles, encryption, accuracy test
+
+- **Sign up and sign in.** Passwords are hashed with Argon2id; sessions live in HttpOnly cookies and
+  only their hashes are stored; five wrong passwords lock the account for 15 minutes.
+- **Family profiles.** Add parents, children and others, and file each report under the right person.
+  If the name on a report doesn't match the profile, the app warns you and lets you move it.
+- **Private by design.** Every request checks ownership; another account's data answers "not found".
+  Deleting a report, a person, or your whole account deletes the files too.
+- **Encrypted files.** Every upload is encrypted with its own key (AES-256-GCM, envelope encryption,
+  ready for AWS KMS) before it touches the disk.
+- **Accuracy test kit.** Measures how many values are found, invented, and read and flagged correctly
+  on real reports against hand-checked answers. See [docs/ACCURACY.md](docs/ACCURACY.md).
+
+| Whose report is it? | Name on report doesn't match |
+|---|---|
+| ![Dashboard](docs/screenshots/family-dashboard.png) | ![Wrong person warning](docs/screenshots/wrong-person.png) |
 
 ### Phase 2: trends, explanations, doctor brief
 
@@ -37,15 +55,15 @@ up reports from different labs into one health timeline you can hand to your doc
   each value sits against its range. Works on phones.
 - Every report can be deleted, together with its file.
 
-Coming next: login, family profiles and encrypted storage, plus an accuracy test on real reports
-(Phase 3); then deployment on AWS.
+Coming next: the accuracy run on 50 real reports, then deployment on AWS (Amplify, App Runner, SQS,
+S3, RDS and KMS).
 
 ## How it works
 
 ```mermaid
 flowchart LR
-    U[Browser<br/>Next.js] -- "1 upload file" --> A[API<br/>FastAPI]
-    A -- "2 save file" --> S[(File storage<br/>folder, later S3)]
+    U[Browser<br/>Next.js] -- "1 upload file<br/>(signed in)" --> A[API<br/>FastAPI]
+    A -- "2 encrypt and save file" --> S[(File storage<br/>folder, later S3)]
     A -- "3 save report, status: queued" --> D[(Database<br/>SQLite / Postgres)]
     A -. "4 background job" .-> J[Processing]
     J -- "5 read the report" --> C[Claude<br/>vision + structured output]
@@ -80,8 +98,12 @@ uvicorn app.main:app --reload # API on http://localhost:8000, docs at /docs
 cd frontend
 npm install
 cp .env.example .env.local
-npm run dev                   # website on http://localhost:3000
+npm run dev                   # website on http://localhost:3000, then create an account
 ```
+
+In development an encryption key for uploaded files is created in `backend/.dev-master-key`. Keep it:
+without it, saved files can't be opened. In production set `RS_MASTER_KEY` and `RS_ENV=production`
+(see `backend/.env.example`).
 
 **Or everything with Docker** (also starts Postgres):
 
@@ -93,7 +115,7 @@ docker compose up --build
 ## Tests
 
 ```bash
-cd backend && pytest        # 98 tests: ranges, flags, test matching, units, trends, the API
+cd backend && pytest        # 146 tests: flags, units, trends, sign-in, privacy, encryption, accuracy scoring
 cd frontend && npm run lint && npm run build
 ```
 
@@ -105,29 +127,35 @@ GitHub Actions runs all of this on every push, plus the database migrations agai
 ```
 backend/
   app/
-    main.py               FastAPI app, CORS, health check
-    api/reports.py        upload, list, get, delete, explanations
-    api/people.py         people, timelines, doctor briefs
+    main.py               FastAPI app, health check
+    api/auth.py           sign up, sign in, sign out, delete account
+    api/profiles.py       family profiles, timelines, doctor briefs
+    api/reports.py        upload, list, get, move, delete, explanations
+    api/deps.py           ownership checks every endpoint uses
     services/
       uploads.py          checks file type by its bytes, shrinks big photos
       extraction.py       sends the report to Claude, gets structured data back
       flagging.py         parses reference ranges, decides low / high / normal
       catalog.py          51 common tests: their spellings and unit conversions
-      people.py           groups reports by the patient name printed on them
+      auth.py             password hashing, sessions, lockout
+      crypto.py           envelope encryption for uploaded files
+      names.py            spots a report filed under the wrong person
       trends.py           builds each person's timeline (all numbers, no AI)
       writing.py          Claude writes explanations and the doctor brief
       claude.py           the one place that calls Claude
       processing.py       the background job that reads a report
       jobs.py             background jobs for explanations and briefs
-      storage.py          where files live (local folder now, S3 later)
+      storage.py          where files live (local folder now, S3 later), encrypted
     models.py             database tables
     schemas.py            JSON shapes the API returns
   alembic/                database migrations
+  accuracy/               the accuracy test on real reports
   tests/
 frontend/
-  src/app/                pages: home, /reports/[id], /people/[key], /briefs/[id]
-  src/components/         upload, results, trend chart, explanation panel, doctor brief
-  src/lib/api.ts          calls to the backend
+  src/app/                pages: home, sign in, family, account, accuracy, reports, timelines, briefs
+  src/components/         upload, results, trend chart, explanation panel, doctor brief, forms
+  src/proxy.ts            sends signed-out visitors to the sign-in page
+  src/lib/api.ts          calls to the backend (forwarded to FastAPI by next.config.ts)
 ```
 
 ## Disclaimer

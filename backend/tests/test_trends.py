@@ -50,21 +50,34 @@ def extractor():
 
 
 @pytest.fixture
-def uploaded(client):
-    return [upload(client).json()["id"] for _ in REPORTS]
+def papa(client):
+    response = client.post("/api/profiles", json={"name": "Anil Sharma", "relation": "parent", "sex": "male"})
+    assert response.status_code == 201
+    return response.json()["id"]
 
 
-def test_people_are_grouped_by_name(client, uploaded):
-    people = client.get("/api/people").json()
-    assert [(p["key"], p["report_count"]) for p in people] == [("anil sharma", 3), ("sunita devi", 1)]
-    anil = people[0]
-    assert anil["name"] == "ANIL SHARMA"  # the most recent spelling
-    assert (anil["first_date"], anil["last_date"]) == ("2025-03-02", "2026-09-12")
-    assert anil["labs"] == ["Lab A", "Lab B", "Lab C"]
+@pytest.fixture
+def uploaded(client, papa):
+    # Anil's three reports go to his profile; Sunita's report is uploaded to the account's own profile.
+    return [upload(client, profile_id=papa).json()["id"] for _ in REPORTS[:3]] + [upload(client).json()["id"]]
 
 
-def test_trends_line_up_values_across_labs_and_units(client, uploaded):
-    trends = client.get("/api/people/anil sharma/trends").json()
+def test_profiles_list_their_reports(client, uploaded, papa):
+    profiles = client.get("/api/profiles").json()
+    assert [(p["name"], p["relation"], p["report_count"]) for p in profiles] == [
+        ("Asha Patel", "self", 1),
+        ("Anil Sharma", "parent", 3),
+    ]
+    assert profiles[1]["last_report_date"] == "2026-09-12"
+    assert len(client.get(f"/api/reports?profile_id={papa}").json()) == 3
+
+    summary = client.get(f"/api/profiles/{papa}/trends").json()["profile"]
+    assert (summary["first_date"], summary["last_date"]) == ("2025-03-02", "2026-09-12")
+    assert summary["labs"] == ["Lab A", "Lab B", "Lab C"]
+
+
+def test_trends_line_up_values_across_labs_and_units(client, uploaded, papa):
+    trends = client.get(f"/api/profiles/{papa}/trends").json()
     series = {s["key"]: s for s in trends["series"]}
     assert set(series) == {"hemoglobin", "platelets", "glucose_fasting"}  # "Colour" isn't in the catalog
 
@@ -88,8 +101,8 @@ def test_trends_line_up_values_across_labs_and_units(client, uploaded):
     assert [s["key"] for s in trends["series"]][:2] == ["hemoglobin", "glucose_fasting"]
 
 
-def test_trends_for_unknown_person_is_404(client, uploaded):
-    assert client.get("/api/people/nobody/trends").status_code == 404
+def test_trends_for_unknown_profile_is_404(client, uploaded):
+    assert client.get("/api/profiles/nobody/trends").status_code == 404
 
 
 def test_explanation_is_written_once_per_language(client, uploaded, writer):
@@ -129,17 +142,17 @@ def test_explanations_are_deleted_with_their_report(client, uploaded):
     assert client.get(f"/api/reports/{report_id}/explanations/en").status_code == 404
 
 
-def test_doctor_brief_keeps_the_numbers_it_was_written_from(client, uploaded, writer):
-    response = client.post("/api/people/anil sharma/briefs")
+def test_doctor_brief_keeps_the_numbers_it_was_written_from(client, uploaded, writer, papa):
+    response = client.post(f"/api/profiles/{papa}/briefs")
     assert response.status_code == 202
 
     brief = client.get(f"/api/briefs/{response.json()['id']}").json()
     assert brief["status"] == "done"
     assert brief["content"]["brief"]["overview"] == "Haemoglobin is falling."
     snapshot = brief["content"]["snapshot"]
-    assert snapshot["person"]["report_count"] == 3
+    assert snapshot["profile"]["report_count"] == 3
     assert snapshot["series"][0]["key"] == "hemoglobin"
-    assert writer.briefed[0].person.key == "anil sharma"
+    assert writer.briefed[0].profile.profile_id == papa
 
-    assert client.post("/api/people/nobody/briefs").status_code == 404
+    assert client.post("/api/profiles/nobody/briefs").status_code == 404
     assert client.get("/api/briefs/missing").status_code == 404

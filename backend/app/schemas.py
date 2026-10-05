@@ -1,11 +1,83 @@
 """The JSON shapes the API sends back to the web app."""
 
+import re
 from datetime import date, datetime
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, computed_field
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field, StringConstraints, computed_field
 
-from app.models import Flag, ReportStatus
+from app.models import Flag, Relation, ReportStatus
+from app.services.names import names_match
+
+# ---------- Accounts ----------
+
+_EMAIL = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+def _check_email(value: str) -> str:
+    if not _EMAIL.match(value):
+        raise ValueError("Enter a valid email address")
+    return value.lower()
+
+
+Email = Annotated[str, StringConstraints(strip_whitespace=True, max_length=254), AfterValidator(_check_email)]
+Name = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
+
+
+class SignupIn(BaseModel):
+    name: Name
+    email: Email
+    # Long passphrases beat complex short ones (NIST 800-63B); 128 caps the hashing work.
+    password: str = Field(min_length=10, max_length=128)
+
+
+class LoginIn(BaseModel):
+    email: Email
+    password: str = Field(max_length=128)
+
+
+class UserOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    name: str
+    email: str
+
+
+# ---------- Family profiles ----------
+
+
+class ProfileIn(BaseModel):
+    name: Name
+    relation: Relation
+    birth_year: int | None = Field(default=None, ge=1900, le=2100)
+    sex: Literal["female", "male", "other"] | None = None
+
+
+class ProfileOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    name: str
+    relation: Relation
+    birth_year: int | None
+    sex: str | None
+    report_count: int = 0
+    last_report_date: date | None = None
+
+
+class ProfileRef(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    name: str
+
+
+class MoveReport(BaseModel):
+    profile_id: str
+
+
+# ---------- Reports ----------
 
 
 class TestResultOut(BaseModel):
@@ -36,14 +108,21 @@ class ReportSummary(BaseModel):
     lab_name: str | None
     patient_name: str | None
     report_date: date | None
-    person_key: str | None
+    profile_id: str
     created_at: datetime
 
 
 class ReportDetail(ReportSummary):
     patient_age: str | None
     patient_sex: str | None
+    profile: ProfileRef
     results: list[TestResultOut]
+
+    @computed_field
+    @property
+    def name_matches_profile(self) -> bool | None:
+        """False when the name printed on the report looks like someone else's."""
+        return names_match(self.profile.name, self.patient_name)
 
     @computed_field
     @property
@@ -51,9 +130,10 @@ class ReportDetail(ReportSummary):
         return sum(r.flag in (Flag.low, Flag.high, Flag.abnormal) for r in self.results)
 
 
-class PersonSummary(BaseModel):
-    key: str
+class TimelineSummary(BaseModel):
+    profile_id: str
     name: str
+    relation: Relation
     age: str | None
     sex: str | None
     report_count: int
@@ -84,7 +164,7 @@ class TrendSeries(BaseModel):
 
 
 class Trends(BaseModel):
-    person: PersonSummary
+    profile: TimelineSummary
     series: list[TrendSeries]
 
 
@@ -106,7 +186,7 @@ class ExplanationOut(JobOut):
 
 
 class BriefOut(JobOut):
-    person_key: str
+    profile_id: str
 
 
 class ExplanationRequest(BaseModel):

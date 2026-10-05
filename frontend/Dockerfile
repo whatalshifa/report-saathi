@@ -3,9 +3,9 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
-# The API address is baked into the browser code at build time.
-ARG NEXT_PUBLIC_API_URL=http://localhost:8000
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+# Where the website forwards /api/* requests. Fixed at build time.
+ARG API_URL=http://localhost:8000
+ENV API_URL=$API_URL
 RUN npm run build
 
 FROM node:22-alpine

@@ -1,7 +1,7 @@
 import pytest
 
 from app.services.catalog import CATALOG, conversion_factor, get_test, match_test, normalize_unit
-from app.services.people import person_key
+from app.services.names import names_match, normalize_name
 
 
 @pytest.mark.parametrize(
@@ -69,15 +69,32 @@ def test_catalog_is_consistent():
 
 
 @pytest.mark.parametrize(
-    ("name", "key"),
+    ("name", "normalized"),
     [
         ("Mr. Anil Sharma", "anil sharma"),
         ("ANIL  SHARMA", "anil sharma"),
         ("Smt. Sunita Devi", "sunita devi"),
-        ("Baby of Priya", "of priya"),
-        (None, "unknown"),
-        ("Mr.", "unknown"),
+        (None, ""),
+        ("Mr.", ""),
     ],
 )
-def test_person_key(name, key):
-    assert person_key(name) == key
+def test_normalize_name(name, normalized):
+    assert normalize_name(name) == normalized
+
+
+@pytest.mark.parametrize(
+    ("profile", "printed", "expected"),
+    [
+        ("Anil Sharma", "MR. ANIL SHARMA", True),
+        ("Anil Sharma", "A. Sharma", True),
+        ("Anil Sharma", "Anil Kumar Sharma", True),
+        ("Anil Sharma", "Mrs. Sunita Sharma", False),  # same surname, different person
+        ("Anil Sharma", "S. Sharma", False),
+        ("Papa", "Anil Sharma", False),
+        ("Anil Sharma", None, None),
+        ("Anil Sharma", "Mr.", None),
+        ("Anil Sharma", "Mr. A", True),
+    ],
+)
+def test_names_match(profile, printed, expected):
+    assert names_match(profile, printed) is expected

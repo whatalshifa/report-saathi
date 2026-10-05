@@ -5,7 +5,7 @@ from collections.abc import Callable
 
 from sqlalchemy.orm import Session, sessionmaker
 
-from app.models import Brief, Explanation, JobStatus, Report
+from app.models import Brief, Explanation, JobStatus, Profile, Report
 from app.services.claude import AIError
 from app.services.trends import build_trends
 from app.services.writing import Writer
@@ -45,9 +45,10 @@ def run_brief(brief_id: str, session_factory: sessionmaker[Session], writer: Wri
             return
 
         def work() -> dict:
-            trends = build_trends(session, brief.person_key)
+            profile = session.get(Profile, brief.profile_id)
+            trends = build_trends(session, profile) if profile else None
             if trends is None:
-                raise AIError("There are no finished reports for this person yet.")
+                raise AIError("There are no finished reports for this profile yet.")
             # Keep the numbers the brief was written from, so the page always matches its text.
             return {"brief": writer.brief(trends).model_dump(), "snapshot": trends.model_dump(mode="json")}
 

@@ -19,3 +19,16 @@ export function formatRange(low: number | null, high: number | null, printed: st
 export function formatNumber(value: number): string {
   return value.toLocaleString("en-IN", { maximumFractionDigits: Math.abs(value) < 10 ? 2 : 1 });
 }
+
+export const RELATION_LABEL: Record<string, string> = {
+  self: "You",
+  spouse: "Spouse",
+  parent: "Parent",
+  child: "Child",
+  sibling: "Sibling",
+  grandparent: "Grandparent",
+  other: "Family",
+};
+
+/** "Papa's" / "Asha's" for headings. */
+export const possessive = (name: string) => (name.endsWith("s") ? `${name}’` : `${name}’s`);

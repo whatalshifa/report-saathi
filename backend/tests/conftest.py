@@ -1,11 +1,14 @@
+import os
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import sessionmaker
 
 from app.db import Base, get_session_factory, make_engine
 from app.main import app
+from app.services.crypto import LocalKeyWrapper
 from app.services.extraction import ExtractedReport, ExtractedTest, get_extractor
-from app.services.storage import LocalStorage, get_storage
+from app.services.storage import EncryptedStorage, LocalStorage, get_storage
 from app.services.writing import BriefFinding, DoctorBrief, ExplainedTest, ReportExplanation, get_writer
 
 PDF_BYTES = b"%PDF-1.4\n% fake test pdf\n"
@@ -131,7 +134,7 @@ def session_factory(tmp_path):
 
 @pytest.fixture
 def storage(tmp_path):
-    return LocalStorage(tmp_path / "uploads")
+    return EncryptedStorage(LocalStorage(tmp_path / "uploads"), LocalKeyWrapper(os.urandom(32)))
 
 
 @pytest.fixture
@@ -151,9 +154,23 @@ def client(session_factory, storage, extractor, writer):
     app.dependency_overrides[get_extractor] = lambda: extractor
     app.dependency_overrides[get_writer] = lambda: writer
     with TestClient(app) as test_client:
+        signup(test_client)
+        # Every test starts signed in, with the profile created at sign-up.
+        test_client.profile_id = test_client.get("/api/profiles").json()[0]["id"]
         yield test_client
     app.dependency_overrides.clear()
 
 
-def upload(client, data=PDF_BYTES, name="report.pdf"):
-    return client.post("/api/reports", files={"file": (name, data, "application/octet-stream")})
+PASSWORD = "correct horse battery"
+
+
+def signup(client, email="asha@example.com", name="Asha Patel", password=PASSWORD):
+    return client.post("/api/auth/signup", json={"name": name, "email": email, "password": password})
+
+
+def upload(client, data=PDF_BYTES, name="report.pdf", profile_id=None):
+    return client.post(
+        "/api/reports",
+        data={"profile_id": profile_id or client.profile_id},
+        files={"file": (name, data, "application/octet-stream")},
+    )
