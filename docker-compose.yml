@@ -22,8 +22,11 @@ services:
     environment:
       RS_DATABASE_URL: postgresql+psycopg://reportsaathi:reportsaathi@db:5432/reportsaathi
       RS_UPLOAD_DIR: /app/uploads
+      # A development encryption key is created here on first start, kept apart from the files.
+      RS_MASTER_KEY_FILE: /app/keys/master-key
     volumes:
       - uploads:/app/uploads
+      - keys:/app/keys
     ports:
       - "8000:8000"
     depends_on:
@@ -34,7 +37,8 @@ services:
     build:
       context: ./frontend
       args:
-        NEXT_PUBLIC_API_URL: http://localhost:8000
+        # The website forwards /api/* to the API, so the browser only ever talks to one address.
+        API_URL: http://api:8000
     ports:
       - "3000:3000"
     depends_on:
@@ -43,3 +47,4 @@ services:
 volumes:
   pgdata:
   uploads:
+  keys:

@@ -3,11 +3,11 @@
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
-import { uploadReport } from "@/lib/api";
+import { uploadReport, type Profile } from "@/lib/api";
 
 const ACCEPTED = "application/pdf,image/jpeg,image/png,image/webp";
 
-export function UploadCard() {
+export function UploadCard({ profile }: { profile: Profile }) {
   const router = useRouter();
   const input = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
@@ -19,7 +19,7 @@ export function UploadCard() {
     setError(null);
     setUploading(true);
     try {
-      const report = await uploadReport(file);
+      const report = await uploadReport(file, profile.id);
       router.push(`/reports/${report.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed");
@@ -53,10 +53,10 @@ export function UploadCard() {
           <path strokeWidth={1.5} strokeLinecap="round" d="M12 16V4m0 0-4 4m4-4 4 4M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
         </svg>
         <span className="text-lg font-semibold">
-          {uploading ? "Uploading…" : "Upload a lab report"}
+          {uploading ? "Uploading…" : `Upload a report for ${profile.name}`}
         </span>
         <span className="text-sm text-slate-500 dark:text-slate-400">
-          Drop a PDF or a photo here, or tap to choose one. Up to 20 MB.
+          Drop a PDF or a photo here, or tap to choose one. Up to 20 MB. Files are stored encrypted.
         </span>
       </button>
       <input

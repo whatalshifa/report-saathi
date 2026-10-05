@@ -9,9 +9,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Run as a normal user, not root.
-RUN useradd --create-home appuser && mkdir -p /app/uploads && chown appuser /app/uploads
+RUN useradd --create-home appuser && mkdir -p /app/uploads /app/keys && chown appuser /app/uploads /app/keys
 USER appuser
 
 EXPOSE 8000
-# Apply any new database migrations, then start the API.
-CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+# Apply any new database migrations, then start the API. Hosting platforms set $PORT;
+# --proxy-headers makes the app see the real client and https behind their load balancer.
+CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --proxy-headers --forwarded-allow-ips='*'"]

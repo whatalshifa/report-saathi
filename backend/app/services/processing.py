@@ -14,7 +14,6 @@ from app.models import Report, ReportStatus, TestResult
 from app.services.catalog import conversion_factor, match_test
 from app.services.extraction import ExtractedReport, ExtractedTest, ExtractionError, Extractor
 from app.services.flagging import compute_flag, parse_value, resolve_range
-from app.services.people import person_key
 from app.services.storage import Storage
 
 log = logging.getLogger(__name__)
@@ -105,7 +104,6 @@ def process_report(
         report.patient_age = _clip(extracted.patient_age, 50)
         report.patient_sex = _clip(extracted.patient_sex, 20)
         report.report_date = _parse_date(extracted.report_date)
-        report.person_key = person_key(extracted.patient_name)
         report.results = build_results(extracted)
         report.status, report.error = ReportStatus.done, None
         session.commit()

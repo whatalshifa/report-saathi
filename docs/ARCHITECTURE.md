@@ -11,7 +11,9 @@ an interview, you can explain the whole project.
 | API | FastAPI (Python) | Receives files, stores them, runs the AI step, answers the website's questions |
 | Database | SQLite on your laptop, Postgres in production | Remembers every report and every value read from it |
 
-The website never talks to Claude or the database directly. It only calls the API. That keeps the API
+The website never talks to Claude or the database directly. It only calls the API: the browser asks
+for `/api/...` on the website's own address, and Next.js forwards the request to FastAPI
+(`frontend/next.config.ts`). That keeps the API
 key secret (it lives only on the server) and means the website could be swapped for a phone app later
 without touching anything else.
 
@@ -19,7 +21,8 @@ without touching anything else.
 
 ### 1. Upload (`frontend/src/components/UploadCard.tsx`)
 
-The user drops a file. The browser sends it to `POST /api/reports` as a normal form upload.
+The user picks whose report it is, then drops a file. The browser sends it to `POST /api/reports` as a
+normal form upload, together with the profile's id.
 
 ### 2. Check the file (`backend/app/services/uploads.py`)
 
@@ -32,7 +35,7 @@ Claude accepts images up to 5 MB, and phone photos are often bigger, so large ph
 
 ### 3. Save it and answer at once (`backend/app/api/reports.py`)
 
-The file goes to storage and a row goes into the `reports` table with status `queued`. The API replies
+The file is encrypted (section 17) and goes to storage, and a row goes into the `reports` table with status `queued`. The API replies
 straight away with the new report's id. It does **not** wait for the AI, because reading a report can
 take 20 to 60 seconds and an HTTP request should not hang that long.
 
@@ -129,15 +132,15 @@ conversion for medical values would be worse than leaving a gap.
 The converted numbers are saved next to the originals (`std_value`, `std_low`, `std_high` on each
 test result), so the original report is never changed.
 
-### 9. Grouping reports by person (`backend/app/services/people.py`)
+### 9. Whose report is it?
 
-For now, reports are grouped by the patient name printed on them: `Mr. Anil Sharma`, `ANIL SHARMA`
-and `anil  sharma` all become the key `anil sharma`. It is simple on purpose. Phase 3 adds login and
-proper family profiles, which will replace this.
+In Phase 2, reports were grouped by the patient name printed on them. Phase 3 replaced that with
+family profiles (section 15): you choose the person when you upload, and the printed name is only
+used to warn you if it looks like someone else's report.
 
 ### 10. Building the timeline (`backend/app/services/trends.py`)
 
-`build_trends()` takes every finished report for a person, sorts them by date, and builds one
+`build_trends()` takes every finished report for a profile, sorts them by date, and builds one
 **series** per catalog test: a list of points, each with the date, the converted value, the flag
 (judged against the range printed by *that* lab), and what the lab actually printed. It also works
 out the change since the previous reading. Tests that are out of range at the latest reading are
@@ -188,11 +191,83 @@ gives a clean one-page handout.
 Claude transcribes reports and writes explanations. Matching tests, converting units, comparing
 against ranges, and computing changes are all plain Python with tests.
 
+## Phase 3: accounts, family, privacy and accuracy
+
+### 14. Signing in (`backend/app/services/auth.py`, `backend/app/api/auth.py`)
+
+ReportSaathi holds health data, so it uses the same building blocks a bank's website would:
+
+- **Passwords are hashed with Argon2id.** A hash is a one-way scramble: we can check a password
+  against it, but can't turn it back into the password. Argon2 is slow and memory-hungry on purpose,
+  so someone who steals the database can't try billions of guesses. Unknown emails are checked
+  against a dummy hash, so the response time doesn't reveal who has an account.
+- **Sessions are random tokens in an HttpOnly cookie.** Signing in creates 32 random bytes. The
+  browser keeps them in a cookie that page scripts can't read, so injected JavaScript can't steal it.
+  The `sessions` table stores only the token's SHA-256 hash, so a leaked database can't be used to
+  sign in either. Signing out deletes the row, which kills the token everywhere.
+- **SameSite=Lax** means the browser won't send the cookie with a form posted from another website,
+  which blocks cross-site request forgery. In production the cookie is also `Secure` (HTTPS only).
+- **Five wrong passwords lock the account for 15 minutes**, which stops password guessing.
+
+Every endpoint takes `CurrentUser` as a dependency. No valid cookie means `401`, and the website sends
+you to the sign-in page (`frontend/src/proxy.ts` does it before a page even loads).
+
+### 15. Family profiles (`backend/app/api/profiles.py`, `frontend/src/components/FamilyManager.tsx`)
+
+One account looks after several people. Signing up creates a profile for you; you add parents,
+children and others from the Family page. Every report belongs to exactly one profile, and timelines
+and doctor briefs are per profile.
+
+Because uploading Mummy's report into Papa's profile is an easy slip, the report page compares the
+**first name** printed on the report with the profile's name (`backend/app/services/names.py`). If
+they differ, it shows a warning with a "Move to…" button. Surnames alone don't count, since a family
+usually shares one.
+
+### 16. Nobody sees anyone else's data (`backend/app/api/deps.py`)
+
+Every lookup goes through `owned_report`, `owned_profile` or `owned_brief`, which check that the item
+belongs to the signed-in user. Someone else's report answers **404 Not Found**, exactly like a report
+that doesn't exist, so ids can't be probed. `tests/test_auth.py` signs in as a second person and tries
+every endpoint against the first person's data.
+
+### 17. Encrypted files (`backend/app/services/crypto.py`, `backend/app/services/storage.py`)
+
+A report photo shows a name, age, phone number and health results, so files are never stored
+readable. ReportSaathi uses **envelope encryption**, the same scheme AWS KMS uses:
+
+1. Each file gets its own random 256-bit **data key**.
+2. The file is encrypted with it using **AES-256-GCM**. GCM also detects any change: a flipped bit
+   means the file refuses to open instead of showing wrong values.
+3. The data key is itself encrypted ("wrapped") with the **master key** and stored at the start of
+   the file.
+4. The file's name is bound in as "associated data", so an encrypted file copied over another's name
+   won't open either.
+
+`EncryptedStorage` wraps any storage (the local folder now, S3 later), so the rest of the app never
+sees ciphertext. The master key comes from `RS_MASTER_KEY`; in development a key file is created for
+you. On AWS, `LocalKeyWrapper` is swapped for KMS, so the master key never leaves AWS's hardware.
+
+The database (names, values) is protected by Postgres encryption at rest on RDS and TLS in transit,
+rather than by the app.
+
+Deleting a report, a profile or the whole account deletes the files too.
+
+### 18. Measuring accuracy (`backend/accuracy/`)
+
+"It works on my sample" isn't evidence. The accuracy kit measures ReportSaathi on real reports
+against answers a person checked by hand: how many printed values it finds, how many it invents, and
+how often the number, unit and low/high flag are right, split by PDFs and phone photos. How to run it
+is in [ACCURACY.md](ACCURACY.md); only totals are published, never a report.
+
 ## The database
 
-Four tables, defined in `backend/app/models.py`:
+Seven tables, defined in `backend/app/models.py`:
 
-- `reports`: one row per uploaded file (status, lab name, patient name, date, person key).
+- `users`: one per account (email, Argon2 password hash, lockout counter).
+- `sessions`: one per signed-in browser, holding only the hash of the cookie's token.
+- `profiles`: the people an account looks after, each with a relation (you, parent, child, ...).
+  Deleting a profile deletes its reports.
+- `reports`: one row per uploaded file (profile, status, lab name, printed patient name, date).
 - `test_results`: one row per value, linked to its report, with the catalog key and the value in the
   standard unit. Deleting a report deletes its values.
 - `explanations`: one per report per language. Deleting a report deletes these too.
@@ -207,9 +282,16 @@ so every copy of the database, on a laptop or on AWS, ends up identical.
 - `tests/test_api.py`: upload a file, wait for the job, check every flag; bad files; deletes.
 - `tests/test_extraction.py`: checks the exact request we send to Claude, and how refusals and
   cut-off answers become friendly errors. Uses a fake client, so no API cost.
-- `tests/test_catalog.py`: test-name matching, unit conversions, and grouping by name.
+- `tests/test_catalog.py`: test-name matching, unit conversions, and comparing printed names.
 - `tests/test_trends.py`: three reports from three labs with three spellings and units become one
   timeline; explanations are made once per language and can be retried; the brief keeps its numbers.
+- `tests/test_auth.py`: sign-up rules, cookie flags, hashed passwords and tokens, lockout, sign-out,
+  every endpoint needing sign-in, a second account trying to reach the first one's data, account
+  deletion removing every file.
+- `tests/test_profiles.py`: adding, editing and deleting profiles, and the wrong-person warning.
+- `tests/test_crypto.py`: files are unreadable on disk, and tampering, the wrong key or a swapped file
+  are all caught.
+- `tests/test_accuracy.py`: the accuracy scoring, and the runner end to end with a stand-in for Claude.
 - GitHub Actions runs all of it, plus lint and the website build, on every push.
 
 ## Where this goes on AWS
@@ -221,6 +303,8 @@ so every copy of the database, on a laptop or on AWS, ends up identical.
 | `BackgroundTasks` | SQS queue + a worker |
 | `uploads/` folder | S3 bucket |
 | SQLite | RDS Postgres |
+| `RS_MASTER_KEY` | AWS KMS key |
 
-Each row is a swap behind an existing boundary (`Storage`, `process_report`, `RS_DATABASE_URL`), which
+The code for the S3 and KMS rows is already in (`S3Storage`, `KmsKeyWrapper`); they switch on with
+settings, described in [DEPLOY.md](DEPLOY.md). Each row is a swap behind an existing boundary (`Storage`, `process_report`, `RS_DATABASE_URL`), which
 is why the code is split the way it is.

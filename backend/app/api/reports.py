@@ -1,41 +1,29 @@
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Form, HTTPException, UploadFile, status
 from sqlalchemy import select
-from sqlalchemy.orm import Session, sessionmaker
 
+from app.api.deps import FactoryDep, SessionDep, StorageDep, WriterDep, owned_profile, owned_report
 from app.config import Settings, get_settings
-from app.db import get_session, get_session_factory
-from app.models import Explanation, JobStatus, Report
-from app.schemas import ExplanationOut, ExplanationRequest, ReportDetail, ReportSummary
+from app.models import Explanation, JobStatus, Profile, Report
+from app.schemas import ExplanationOut, ExplanationRequest, MoveReport, ReportDetail, ReportSummary
+from app.services.auth import CurrentUser
 from app.services.extraction import Extractor, get_extractor
 from app.services.jobs import run_explanation
 from app.services.processing import process_report
-from app.services.storage import Storage, get_storage
 from app.services.uploads import UploadError, prepare_upload
-from app.services.writing import Writer, get_writer
 
 router = APIRouter(prefix="/api/reports", tags=["reports"])
 
-SessionDep = Annotated[Session, Depends(get_session)]
-StorageDep = Annotated[Storage, Depends(get_storage)]
-FactoryDep = Annotated[sessionmaker[Session], Depends(get_session_factory)]
-WriterDep = Annotated[Writer, Depends(get_writer)]
-
 _EXTENSIONS = {"application/pdf": "pdf", "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp"}
-
-
-def _get_report(session: Session, report_id: str) -> Report:
-    report = session.get(Report, report_id)
-    if report is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Report not found")
-    return report
 
 
 @router.post("", status_code=status.HTTP_202_ACCEPTED, response_model=ReportDetail)
 def upload_report(
     file: UploadFile,
+    profile_id: Annotated[str, Form()],
+    user: CurrentUser,
     background: BackgroundTasks,
     session: SessionDep,
     storage: StorageDep,
@@ -43,6 +31,7 @@ def upload_report(
     extractor: Annotated[Extractor, Depends(get_extractor)],
     settings: Annotated[Settings, Depends(get_settings)],
 ) -> Report:
+    profile = owned_profile(session, user, profile_id)
     max_bytes = settings.max_upload_mb * 1_000_000
     try:
         data, content_type = prepare_upload(file.file.read(max_bytes + 1), max_bytes)
@@ -55,6 +44,7 @@ def upload_report(
 
     report = Report(
         id=report_id,
+        profile=profile,
         filename=(file.filename or "report")[:255],
         content_type=content_type,
         storage_key=storage_key,
@@ -68,18 +58,30 @@ def upload_report(
 
 
 @router.get("", response_model=list[ReportSummary])
-def list_reports(session: SessionDep) -> list[Report]:
-    return list(session.scalars(select(Report).order_by(Report.created_at.desc())))
+def list_reports(user: CurrentUser, session: SessionDep, profile_id: str | None = None) -> list[Report]:
+    query = select(Report).join(Profile).where(Profile.user_id == user.id).order_by(Report.created_at.desc())
+    if profile_id is not None:
+        query = query.where(Report.profile_id == profile_id)
+    return list(session.scalars(query))
 
 
 @router.get("/{report_id}", response_model=ReportDetail)
-def get_report(report_id: str, session: SessionDep) -> Report:
-    return _get_report(session, report_id)
+def get_report(report_id: str, user: CurrentUser, session: SessionDep) -> Report:
+    return owned_report(session, user, report_id)
+
+
+@router.patch("/{report_id}", response_model=ReportDetail)
+def move_report(report_id: str, body: MoveReport, user: CurrentUser, session: SessionDep) -> Report:
+    """File a report under a different profile, e.g. when it was uploaded to the wrong person."""
+    report = owned_report(session, user, report_id)
+    report.profile = owned_profile(session, user, body.profile_id)
+    session.commit()
+    return report
 
 
 @router.delete("/{report_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_report(report_id: str, session: SessionDep, storage: StorageDep) -> None:
-    report = _get_report(session, report_id)
+def delete_report(report_id: str, user: CurrentUser, session: SessionDep, storage: StorageDep) -> None:
+    report = owned_report(session, user, report_id)
     storage.delete(report.storage_key)
     session.delete(report)
     session.commit()
@@ -89,13 +91,14 @@ def delete_report(report_id: str, session: SessionDep, storage: StorageDep) -> N
 def request_explanation(
     report_id: str,
     body: ExplanationRequest,
+    user: CurrentUser,
     background: BackgroundTasks,
     session: SessionDep,
     factory: FactoryDep,
     writer: WriterDep,
 ) -> Explanation:
     """Start writing a plain-language explanation, or return the one already made."""
-    report = _get_report(session, report_id)
+    report = owned_report(session, user, report_id)
     if report.status != JobStatus.done:
         raise HTTPException(status.HTTP_409_CONFLICT, "This report hasn't been read yet")
 
@@ -115,7 +118,8 @@ def request_explanation(
 
 
 @router.get("/{report_id}/explanations/{language}", response_model=ExplanationOut)
-def get_explanation(report_id: str, language: str, session: SessionDep) -> Explanation:
+def get_explanation(report_id: str, language: str, user: CurrentUser, session: SessionDep) -> Explanation:
+    owned_report(session, user, report_id)
     explanation = session.scalar(
         select(Explanation).where(Explanation.report_id == report_id, Explanation.language == language)
     )

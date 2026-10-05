@@ -44,3 +44,35 @@ can never disagree.
 
 **Grouping by printed name for now.** It's the simplest thing that works for one family. Login and
 proper family profiles come in Phase 3.
+
+## Phase 3
+
+**Our own sign-in instead of a login service (Cognito, Clerk, Auth0).** Those are good choices for a
+company. Building it here shows the pieces that matter: Argon2id hashing, random session tokens in
+HttpOnly cookies, storing only token hashes, lockout after repeated failures. The code is short and
+fully tested. Moving to Cognito later would only change `services/auth.py`.
+
+**Server-side sessions instead of JWTs.** A JWT can't be cancelled before it expires, so signing out
+or deleting an account wouldn't take effect everywhere. A session row can be deleted at once.
+
+**The website forwards `/api/*` to FastAPI.** The browser talks to one address, so the sign-in cookie
+is first-party, `SameSite=Lax` works, and there's no cross-site cookie setup to get wrong.
+
+**Envelope encryption for files, with a key per file.** The same design as AWS KMS, so moving the
+master key into KMS is a swap of one class. AES-GCM was chosen because it also detects tampering.
+
+**Not encrypting database columns in the app.** Encrypting names and values in the app would stop the
+database from sorting and grouping them for timelines. RDS encrypts the whole database at rest, and
+the most sensitive item, the original report image, is encrypted by the app.
+
+**"Not found" for other people's data.** Answering 403 would confirm the id exists. 404 reveals
+nothing.
+
+**Profiles chosen at upload, printed names only for a warning.** Matching by printed name broke on
+real families (shared surnames, initials, "Baby of Priya"). The person uploading knows whose report
+it is; the app only double-checks.
+
+**Accuracy measured on real reports, published as totals only.** The answer keys are drafted by one
+Claude reading to save typing, then corrected by hand against the paper. Scoring always uses a fresh
+reading, so the test measures the app, not the draft. Reports stay out of git; only counts are
+published.

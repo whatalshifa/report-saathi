@@ -77,5 +77,5 @@ def test_list_and_delete(client, storage):
 
     assert client.delete(f"/api/reports/{first}").status_code == 204
     assert client.get(f"/api/reports/{first}").status_code == 404
-    assert not (storage.root / f"{first}.pdf").exists()
+    assert not (storage.inner.root / f"{first}.pdf").exists()
     assert client.delete(f"/api/reports/{first}").status_code == 404

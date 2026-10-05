@@ -116,7 +116,7 @@ shown for its test, and flags were judged against each lab's own printed range.
 
 
 def _trends_payload(trends: Trends) -> str:
-    person = trends.person
+    person = trends.profile
     return json.dumps(
         {
             "patient": {"age": person.age, "sex": person.sex},

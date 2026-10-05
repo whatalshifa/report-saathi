@@ -1,9 +1,12 @@
 """Database tables.
 
+A User signs in and owns Profiles: themselves and family members they look after.
+Every Report belongs to one Profile. A Session is one signed-in browser.
+
 A Report is one uploaded file. Each Report has many TestResults, one per value
 printed on it (Haemoglobin, TSH, Vitamin D, ...). An Explanation is the
 plain-language reading of one report in one language, and a Brief is the
-summary of one person's reports written for their doctor.
+summary of one profile's reports written for their doctor.
 """
 
 import enum
@@ -39,10 +42,68 @@ class Flag(enum.StrEnum):
     unknown = "unknown"  # no usable reference range on the report
 
 
+class Relation(enum.StrEnum):
+    self = "self"
+    spouse = "spouse"
+    parent = "parent"
+    child = "child"
+    sibling = "sibling"
+    grandparent = "grandparent"
+    other = "other"
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    email: Mapped[str] = mapped_column(String(254), unique=True)  # stored lowercased
+    name: Mapped[str] = mapped_column(String(100))
+    password_hash: Mapped[str] = mapped_column(String(255))
+    failed_logins: Mapped[int] = mapped_column(Integer, default=0)
+    locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+    profiles: Mapped[list["Profile"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan", order_by="Profile.created_at"
+    )
+    sessions: Mapped[list["AuthSession"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+
+
+class AuthSession(Base):
+    """One signed-in browser. Only a hash of the cookie's token is stored, so a leaked
+    database can't be used to sign in."""
+
+    __tablename__ = "sessions"
+
+    token_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+    user: Mapped[User] = relationship(back_populates="sessions")
+
+
+class Profile(Base):
+    __tablename__ = "profiles"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    name: Mapped[str] = mapped_column(String(100))
+    relation: Mapped[Relation] = mapped_column(Enum(Relation, native_enum=False, length=20))
+    birth_year: Mapped[int | None] = mapped_column(Integer)
+    sex: Mapped[str | None] = mapped_column(String(20))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+    user: Mapped[User] = relationship(back_populates="profiles")
+    reports: Mapped[list["Report"]] = relationship(back_populates="profile", cascade="all, delete-orphan")
+    briefs: Mapped[list["Brief"]] = relationship(cascade="all, delete-orphan")
+
+
 class Report(Base):
     __tablename__ = "reports"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    profile_id: Mapped[str] = mapped_column(ForeignKey("profiles.id", ondelete="CASCADE"), index=True)
     filename: Mapped[str] = mapped_column(String(255))
     content_type: Mapped[str] = mapped_column(String(100))
     storage_key: Mapped[str] = mapped_column(String(255))
@@ -57,8 +118,6 @@ class Report(Base):
     patient_age: Mapped[str | None] = mapped_column(String(50))
     patient_sex: Mapped[str | None] = mapped_column(String(20))
     report_date: Mapped[date | None] = mapped_column(Date)
-    # Groups one person's reports into a timeline. Phase 3 replaces this with family profiles.
-    person_key: Mapped[str | None] = mapped_column(String(255), index=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, onupdate=_now)
@@ -67,6 +126,7 @@ class Report(Base):
         back_populates="report", cascade="all, delete-orphan", order_by="TestResult.position"
     )
     explanations: Mapped[list["Explanation"]] = relationship(cascade="all, delete-orphan")
+    profile: Mapped[Profile] = relationship(back_populates="reports")
 
 
 class TestResult(Base):
@@ -117,7 +177,7 @@ class Brief(Base):
     __tablename__ = "briefs"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    person_key: Mapped[str] = mapped_column(String(255), index=True)
+    profile_id: Mapped[str] = mapped_column(ForeignKey("profiles.id", ondelete="CASCADE"), index=True)
     status: Mapped[JobStatus] = mapped_column(
         Enum(JobStatus, native_enum=False, length=20), default=JobStatus.queued
     )
