@@ -76,3 +76,15 @@ it is; the app only double-checks.
 Claude reading to save typing, then corrected by hand against the paper. Scoring always uses a fresh
 reading, so the test measures the app, not the draft. Reports stay out of git; only counts are
 published.
+
+## Deployment
+
+**Render + Vercel + Neon for the live demo, AWS kept as the documented production route.** All three
+have free tiers that need no card. Railway was the first pick, but its trial ended, and its Hobby plan
+costs money. Render's free API sleeps when idle; for a portfolio demo a slow first visit is a fair
+trade for zero cost.
+
+**Neon for both the database and the files.** Neon Object Storage speaks the S3 API, so the existing
+`S3Storage` works unchanged (it now uses path-style addresses for non-AWS endpoints). One provider,
+one region (Singapore, close to users in India), and files are still encrypted by the app before
+they leave the API.

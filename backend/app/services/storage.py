@@ -80,8 +80,16 @@ def make_storage(settings: Settings) -> Storage:
     if not settings.s3_bucket:
         raise RuntimeError("RS_S3_BUCKET must be set when RS_STORAGE=s3")
     import boto3
+    from botocore.config import Config
 
-    client = boto3.client("s3", endpoint_url=settings.s3_endpoint_url, region_name=settings.s3_region)
+    # Non-AWS buckets (Neon, R2, MinIO) only understand path-style addresses: endpoint/bucket/key.
+    style = "path" if settings.s3_endpoint_url else "auto"
+    client = boto3.client(
+        "s3",
+        endpoint_url=settings.s3_endpoint_url,
+        region_name=settings.s3_region,
+        config=Config(s3={"addressing_style": style}),
+    )
     return S3Storage(settings.s3_bucket, client)
 
 

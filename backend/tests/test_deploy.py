@@ -99,3 +99,27 @@ def test_restart_finishes_interrupted_work(session_factory, storage):
 
 def test_health_checks_the_database(client):
     assert client.get("/api/health").json() == {"status": "ok"}
+
+
+@pytest.mark.parametrize(
+    "given",
+    [
+        "postgres://u:p@db.example.com/rs?sslmode=require",
+        "postgresql://u:p@db.example.com/rs?sslmode=require",
+        "postgresql+psycopg://u:p@db.example.com/rs?sslmode=require",
+    ],
+)
+def test_database_url_uses_psycopg(given):
+    url = Settings(database_url=given).database_url
+    assert url == "postgresql+psycopg://u:p@db.example.com/rs?sslmode=require"
+
+
+def test_custom_s3_endpoint_uses_path_style():
+    settings = Settings(
+        storage="s3",
+        s3_bucket="reports",
+        s3_endpoint_url="https://storage.example.com",
+        s3_region="ap-southeast-1",
+    )
+    storage = make_storage(settings)
+    assert storage.client.meta.config.s3["addressing_style"] == "path"
