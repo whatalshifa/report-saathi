@@ -31,7 +31,7 @@ export default function AccuracyPage() {
     <div className="max-w-2xl space-y-8">
       <header>
         <h1 className="text-2xl font-bold">How accurate is ReportSaathi?</h1>
-        <p className="mt-2 text-slate-600 dark:text-slate-400">
+        <p className="mt-2 text-muted">
           We test it on real lab reports from Indian labs, a mix of PDFs and phone photos. A person writes down every value
           from the paper by hand, then ReportSaathi reads the same reports from scratch and the two are compared value
           by value.
@@ -42,15 +42,15 @@ export default function AccuracyPage() {
         <>
           <section className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {METRICS.slice(0, 3).map(([key, label]) => (
-              <div key={key} className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-                <p className="text-sm text-slate-500">{label}</p>
+              <div key={key} className="card p-4">
+                <p className="text-sm text-muted">{label}</p>
                 <p className="mt-1 text-3xl font-semibold tabular-nums">{pct(data.overall?.[key])}</p>
               </div>
             ))}
           </section>
-          <section className="overflow-x-auto rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+          <section className="overflow-x-auto card">
             <table className="w-full text-sm">
-              <thead className="bg-slate-50 text-left text-slate-500 dark:bg-slate-800/60">
+              <thead className="bg-slate-50 text-left text-muted dark:bg-slate-800/60">
                 <tr>
                   <th className="px-4 py-2 font-medium">Measure</th>
                   <th className="px-4 py-2 text-right font-medium">All</th>
@@ -61,7 +61,7 @@ export default function AccuracyPage() {
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              <tbody className="divide-y divide-line">
                 <tr>
                   <td className="px-4 py-2.5">Reports tested</td>
                   <td className="px-4 py-2.5 text-right tabular-nums">{data.overall.reports}</td>
@@ -85,12 +85,12 @@ export default function AccuracyPage() {
               </tbody>
             </table>
           </section>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-muted">
             Last run {new Date(data.run_at).toLocaleDateString("en-IN", { dateStyle: "long" })} with {data.model}.
           </p>
         </>
       ) : (
-        <p className="rounded-xl border border-dashed border-slate-300 p-6 text-center text-slate-600 dark:border-slate-700 dark:text-slate-400">
+        <p className="rounded-xl border border-dashed border-line p-6 text-center text-slate-600 dark:text-slate-400">
           The first test run on real reports hasn’t been published yet.
         </p>
       )}
@@ -101,13 +101,13 @@ export default function AccuracyPage() {
           {METRICS.map(([key, label, meaning]) => (
             <div key={key}>
               <dt className="font-medium">{label}</dt>
-              <dd className="text-slate-600 dark:text-slate-400">{meaning}</dd>
+              <dd className="text-muted">{meaning}</dd>
             </div>
           ))}
         </dl>
       </section>
 
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-muted">
         No report or patient detail is published, only these totals. ReportSaathi can still misread a report, so always
         check important values against the original. <Link href="/" className="underline">Back to ReportSaathi</Link>
       </p>

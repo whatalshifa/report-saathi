@@ -1,25 +1,98 @@
 @import "tailwindcss";
 
+/* Dark mode follows a class on <html>, set before the first paint by the script in layout.tsx.
+   "System" (the default) copies the device setting; the switch in the header can pin light or dark. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
-  --background: #f8fafc;
+  --background: #f7f9fb;
   --foreground: #0f172a;
+  --surface: #ffffff;
+  --muted: #64748b;
+  --border: #e2e8f0;
+  color-scheme: light;
+}
+
+.dark {
+  --background: #070b14;
+  --foreground: #e2e8f0;
+  --surface: #0f1623;
+  --muted: #94a3b8;
+  --border: #1e293b;
+  color-scheme: dark;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-muted: var(--muted);
+  --color-line: var(--border);
   --font-sans: var(--font-geist-sans);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #020617;
-    --foreground: #e2e8f0;
-  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+/* The few building blocks every page shares, so buttons and cards look the same everywhere. */
+@layer components {
+  .card {
+    @apply rounded-2xl border border-line bg-surface shadow-[0_1px_2px_rgb(15_23_42/0.04)];
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors
+      focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600
+      disabled:cursor-not-allowed disabled:opacity-60;
+  }
+  .btn-primary {
+    @apply bg-teal-700 text-white shadow-sm hover:bg-teal-800 dark:bg-teal-600 dark:hover:bg-teal-500;
+  }
+  .btn-secondary {
+    @apply border border-line bg-surface text-foreground hover:border-teal-600 hover:text-teal-800
+      dark:hover:text-teal-300;
+  }
+  .btn-danger {
+    @apply bg-rose-700 text-white hover:bg-rose-800;
+  }
+  .btn-sm {
+    @apply rounded-lg px-3 py-1.5;
+  }
+
+  .input {
+    @apply mt-1 w-full rounded-xl border border-line bg-surface px-3 py-2.5 text-foreground outline-none
+      transition placeholder:text-slate-400 focus:border-teal-600 focus:ring-4 focus:ring-teal-600/15;
+  }
+
+  .link {
+    @apply font-medium text-teal-700 underline-offset-4 hover:underline dark:text-teal-400;
+  }
+
+  .back-link {
+    @apply inline-flex items-center gap-1 text-sm font-medium text-teal-700 hover:underline dark:text-teal-400;
+  }
+
+  .eyebrow {
+    @apply text-xs font-semibold tracking-[0.14em] text-teal-700 uppercase dark:text-teal-400;
+  }
+
+  .skeleton {
+    @apply animate-pulse rounded-lg bg-slate-200/80 dark:bg-slate-800/80;
+  }
+}
+
+/* Printouts (the doctor brief) are always black on white, whatever the screen theme. */
+@media print {
+  :root,
+  .dark {
+    --background: #ffffff;
+    --foreground: #0f172a;
+    --surface: #ffffff;
+    --muted: #475569;
+    --border: #cbd5e1;
+    color-scheme: light;
+  }
 }

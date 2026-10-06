@@ -1,12 +1,14 @@
 import uuid
+from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Form, HTTPException, UploadFile, status
-from sqlalchemy import select
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session
 
 from app.api.deps import FactoryDep, SessionDep, StorageDep, WriterDep, owned_profile, owned_report
 from app.config import Settings, get_settings
-from app.models import Explanation, JobStatus, Profile, Report
+from app.models import Explanation, JobStatus, Profile, Report, User
 from app.schemas import ExplanationOut, ExplanationRequest, MoveReport, ReportDetail, ReportSummary
 from app.services.auth import CurrentUser, SettingsDep
 from app.services.claude import AI_OFF
@@ -16,6 +18,29 @@ from app.services.processing import process_report
 from app.services.uploads import UploadError, prepare_upload
 
 router = APIRouter(prefix="/api/reports", tags=["reports"])
+
+
+def _check_upload_allowance(session: Session, user: User, settings: Settings) -> None:
+    """Caps how many new reports an account can have read, which caps what the AI can cost."""
+    # Uploads are PDFs or images; the ready-made sample reports are the only text/plain ones.
+    own_reports = (
+        select(func.count(Report.id))
+        .join(Profile)
+        .where(Profile.user_id == user.id, Report.content_type != "text/plain")
+    )
+    if user.is_guest and session.scalar(own_reports) >= settings.guest_upload_limit:
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN,
+            f"Demo accounts can read {settings.guest_upload_limit} reports. "
+            "Create a free account to keep going.",
+        )
+    since = datetime.now(UTC) - timedelta(days=1)
+    if session.scalar(own_reports.where(Report.created_at >= since)) >= settings.daily_upload_limit:
+        raise HTTPException(
+            status.HTTP_429_TOO_MANY_REQUESTS,
+            f"You've added {settings.daily_upload_limit} reports today. Please try again tomorrow.",
+        )
+
 
 _EXTENSIONS = {"application/pdf": "pdf", "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp"}
 
@@ -35,6 +60,7 @@ def upload_report(
     profile = owned_profile(session, user, profile_id)
     if not settings.ai_enabled:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, AI_OFF)
+    _check_upload_allowance(session, user, settings)
     max_bytes = settings.max_upload_mb * 1_000_000
     try:
         data, content_type = prepare_upload(file.file.read(max_bytes + 1), max_bytes)

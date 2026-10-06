@@ -11,26 +11,46 @@ from app.api.deps import SessionDep
 from app.config import get_settings
 from app.db import get_session_factory
 from app.services.extraction import get_extractor
+from app.services.guests import purge_expired_guests
 from app.services.jobs import recover_interrupted
 from app.services.storage import get_storage
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 log = logging.getLogger(__name__)
 
+if get_settings().sentry_dsn:
+    import sentry_sdk
+
+    # Crashes are reported with the request path and stack trace, never request bodies or cookies,
+    # so no report contents or sign-in tokens leave the server.
+    sentry_sdk.init(
+        dsn=get_settings().sentry_dsn,
+        environment=get_settings().env,
+        send_default_pii=False,
+        max_request_body_size="never",
+        traces_sample_rate=0.1,
+    )
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    if get_settings().recover_jobs_on_start:
-        overrides = app.dependency_overrides
-        factory = overrides.get(get_session_factory, get_session_factory)()
-        storage = overrides.get(get_storage, get_storage)()
+    settings = get_settings()
+    overrides = app.dependency_overrides
+    factory = overrides.get(get_session_factory, get_session_factory)()
+    storage = overrides.get(get_storage, get_storage)()
+    try:
+        with factory() as session:
+            purge_expired_guests(session, storage, settings.guest_hours)
+    except Exception:
+        log.exception("Could not delete expired demo accounts at startup")
+    if settings.recover_jobs_on_start:
         extractor = overrides.get(get_extractor, get_extractor)()
         # In a thread, so the server starts answering straight away.
         threading.Thread(target=recover_interrupted, args=(factory, storage, extractor), daemon=True).start()
     yield
 
 
-app = FastAPI(title="ReportSaathi API", version="0.5.0", lifespan=lifespan)
+app = FastAPI(title="ReportSaathi API", version="0.6.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,

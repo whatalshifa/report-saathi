@@ -53,6 +53,20 @@ class Settings(BaseSettings):
     max_failed_logins: int = 5
     lockout_minutes: int = 15
 
+    # One-click demo accounts: deleted after guest_hours, and they can read only a few new reports.
+    guest_hours: int = 24
+    guest_upload_limit: int = 3
+    # Every account: new reports read per day, so a leaked login can't run up the AI bill.
+    daily_upload_limit: int = 30
+
+    # Requests allowed from one address, per window. Kept in memory, so they reset on restart.
+    demo_per_ip_per_hour: int = 5
+    demo_per_hour: int = 100  # all addresses together
+    auth_per_ip_per_10min: int = 20
+
+    # Error tracking. Set it to a Sentry project's DSN to have crashes reported; empty turns it off.
+    sentry_dsn: str | None = None
+
     # Re-run reports a restart interrupted. Off when several API copies run at once.
     recover_jobs_on_start: bool = True
 

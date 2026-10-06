@@ -2,6 +2,8 @@
 // Requests go to /api/* on this website, and next.config.ts forwards them to FastAPI,
 // so the browser sends the sign-in cookie automatically.
 
+import { serverStatus } from "@/lib/serverStatus";
+
 export type Flag = "low" | "high" | "normal" | "abnormal" | "unknown";
 export type ReportStatus = "queued" | "processing" | "done" | "failed";
 
@@ -50,8 +52,34 @@ export class ApiError extends Error {
   }
 }
 
+// While the free server wakes up, the website's forwarder may give up and answer 502/504,
+// or the connection may drop. Reads are safe to try again, so they are, for about a minute.
+const RETRY_DELAYS_MS = [2000, 4000, 8000, 15000, 30000];
+const WAKING_STATUSES = new Set([502, 504]);
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function fetchWithWake(path: string, init?: RequestInit): Promise<Response> {
+  const retry = (init?.method ?? "GET") === "GET";
+  const done = serverStatus.track();
+  try {
+    for (let attempt = 0; ; attempt++) {
+      try {
+        const response = await fetch(path, { cache: "no-store", credentials: "same-origin", ...init });
+        if (!retry || !WAKING_STATUSES.has(response.status) || attempt >= RETRY_DELAYS_MS.length) return response;
+      } catch {
+        if (!retry || attempt >= RETRY_DELAYS_MS.length) {
+          throw new ApiError("Could not reach the server. Check your connection and try again.", 0);
+        }
+      }
+      await wait(RETRY_DELAYS_MS[attempt]);
+    }
+  } finally {
+    done();
+  }
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(path, { cache: "no-store", credentials: "same-origin", ...init });
+  const response = await fetchWithWake(path, init);
   if (response.status === 401 && !path.startsWith("/api/auth/") && typeof window !== "undefined") {
     // Signed out (or the session expired): go to sign-in, then come back here.
     // A full page load on purpose, so no signed-in state survives in memory.
@@ -60,10 +88,16 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   }
   if (!response.ok) {
     const body = await response.json().catch(() => null);
-    const detail = typeof body?.detail === "string" ? body.detail : `Request failed (${response.status})`;
+    const detail = typeof body?.detail === "string" ? body.detail : friendlyStatus(response.status);
     throw new ApiError(detail, response.status);
   }
   return response.status === 204 ? (undefined as T) : response.json();
+}
+
+function friendlyStatus(status: number): string {
+  if (status === 429) return "Too many tries. Please wait a few minutes.";
+  if (status >= 500) return "The server had a problem. Please try again in a moment.";
+  return `Request failed (${status})`;
 }
 
 const json = (method: string, body: unknown): RequestInit => ({
@@ -78,12 +112,19 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  /** A one-click demo account, deleted after a day. */
+  is_guest: boolean;
 }
 
 export const signup = (name: string, email: string, password: string) =>
   request<User>("/api/auth/signup", json("POST", { name, email, password }));
 export const login = (email: string, password: string) =>
   request<User>("/api/auth/login", json("POST", { email, password }));
+/** Answers once the API (and its database) is up; used to wake the free server early. */
+export const checkHealth = () => request<{ status: string }>("/api/health");
+
+/** Signs in to a fresh demo account that already holds the sample reports. */
+export const startDemo = () => request<User>("/api/auth/demo", { method: "POST" });
 export const logout = () => request<void>("/api/auth/logout", { method: "POST" });
 export const deleteAccount = () => request<void>("/api/auth/me", { method: "DELETE" });
 

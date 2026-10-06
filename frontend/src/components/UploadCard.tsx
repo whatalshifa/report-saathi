@@ -29,12 +29,22 @@ export function UploadCard({ profile, reading }: { profile: Profile; reading: bo
 
   if (!reading) {
     return (
-      <div className="rounded-2xl border-2 border-dashed border-slate-300 bg-white px-6 py-8 text-center dark:border-slate-700 dark:bg-slate-900">
-        <p className="text-lg font-semibold">Reading new reports is paused on this demo</p>
-        <p className="mx-auto mt-2 max-w-prose text-sm text-slate-500 dark:text-slate-400">
-          This copy of ReportSaathi runs without an AI key, so it can&apos;t read new uploads yet. The sample reports
-          below show everything it does with a report once it&apos;s read.
-        </p>
+      <div className="card flex gap-4 p-5">
+        <span
+          aria-hidden
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300"
+        >
+          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8}>
+            <path strokeLinecap="round" d="M10 9v6m4-6v6M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+          </svg>
+        </span>
+        <div>
+          <p className="font-semibold">Reading new reports is paused on this demo</p>
+          <p className="mt-1 text-sm text-muted">
+            This copy of ReportSaathi runs without an AI key, so it can&apos;t read new uploads yet. The sample reports
+            show everything it does once a report is read.
+          </p>
+        </div>
       </div>
     );
   }
@@ -58,7 +68,7 @@ export function UploadCard({ profile, reading }: { profile: Profile; reading: bo
         className={`flex w-full flex-col items-center gap-3 rounded-2xl border-2 border-dashed px-6 py-12 text-center transition ${
           dragging
             ? "border-teal-600 bg-teal-50 dark:bg-teal-950/40"
-            : "border-slate-300 bg-white hover:border-teal-500 dark:border-slate-700 dark:bg-slate-900"
+            : "border-line bg-surface hover:border-teal-500 hover:bg-teal-50/40 dark:hover:bg-teal-950/20"
         } disabled:cursor-wait disabled:opacity-70`}
       >
         <svg aria-hidden viewBox="0 0 24 24" className="h-10 w-10 text-teal-600" fill="none" stroke="currentColor">
@@ -67,7 +77,7 @@ export function UploadCard({ profile, reading }: { profile: Profile; reading: bo
         <span className="text-lg font-semibold">
           {uploading ? "Uploading…" : `Upload a report for ${profile.name}`}
         </span>
-        <span className="text-sm text-slate-500 dark:text-slate-400">
+        <span className="text-sm text-muted">
           Drop a PDF or a photo here, or tap to choose one. Up to 20 MB. Files are stored encrypted.
         </span>
       </button>

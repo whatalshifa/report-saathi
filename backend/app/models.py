@@ -74,6 +74,8 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(255))
     failed_logins: Mapped[int] = mapped_column(Integer, default=0)
     locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # A one-click demo account: no real email or password, deleted after a day.
+    is_guest: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
     profiles: Mapped[list["Profile"]] = relationship(

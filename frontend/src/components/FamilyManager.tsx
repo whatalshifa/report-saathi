@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 
+import { ErrorNote, SkeletonList } from "@/components/Skeleton";
 import {
   createProfile,
   deleteProfile,
@@ -19,15 +20,12 @@ import { usePoll } from "@/lib/usePoll";
 const noRepeat = () => false;
 const RELATIONS: Relation[] = ["spouse", "parent", "child", "sibling", "grandparent", "other"];
 
-const field =
-  "mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20 dark:border-slate-700 dark:bg-slate-900";
-
 export function FamilyManager() {
   const { data: profiles, error, reload } = usePoll(listProfiles, noRepeat);
   const [editing, setEditing] = useState<string | null>(null);
 
-  if (error) return <p className="text-rose-700 dark:text-rose-300">{error}</p>;
-  if (!profiles) return <p className="text-slate-500">Loading…</p>;
+  if (error) return <ErrorNote message={error} />;
+  if (!profiles) return <SkeletonList />;
 
   async function remove(profile: Profile) {
     const reports = profile.report_count
@@ -45,16 +43,16 @@ export function FamilyManager() {
   return (
     <div className="space-y-8">
       <header>
-        <Link href="/" className="text-sm font-medium text-teal-700 dark:text-teal-400">
+        <Link href="/" className="back-link">
           ← Reports
         </Link>
-        <h1 className="mt-2 text-2xl font-bold">Family</h1>
-        <p className="mt-1 text-slate-600 dark:text-slate-400">
+        <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">Family</h1>
+        <p className="mt-1 text-muted">
           Add the people whose reports you look after. Each person gets their own reports and timeline.
         </p>
       </header>
 
-      <ul className="divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-white dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900">
+      <ul className="divide-y divide-line card">
         {profiles.map((p) => (
           <li key={p.id} className="p-4">
             {editing === p.id ? (
@@ -73,9 +71,9 @@ export function FamilyManager() {
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <p className="font-medium">
-                    {p.name} <span className="font-normal text-slate-500">· {RELATION_LABEL[p.relation]}</span>
+                    {p.name} <span className="font-normal text-muted">· {p.is_sample ? "Sample" : RELATION_LABEL[p.relation]}</span>
                   </p>
-                  <p className="text-sm text-slate-500">
+                  <p className="text-sm text-muted">
                     {[p.birth_year && `Born ${p.birth_year}`, `${p.report_count} report${p.report_count === 1 ? "" : "s"}`]
                       .filter(Boolean)
                       .join(" · ")}
@@ -84,14 +82,14 @@ export function FamilyManager() {
                 <div className="flex gap-2 text-sm">
                   <button
                     onClick={() => setEditing(p.id)}
-                    className="rounded-lg border border-slate-300 px-3 py-1.5 hover:border-teal-600 dark:border-slate-700"
+                    className="btn btn-secondary btn-sm"
                   >
                     Edit
                   </button>
                   {p.relation !== "self" && (
                     <button
                       onClick={() => remove(p)}
-                      className="rounded-lg border border-slate-300 px-3 py-1.5 text-slate-600 hover:border-rose-400 hover:text-rose-700 dark:border-slate-700 dark:text-slate-300"
+                      className="btn btn-secondary btn-sm hover:border-rose-400 hover:text-rose-700 dark:hover:text-rose-300"
                     >
                       Delete
                     </button>
@@ -103,9 +101,9 @@ export function FamilyManager() {
         ))}
       </ul>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+      <section className="card p-5">
         <h2 className="text-lg font-semibold">Add a family member</h2>
-        <p className="mb-4 mt-1 text-sm text-slate-500">
+        <p className="mb-4 mt-1 text-sm text-muted">
           Use the name as their lab reports print it. Then ReportSaathi can tell you if a report lands in the wrong
           person’s profile.
         </p>
@@ -166,12 +164,12 @@ function ProfileForm({
     <form onSubmit={handleSubmit} className="grid gap-3 sm:grid-cols-2">
       <label className="block text-sm font-medium">
         Name
-        <input name="name" required maxLength={100} defaultValue={initial?.name} className={field} />
+        <input name="name" required maxLength={100} defaultValue={initial?.name} className="input" />
       </label>
       {!isSelf && (
         <label className="block text-sm font-medium">
           Relation to you
-          <select name="relation" defaultValue={initial?.relation ?? "parent"} className={field}>
+          <select name="relation" defaultValue={initial?.relation ?? "parent"} className="input">
             {RELATIONS.map((r) => (
               <option key={r} value={r}>
                 {RELATION_LABEL[r]}
@@ -181,7 +179,7 @@ function ProfileForm({
         </label>
       )}
       <label className="block text-sm font-medium">
-        Year of birth <span className="font-normal text-slate-500">(optional)</span>
+        Year of birth <span className="font-normal text-muted">(optional)</span>
         <input
           name="birth_year"
           type="number"
@@ -189,12 +187,12 @@ function ProfileForm({
           min={1900}
           max={new Date().getFullYear()}
           defaultValue={initial?.birth_year ?? ""}
-          className={field}
+          className="input"
         />
       </label>
       <label className="block text-sm font-medium">
-        Sex <span className="font-normal text-slate-500">(optional, some ranges depend on it)</span>
-        <select name="sex" defaultValue={initial?.sex ?? ""} className={field}>
+        Sex <span className="font-normal text-muted">(optional, some ranges depend on it)</span>
+        <select name="sex" defaultValue={initial?.sex ?? ""} className="input">
           <option value="">Prefer not to say</option>
           <option value="female">Female</option>
           <option value="male">Male</option>
@@ -209,12 +207,12 @@ function ProfileForm({
       <div className="flex gap-2 sm:col-span-2">
         <button
           disabled={busy}
-          className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-60"
+          className="btn btn-primary"
         >
           {busy ? "Saving…" : submitLabel}
         </button>
         {onCancel && (
-          <button type="button" onClick={onCancel} className="rounded-lg px-4 py-2 text-sm text-slate-600 dark:text-slate-300">
+          <button type="button" onClick={onCancel} className="btn text-muted hover:text-foreground">
             Cancel
           </button>
         )}
