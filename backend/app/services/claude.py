@@ -19,8 +19,14 @@ class AIError(Exception):
     """A failure we can explain to the user in plain words."""
 
 
+AI_OFF = "The AI is switched off on this demo, so only the ready-made sample results are available."
+
+
 def make_client() -> anthropic.Anthropic:
-    return anthropic.Anthropic(api_key=get_settings().anthropic_api_key)
+    settings = get_settings()
+    if not settings.ai_enabled:
+        raise AIError(AI_OFF)
+    return anthropic.Anthropic(api_key=settings.anthropic_api_key)
 
 
 def ask_structured(

@@ -22,9 +22,9 @@ services:
       # Render makes a random 32-byte key once. Copy it somewhere safe: the files can't be opened without it.
       - key: RS_MASTER_KEY
         generateValue: true
-      # Render asks for these when the Blueprint is first created.
-      - key: ANTHROPIC_API_KEY
-        sync: false
+      # Render asks for these when the Blueprint is first created. To switch on reading real
+      # uploads later, add ANTHROPIC_API_KEY in the service's Environment tab; without it the
+      # site runs as a demo with sample reports.
       - key: RS_DATABASE_URL
         sync: false
       - key: RS_S3_ENDPOINT_URL

@@ -112,6 +112,13 @@ cp backend/.env.example backend/.env   # add your key
 docker compose up --build
 ```
 
+## Demo mode
+
+With no Anthropic key, the app still runs: uploads are paused and anyone can add **sample reports**
+(Meera, a made-up person with three reports from two labs). They go through the same flagging, unit
+conversion and trend code as real uploads, with explanations in three languages and a doctor brief
+written in advance. Add `ANTHROPIC_API_KEY` and uploads switch on.
+
 ## Deploying
 
 [docs/DEPLOY.md](docs/DEPLOY.md) covers every setting, plus two routes: Render + Vercel + Neon on free tiers, or AWS
@@ -120,7 +127,7 @@ docker compose up --build
 ## Tests
 
 ```bash
-cd backend && pytest        # 155 tests: flags, units, trends, sign-in, privacy, encryption, accuracy scoring
+cd backend && pytest        # 164 tests: flags, units, trends, sign-in, privacy, encryption, accuracy scoring
 cd frontend && npm run lint && npm run build
 ```
 

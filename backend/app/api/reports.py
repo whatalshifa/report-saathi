@@ -8,7 +8,8 @@ from app.api.deps import FactoryDep, SessionDep, StorageDep, WriterDep, owned_pr
 from app.config import Settings, get_settings
 from app.models import Explanation, JobStatus, Profile, Report
 from app.schemas import ExplanationOut, ExplanationRequest, MoveReport, ReportDetail, ReportSummary
-from app.services.auth import CurrentUser
+from app.services.auth import CurrentUser, SettingsDep
+from app.services.claude import AI_OFF
 from app.services.extraction import Extractor, get_extractor
 from app.services.jobs import run_explanation
 from app.services.processing import process_report
@@ -32,6 +33,8 @@ def upload_report(
     settings: Annotated[Settings, Depends(get_settings)],
 ) -> Report:
     profile = owned_profile(session, user, profile_id)
+    if not settings.ai_enabled:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, AI_OFF)
     max_bytes = settings.max_upload_mb * 1_000_000
     try:
         data, content_type = prepare_upload(file.file.read(max_bytes + 1), max_bytes)
@@ -96,6 +99,7 @@ def request_explanation(
     session: SessionDep,
     factory: FactoryDep,
     writer: WriterDep,
+    settings: SettingsDep,
 ) -> Explanation:
     """Start writing a plain-language explanation, or return the one already made."""
     report = owned_report(session, user, report_id)
@@ -107,6 +111,8 @@ def request_explanation(
     )
     if explanation is not None and explanation.status != JobStatus.failed:
         return explanation
+    if not settings.ai_enabled:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, AI_OFF)
     if explanation is None:
         explanation = Explanation(report_id=report_id, language=body.language)
         session.add(explanation)

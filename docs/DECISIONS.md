@@ -88,3 +88,9 @@ trade for zero cost.
 `S3Storage` works unchanged (it now uses path-style addresses for non-AWS endpoints). One provider,
 one region (Singapore, close to users in India), and files are still encrypted by the app before
 they leave the API.
+
+**Demo mode instead of a paid key for the public site.** The Anthropic API has no free tier. Rather
+than a broken upload box, the site says reading is paused and offers sample reports. Their values
+are stored as a pre-made reading (the same shape Claude returns), so flags, units and trends still
+come from the app's own code, not from the sample file. Clients to Claude are created on first use,
+so the server boots without a key.

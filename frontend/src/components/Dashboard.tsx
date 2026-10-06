@@ -1,22 +1,27 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { ReportList } from "@/components/ReportList";
+import { SampleCard } from "@/components/SampleCard";
 import { UploadCard } from "@/components/UploadCard";
-import { listProfiles } from "@/lib/api";
+import { getFeatures, listProfiles } from "@/lib/api";
 import { formatDate, possessive, RELATION_LABEL } from "@/lib/format";
 import { usePoll } from "@/lib/usePoll";
 
 const noRepeat = () => false;
 
 export function Dashboard({ profileId }: { profileId?: string }) {
-  const { data: profiles, error } = usePoll(listProfiles, noRepeat);
+  const router = useRouter();
+  const { data: profiles, error, reload } = usePoll(listProfiles, noRepeat);
+  const { data: features } = usePoll(getFeatures, noRepeat);
 
   if (error) return <p className="text-rose-700 dark:text-rose-300">{error}</p>;
-  if (!profiles) return <p className="text-slate-500">Loading…</p>;
+  if (!profiles || !features) return <p className="text-slate-500">Loading…</p>;
 
   const selected = profiles.find((p) => p.id === profileId) ?? profiles[0];
+  const hasSamples = profiles.some((p) => p.is_sample);
 
   return (
     <div className="space-y-8">
@@ -37,7 +42,9 @@ export function Dashboard({ profileId }: { profileId?: string }) {
                   }`}
                 >
                   <span className="font-medium">{p.name}</span>
-                  <span className={active ? "text-teal-100" : "text-slate-500"}>{RELATION_LABEL[p.relation]}</span>
+                  <span className={active ? "text-teal-100" : "text-slate-500"}>
+                    {p.is_sample ? "Sample" : RELATION_LABEL[p.relation]}
+                  </span>
                 </Link>
               </li>
             );
@@ -53,7 +60,16 @@ export function Dashboard({ profileId }: { profileId?: string }) {
         </ul>
       </section>
 
-      <UploadCard key={selected.id} profile={selected} />
+      <UploadCard key={selected.id} profile={selected} reading={features.reading} />
+
+      {!hasSamples && (
+        <SampleCard
+          onAdded={(sample) => {
+            reload();
+            router.push(`/?profile=${sample.id}`);
+          }}
+        />
+      )}
 
       {selected.report_count > 0 && (
         <Link

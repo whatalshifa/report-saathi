@@ -62,6 +62,7 @@ class ProfileOut(BaseModel):
     relation: Relation
     birth_year: int | None
     sex: str | None
+    is_sample: bool = False
     report_count: int = 0
     last_report_date: date | None = None
 

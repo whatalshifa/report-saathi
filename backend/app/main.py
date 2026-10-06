@@ -6,7 +6,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
-from app.api import auth, profiles, reports
+from app.api import auth, demo, profiles, reports
 from app.api.deps import SessionDep
 from app.config import get_settings
 from app.db import get_session_factory
@@ -30,7 +30,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="ReportSaathi API", version="0.4.0", lifespan=lifespan)
+app = FastAPI(title="ReportSaathi API", version="0.5.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -43,6 +43,7 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(profiles.router)
 app.include_router(reports.router)
+app.include_router(demo.router)
 
 
 @app.get("/api/health")

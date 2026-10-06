@@ -67,6 +67,11 @@ class Settings(BaseSettings):
         return url
 
     @property
+    def ai_enabled(self) -> bool:
+        """Without an Anthropic key the site runs as a demo: sample reports only, no new readings."""
+        return bool(self.anthropic_api_key and self.anthropic_api_key.strip())
+
+    @property
     def cookie_secure(self) -> bool:
         return self.env == "production"
 
