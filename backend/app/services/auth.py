@@ -81,9 +81,16 @@ def authenticate(session: Session, user: User | None, password: str, settings: S
     return user
 
 
-def start_session(session: Session, user: User, response: Response, settings: Settings) -> None:
+def start_session(
+    session: Session,
+    user: User,
+    response: Response,
+    settings: Settings,
+    lifetime: timedelta | None = None,
+) -> None:
+    lifetime = lifetime or timedelta(days=settings.session_days)
     token = secrets.token_urlsafe(32)
-    expires = _now() + timedelta(days=settings.session_days)
+    expires = _now() + lifetime
     session.add(AuthSession(token_hash=_hash_token(token), user_id=user.id, expires_at=expires))
     # Tidy up this user's expired sessions while we're here.
     session.execute(
@@ -93,7 +100,7 @@ def start_session(session: Session, user: User, response: Response, settings: Se
     response.set_cookie(
         COOKIE_NAME,
         token,
-        max_age=settings.session_days * 86400,
+        max_age=int(lifetime.total_seconds()),
         httponly=True,
         secure=settings.cookie_secure,
         samesite="lax",  # not sent on cross-site form posts, which blocks CSRF

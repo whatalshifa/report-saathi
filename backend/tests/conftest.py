@@ -8,6 +8,8 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import sessionmaker
 
+from app.api.auth import Limiters, get_limiters
+from app.config import get_settings
 from app.db import Base, get_session_factory, make_engine
 from app.main import app
 from app.services.crypto import LocalKeyWrapper
@@ -157,6 +159,8 @@ def client(session_factory, storage, extractor, writer):
     app.dependency_overrides[get_storage] = lambda: storage
     app.dependency_overrides[get_extractor] = lambda: extractor
     app.dependency_overrides[get_writer] = lambda: writer
+    limiters = Limiters(get_settings())  # fresh counts for every test
+    app.dependency_overrides[get_limiters] = lambda: limiters
     with TestClient(app) as test_client:
         signup(test_client)
         # Every test starts signed in, with the profile created at sign-up.

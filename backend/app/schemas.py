@@ -42,6 +42,7 @@ class UserOut(BaseModel):
     id: str
     name: str
     email: str
+    is_guest: bool = False
 
 
 # ---------- Family profiles ----------
