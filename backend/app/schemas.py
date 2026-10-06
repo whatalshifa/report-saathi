@@ -7,6 +7,7 @@ from typing import Annotated, Literal
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field, StringConstraints, computed_field
 
 from app.models import Flag, Relation, ReportStatus
+from app.services.catalog import get_test
 from app.services.consent import CONSENT_VERSION
 from app.services.names import names_match
 
@@ -120,6 +121,9 @@ class TestResultOut(BaseModel):
     reference_text: str | None
     ref_low: float | None
     ref_high: float | None
+    # "lab" when the report printed the range; "typical" when it printed none and a typical adult
+    # range from the catalog was used instead (the page must say so); None with no range at all.
+    range_source: Literal["lab", "typical"] | None = None
     lab_flag: str | None
     flag: Flag
     catalog_key: str | None
@@ -134,6 +138,20 @@ class TestResultOut(BaseModel):
     @property
     def corrected(self) -> bool:
         return self.corrected_at is not None
+
+    @computed_field
+    @property
+    def loinc(self) -> str | None:
+        """The test's LOINC code, the international ID a doctor's system recognises."""
+        test = get_test(self.catalog_key)
+        return test.loinc if test else None
+
+    @computed_field
+    @property
+    def typical_range_source(self) -> str | None:
+        """Where a typical range comes from, shown beside it; None for the lab's own range."""
+        test = get_test(self.catalog_key)
+        return test.typical_source if test and self.range_source == "typical" else None
 
 
 class ResultCorrection(BaseModel):
@@ -204,17 +222,37 @@ class TrendSeries(BaseModel):
     key: str
     name: str
     unit: str
+    loinc: str | None = None
     ref_low: float | None
     ref_high: float | None
+    # "typical" only when none of the reports printed a range for this test.
+    range_source: Literal["lab", "typical"] | None = None
     points: list[TrendPoint]
     latest_flag: Flag
     change: float | None
     change_pct: float | None
 
 
+class RecheckDue(BaseModel):
+    """A test whose latest reading was out of range longer ago than doctors often wait to recheck it."""
+
+    key: str
+    name: str
+    flag: Flag  # of the latest reading: low, high or abnormal
+    last_date: date
+    months: float  # the usual recheck interval
+    source: str  # the guideline the interval comes from
+
+
 class Trends(BaseModel):
     profile: TimelineSummary
     series: list[TrendSeries]
+    # A reminder for the person, not part of what a doctor brief keeps (see SNAPSHOT_EXCLUDE).
+    rechecks: list[RecheckDue] = []
+
+
+# What a brief stores of the trends: the numbers it was written from, without reminders meant for the family.
+SNAPSHOT_EXCLUDE = {"rechecks"}
 
 
 class JobOut(BaseModel):

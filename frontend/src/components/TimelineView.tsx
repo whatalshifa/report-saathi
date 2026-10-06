@@ -7,7 +7,16 @@ import { useCallback, useState } from "react";
 import { FlagBadge } from "@/components/FlagBadge";
 import { ErrorNote, SkeletonPage } from "@/components/Skeleton";
 import { TrendChart } from "@/components/TrendChart";
-import { getTrends, isOutOfRange, requestBrief, type TrendSeries } from "@/lib/api";
+import { TypicalRangeNote } from "@/components/TypicalRangeNote";
+import {
+  getTrends,
+  isOutOfRange,
+  requestBrief,
+  type Flag,
+  type RecheckDue,
+  type TimelineSummary,
+  type TrendSeries,
+} from "@/lib/api";
 import { formatAge, formatDate, formatNumber, formatRange, formatSex, possessive } from "@/lib/format";
 import { usePoll } from "@/lib/usePoll";
 
@@ -76,6 +85,8 @@ export function TimelineView({ profileId }: { profileId: string }) {
         &ldquo;Now&rdquo; means each test&apos;s latest reading. Values from different labs are converted to one unit
         so they can be compared.
       </p>
+
+      {trends.rechecks && trends.rechecks.length > 0 && <RecheckCard person={person} due={trends.rechecks} />}
 
       {charted.length > 0 && (
         <section className="grid gap-4 md:grid-cols-2">
@@ -148,6 +159,7 @@ function TrendCard({ series }: { series: TrendSeries }) {
       <DirectionNote series={series} />
       <p className="mb-3 text-sm text-muted">
         Normal: {formatRange(series.ref_low, series.ref_high, null)} {series.unit}
+        <TypicalRangeNote rangeSource={series.range_source} />
       </p>
       <TrendChart series={series} />
       <details className="mt-2 text-sm">
@@ -182,6 +194,43 @@ function TrendCard({ series }: { series: TrendSeries }) {
         </table>
       </details>
     </article>
+  );
+}
+
+const FLAG_WORD: Partial<Record<Flag, string>> = { high: "high", low: "low" };
+
+/** "about 3 months", "about a month", "about 6 weeks". */
+function interval(months: number): string {
+  if (!Number.isInteger(months)) return `about ${Math.round(months * 4)} weeks`;
+  return months === 1 ? "about a month" : `about ${months} months`;
+}
+
+/**
+ * Tests whose latest reading was out of range a while ago. Worded as a nudge to ask the doctor,
+ * never as advice: the interval is what guidelines say doctors often do, and its source is shown.
+ */
+function RecheckCard({ person, due }: { person: TimelineSummary; due: RecheckDue[] }) {
+  const whose = person.relation === "self" ? "Your" : possessive(person.name);
+  return (
+    <section
+      aria-labelledby="recheck-heading"
+      className="rounded-xl border border-amber-300 bg-amber-50 p-5 dark:border-amber-800 dark:bg-amber-950/40"
+    >
+      <h2 id="recheck-heading" className="text-lg font-semibold text-amber-950 dark:text-amber-100">
+        Due for a recheck
+      </h2>
+      <ul className="mt-3 space-y-3">
+        {due.map((d) => (
+          <li key={d.key}>
+            <p className="text-amber-950 dark:text-amber-100">
+              {whose} {d.name} was {FLAG_WORD[d.flag] ?? "outside the normal range"} on {formatDate(d.last_date)}.
+              Doctors often recheck it after {interval(d.months)}. Ask your doctor whether it&apos;s time.
+            </p>
+            <p className="mt-0.5 text-xs text-amber-900/75 dark:text-amber-200/70">Source: {d.source}</p>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 

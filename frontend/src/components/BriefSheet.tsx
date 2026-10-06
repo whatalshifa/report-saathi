@@ -77,7 +77,10 @@ export function BriefSheet({
                 const previous = s.points.length > 1 ? s.points[s.points.length - 2] : null;
                 return (
                   <tr key={s.key}>
-                    <td className="py-2 pr-3">{s.name}</td>
+                    <td className="py-2 pr-3">
+                      {s.name}
+                      {s.loinc && <span className="block text-xs text-muted">LOINC {s.loinc}</span>}
+                    </td>
                     <td className="py-2 pr-3 tabular-nums">
                       {formatNumber(latest.value)} {s.unit}
                       <span className="block text-xs text-muted">{formatDate(latest.date)}</span>
@@ -94,6 +97,9 @@ export function BriefSheet({
                     </td>
                     <td className="py-2 pr-3 text-muted">
                       {formatRange(s.ref_low, s.ref_high, null)}
+                      {s.range_source === "typical" && (
+                        <span className="block text-xs">Typical range, not from the lab</span>
+                      )}
                     </td>
                     <td className="py-2">
                       <FlagBadge flag={s.latest_flag} />
@@ -119,8 +125,9 @@ export function BriefSheet({
 
       <p className="border-t border-line pt-4 text-xs text-muted">
         Prepared {formatDate(createdAt)} by ReportSaathi from the patient’s lab reports. Values from different labs
-        are converted to the units shown; each status uses the range printed by that lab. The overview and findings
-        are written by AI. Please check against the original reports.
+        are converted to the units shown; each status uses the range printed by that lab, or a typical adult range
+        where the lab printed none (marked). LOINC codes identify each test. The overview and findings are written
+        by AI. Please check against the original reports.
       </p>
     </article>
   );

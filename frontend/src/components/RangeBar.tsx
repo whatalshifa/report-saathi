@@ -21,7 +21,9 @@ export function RangeBar({ result }: { result: TestResult }) {
     <div
       className="relative h-2 w-full min-w-24 rounded-full bg-slate-200 dark:bg-slate-700"
       role="img"
-      aria-label={`${value} against a normal range of ${result.reference_text ?? `${low ?? ""}–${high ?? ""}`}`}
+      aria-label={`${value} against ${result.range_source === "typical" ? "a typical" : "a normal"} range of ${
+        result.reference_text ?? `${low ?? ""}–${high ?? ""}`
+      }`}
     >
       <div
         className="absolute inset-y-0 rounded-full bg-emerald-200 dark:bg-emerald-900"

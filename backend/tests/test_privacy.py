@@ -97,6 +97,7 @@ def test_export_holds_the_files_the_data_and_a_csv_of_every_value(client):
         "g/dL",
         "13.0 - 17.0",
         "Low",
+        "718-7",
     ] in rows
     assert [
         "Asha Patel",
@@ -107,6 +108,7 @@ def test_export_holds_the_files_the_data_and_a_csv_of_every_value(client):
         "",
         "Negative",
         "Abnormal",
+        "5792-7",
     ] in rows
     assert all(row[0] == "Meera Joshi" for row in rows[5:])
 
@@ -135,6 +137,7 @@ def test_export_includes_every_fix(client):
         "g/dL",
         "13.0 - 17.0",
         "Low",
+        "718-7",
     ] in read_csv(archive)
 
 

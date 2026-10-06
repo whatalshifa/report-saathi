@@ -9,6 +9,7 @@ import { FlagBadge } from "@/components/FlagBadge";
 import { RangeBar } from "@/components/RangeBar";
 import { SkeletonPage } from "@/components/Skeleton";
 import { SourceButton, SourceDialog } from "@/components/SourceView";
+import { TypicalRangeNote } from "@/components/TypicalRangeNote";
 import { CorrectedChip, FixButton, ValueEditor } from "@/components/ValueFix";
 import {
   deleteReport,
@@ -95,6 +96,12 @@ export function ReportView({ id }: { id: string }) {
   const showSource = (r: TestResult) =>
     canShowSource && r.box ? (trigger: HTMLElement) => setSource({ result: r, trigger }) : undefined;
   const sections = groupBySection(report.results);
+  // Every typical range used on this report, and where each comes from, for the note under the table.
+  const typicalSources = [
+    ...new Set(
+      report.results.filter((r) => r.range_source === "typical").map((r) => r.typical_range_source ?? ""),
+    ),
+  ].filter(Boolean);
   const lastCorrection = report.results
     .map((r) => r.corrected_at)
     .filter((t): t is string => t !== null)
@@ -163,6 +170,7 @@ export function ReportView({ id }: { id: string }) {
                 </p>
                 <p className="mb-3 text-sm text-muted">
                   Normal: {formatRange(r.ref_low, r.ref_high, r.reference_text)}
+                  <TypicalRangeNote rangeSource={r.range_source} source={r.typical_range_source} />
                 </p>
                 <RangeBar result={r} />
                 {r.corrected && (
@@ -237,6 +245,13 @@ export function ReportView({ id }: { id: string }) {
             </div>
           </div>
         ))}
+        {typicalSources.length > 0 && (
+          <p className="text-sm text-muted">
+            Your lab printed no normal range for some values, so we compared them with a typical range for
+            adults instead. Labs and doctors may use a slightly different one, so ask your doctor what is normal
+            for you. Typical ranges from: {typicalSources.join("; ")}.
+          </p>
+        )}
       </section>
 
       <p className="text-xs text-muted">
@@ -296,6 +311,7 @@ function ResultItem({ reportId, result: r, onSaved, onShowSource }: ResultProps)
         <SourceToggle name={r.name} onShow={onShowSource} />
         <FixButton ref={button} name={r.name} open={editing} onClick={toggle} />
         <span className="text-muted"> · Normal: {formatRange(r.ref_low, r.ref_high, r.reference_text)}</span>
+        <TypicalRangeNote rangeSource={r.range_source} source={r.typical_range_source} />
       </p>
       <CorrectedChip result={r} showReading />
       {editing && <ValueEditor reportId={reportId} result={r} onSaved={onSaved} onClose={close} />}
@@ -323,7 +339,10 @@ function ResultRow({ reportId, result: r, onSaved, onShowSource }: ResultProps) 
             </div>
           )}
         </td>
-        <td className="px-4 py-2.5 text-muted">{formatRange(r.ref_low, r.ref_high, r.reference_text)}</td>
+        <td className="px-4 py-2.5 text-muted">
+          {formatRange(r.ref_low, r.ref_high, r.reference_text)}
+          <TypicalRangeNote rangeSource={r.range_source} source={r.typical_range_source} />
+        </td>
         <td className="px-4 py-2.5">
           <RangeBar result={r} />
         </td>

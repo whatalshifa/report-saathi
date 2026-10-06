@@ -916,6 +916,25 @@
        "x1": 0.4589,
        "y1": 0.6676
       }
+     },
+     {
+      "section": "Kidney Function",
+      "name": "Creatinine, Serum",
+      "catalog_key": "creatinine",
+      "value_text": "0.8",
+      "numeric_value": 0.8,
+      "unit": "mg/dl",
+      "reference_text": null,
+      "ref_low": null,
+      "ref_high": null,
+      "lab_flag": null,
+      "box": {
+       "page": 1,
+       "x0": 0.421,
+       "y0": 0.703,
+       "x1": 0.4621,
+       "y1": 0.7189
+      }
      }
     ]
    },

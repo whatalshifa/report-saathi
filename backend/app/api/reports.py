@@ -32,7 +32,7 @@ from app.services.consent import NEEDS_CONSENT, has_consented
 from app.services.corrections import CorrectionError, correct_result
 from app.services.extraction import Extractor, get_extractor
 from app.services.jobs import run_explanation
-from app.services.processing import process_report
+from app.services.processing import process_report, refresh_typical_ranges
 from app.services.uploads import UploadError, prepare_upload
 
 router = APIRouter(prefix="/api/reports", tags=["reports"])
@@ -143,6 +143,7 @@ def move_report(report_id: str, body: MoveReport, user: CurrentUser, session: Se
     """File a report under a different profile, e.g. when it was uploaded to the wrong person."""
     report = owned_report(session, user, report_id)
     report.profile = owned_profile(session, user, body.profile_id)
+    refresh_typical_ranges(report, report.profile.sex)
     session.commit()
     return report
 

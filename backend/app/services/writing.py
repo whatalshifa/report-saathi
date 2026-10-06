@@ -109,7 +109,9 @@ of range.
 
 Rules:
 - Use only the numbers, dates and flags given. Every value is already converted to the unit \
-shown for its test, and flags were judged against each lab's own printed range.
+shown for its test, and flags were judged against each lab's own printed range. Where \
+range_source is "typical", the lab printed no range and a typical adult range was used; say so \
+if you mention it.
 - Describe trends (rising, falling, stable) only from the values given.
 - Do not diagnose or suggest treatment. Point out patterns worth the doctor's attention.
 - Questions are from the patient's point of view, in plain words."""
@@ -128,6 +130,7 @@ def _trends_payload(trends: Trends) -> str:
                     "test": s.name,
                     "unit": s.unit,
                     "latest_normal_range": [s.ref_low, s.ref_high],
+                    "range_source": s.range_source,
                     "readings": [
                         {"date": str(p.date), "value": p.value, "flag": p.flag.value} for p in s.points
                     ],

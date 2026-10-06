@@ -234,3 +234,28 @@ the browser's voice list arrives (`voiceschanged`). Text is spoken sentence by s
 browsers stop one long utterance part-way, and speech stops when the language changes or the page
 closes. It reads the warning (if any), the summary, each flagged test and the questions, and skips
 the long lists of common reasons to keep it listenable.
+
+**Typical ranges are a labelled fallback, never a replacement.** A value with no range can't be
+flagged, and families then miss a low haemoglobin. But a typical range is not the lab's: methods and
+populations differ. So it is used only when the report printed no range text at all (a range we
+couldn't parse is still the lab's), it is stored with `range_source = "typical"` and every place that
+shows it says "Typical range, not from your lab" with its source, and the doctor brief marks it too.
+A sex-specific range is used only when the profile's sex is male or female; with it unknown, only a
+range for anyone applies, because the wrong sex's range can call a normal value abnormal. Age-banded
+tests (AMH, IGF-1, DHEA-S) and cycle-dependent hormones get no typical range at all.
+
+**Only codes, ranges and intervals two reviewers verified.** A wrong LOINC code sends a doctor's system
+the wrong test, and a wrong range or recheck interval reads as medical guidance. Every entry was checked
+against its named source by two independent reviewers; anything they couldn't confirm is left empty
+rather than filled from memory (10 tests have no code, and four proposed tests were dropped over
+disputed unit factors). Tests guard the rest: each code must pass LOINC's mod-10 check digit, no code
+is used twice, no spelling may match two tests, and every unit factor must be positive and agree with
+any other spelling of the same unit.
+
+**Recheck reminders live in the app, worded as a question for the doctor.** The reminder says what
+guidelines say doctors often do ("Doctors often recheck it after about 3 months. Ask your doctor
+whether it's time.") and shows the guideline, rather than telling anyone to get tested. It counts from
+the report's own date and only looks at each test's latest reading, so a newer report clears it. It is
+computed in the trends service (with `today` passed in for tests), not stored, and is left out of the
+doctor brief's saved snapshot because it is meant for the family.
+

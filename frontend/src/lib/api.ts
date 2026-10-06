@@ -5,6 +5,7 @@
 import { serverStatus } from "@/lib/serverStatus";
 
 export type Flag = "low" | "high" | "normal" | "abnormal" | "unknown";
+export type RangeSource = "lab" | "typical";
 export type ReportStatus = "queued" | "processing" | "done" | "failed";
 
 /** Where a value is printed in the original file: a page (from 1), and edges as fractions 0-1 of it. */
@@ -26,8 +27,18 @@ export interface TestResult {
   reference_text: string | null;
   ref_low: number | null;
   ref_high: number | null;
+  /**
+   * "lab" when the report printed the range; "typical" when it printed none and a typical adult range
+   * was used instead (always say so next to it); null when there is no range.
+   */
+  range_source: RangeSource | null;
+  /** Where that typical range comes from; null for the lab's own range. */
+  typical_range_source: string | null;
   lab_flag: string | null;
   flag: Flag;
+  /** The test's catalog key and its LOINC code (the international test ID), when known. */
+  catalog_key: string | null;
+  loinc: string | null;
   /** True when the person fixed a value the AI misread. */
   corrected: boolean;
   corrected_at: string | null;
@@ -287,17 +298,35 @@ export interface TrendSeries {
   key: string;
   name: string;
   unit: string;
+  /** Missing in briefs written before LOINC codes were added. */
+  loinc?: string | null;
   ref_low: number | null;
   ref_high: number | null;
+  /** "typical" only when no report printed a range for this test. Missing in older briefs. */
+  range_source?: RangeSource | null;
   points: TrendPoint[];
   latest_flag: Flag;
   change: number | null;
   change_pct: number | null;
 }
 
+/** A test whose latest reading was out of range longer ago than doctors often wait to recheck it. */
+export interface RecheckDue {
+  key: string;
+  name: string;
+  flag: Flag;
+  last_date: string;
+  /** The usual recheck interval, e.g. 3 or 1.5. */
+  months: number;
+  /** The guideline the interval comes from. */
+  source: string;
+}
+
 export interface Trends {
   profile: TimelineSummary;
   series: TrendSeries[];
+  /** Reminders for the family; a brief's snapshot doesn't keep them. */
+  rechecks?: RecheckDue[];
 }
 
 export type Language = "en" | "hi" | "mr";

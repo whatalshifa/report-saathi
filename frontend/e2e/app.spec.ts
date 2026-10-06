@@ -117,6 +117,52 @@ test("the timeline shows trends and the doctor brief", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Meera Joshi" })).toBeVisible();
 });
 
+test("a value with no printed range is compared with a typical range, clearly labelled", async ({ page }) => {
+  await startDemo(page);
+  await page.getByRole("link", { name: /Demo Diagnostics Centre, Pune/ }).click();
+  const creatinine = page.locator("li, tr").filter({ hasText: "Creatinine, Serum", visible: true });
+  await expect(creatinine.getByText("Typical range, not from your lab")).toBeVisible();
+  await expect(creatinine.getByText("0.59 – 1.04")).toBeVisible();
+  await expect(page.getByText(/Your lab printed no normal range for some values/)).toBeVisible();
+});
+
+test("the doctor brief gives each test's LOINC code", async ({ page }) => {
+  await startDemo(page);
+  await page.getByRole("link", { name: /results over time/ }).click();
+  await page.getByRole("button", { name: "Prepare doctor brief" }).click();
+  const ldl = page.getByRole("row").filter({ hasText: "LDL cholesterol" });
+  await expect(ldl.getByText("LOINC 2089-1")).toBeVisible();
+});
+
+test("the timeline lists tests due for a recheck, carefully worded", async ({ page }) => {
+  // Meera's LDL becomes due on 8 Dec 2026; until then, answer as the server will on that day.
+  await page.route("**/api/profiles/*/trends", async (route) => {
+    const response = await route.fetch();
+    const trends = await response.json();
+    expect(trends.rechecks).toEqual(expect.any(Array));
+    trends.rechecks = [
+      {
+        key: "ldl",
+        name: "LDL cholesterol",
+        flag: "high",
+        last_date: "2026-09-08",
+        months: 3,
+        source: "2018 AHA/ACC Cholesterol Guideline",
+      },
+    ];
+    await route.fulfill({ response, json: trends });
+  });
+  await startDemo(page);
+  await page.getByRole("link", { name: /results over time/ }).click();
+  const card = page.getByRole("region", { name: "Due for a recheck" });
+  await expect(
+    card.getByText(
+      /^Meera Joshi’s LDL cholesterol was high on 8 Sept? 2026\. Doctors often recheck it after about 3 months\. Ask your doctor whether it's time\.$/,
+    ),
+  ).toBeVisible();
+  await expect(card.getByText("Source: 2018 AHA/ACC Cholesterol Guideline")).toBeVisible();
+});
+
 test("a doctor can open a shared brief until the link is revoked", async ({ page, browser }) => {
   await startDemo(page);
   await page.getByRole("link", { name: /results over time/ }).click();

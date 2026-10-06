@@ -11,7 +11,7 @@ from datetime import date
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.models import Report, ReportStatus, TestResult
-from app.services.catalog import TestDef, conversion_factor, match_test
+from app.services.catalog import TestDef, conversion_factor, get_test, match_test, typical_range
 from app.services.extraction import ExtractedReport, ExtractedTest, ExtractionError, Extractor
 from app.services.flagging import compute_flag, parse_value, resolve_range
 from app.services.storage import Storage
@@ -53,7 +53,49 @@ def convert_to_standard(result: TestResult, catalog_test: TestDef) -> None:
     result.std_high = _scale(result.ref_high, factor)
 
 
-def build_results(extracted: ExtractedReport) -> list[TestResult]:
+def _unscale(value: float | None, factor: float) -> float | None:
+    return None if value is None else round(value / factor, 4)
+
+
+def use_typical_range(result: TestResult, sex: str | None) -> None:
+    """When the lab printed no range, fall back to the catalog's typical adult range, or to none.
+
+    Never touches a range the lab printed (or any printed reference text we couldn't parse).
+    The typical range is kept in the report's own unit like a printed one, so the flag, a later
+    fix and the timeline all work the same; range_source = "typical" is what labels it.
+    `sex` is the profile's; call this again when it changes.
+    """
+    if result.range_source == "lab" or (result.reference_text or "").strip():
+        return
+    result.ref_low = result.ref_high = result.range_source = None
+    test = get_test(result.catalog_key)
+    if test is not None and result.value is not None:
+        typical = typical_range(test, sex)
+        factor = conversion_factor(test, result.unit)
+        if typical is not None and factor:
+            result.ref_low, result.ref_high = _unscale(typical.low, factor), _unscale(typical.high, factor)
+            result.range_source = "typical"
+    if test is not None:
+        convert_to_standard(result, test)
+
+
+def reflag(result: TestResult) -> None:
+    result.flag = compute_flag(
+        result.value, result.value_text, result.ref_low, result.ref_high, result.reference_text
+    )
+
+
+def refresh_typical_ranges(report: Report, sex: str | None) -> None:
+    """Re-pick typical ranges after the person's sex changes or the report moves to someone else."""
+    for result in report.results:
+        if result.range_source != "lab":
+            use_typical_range(result, sex)
+            reflag(result)
+
+
+def build_results(extracted: ExtractedReport, sex: str | None = None) -> list[TestResult]:
+    """The report's values, flagged. `sex` is the profile's, so a value whose lab printed no range
+    can be judged against a typical range for that person."""
     results = []
     for position, test in enumerate(extracted.tests):
         value = parse_value(test.value_text)
@@ -70,11 +112,13 @@ def build_results(extracted: ExtractedReport) -> list[TestResult]:
             reference_text=_clip(test.reference_text, 255),
             ref_low=low,
             ref_high=high,
+            range_source="lab" if low is not None or high is not None else None,
             lab_flag=_clip(test.lab_flag, 20),
-            flag=compute_flag(value, test.value_text, low, high, test.reference_text),
             box=test.box.model_dump() if test.box else None,
         )
         standardize(result, test)
+        use_typical_range(result, sex)
+        reflag(result)
         results.append(result)
     return results
 
@@ -110,6 +154,6 @@ def process_report(
         report.patient_age = _clip(extracted.patient_age, 50)
         report.patient_sex = _clip(extracted.patient_sex, 20)
         report.report_date = _parse_date(extracted.report_date)
-        report.results = build_results(extracted)
+        report.results = build_results(extracted, report.profile.sex)
         report.status, report.error = ReportStatus.done, None
         session.commit()

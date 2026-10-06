@@ -25,6 +25,7 @@ from sqlalchemy.orm import Session
 
 from app.models import Correction, Flag, Profile, Report, ShareLink, ShareView, TestResult, User
 from app.services.auth import as_utc
+from app.services.catalog import get_test
 from app.services.storage import Storage
 
 log = logging.getLogger(__name__)
@@ -33,7 +34,7 @@ FORMAT_VERSION = 1
 DATA_FILE = "reportsaathi-data.json"
 CSV_FILE = "results.csv"
 
-CSV_HEADER = ["Person", "Date", "Lab", "Test", "Value", "Unit", "Normal range", "Flag"]
+CSV_HEADER = ["Person", "Date", "Lab", "Test", "Value", "Unit", "Normal range", "Flag", "LOINC"]
 FLAG_WORDS = {
     Flag.low: "Low",
     Flag.high: "High",
@@ -48,7 +49,8 @@ Your ReportSaathi data, downloaded on {day}.
 reports/            The original report files you uploaded, in a folder for each person,
                     named by the report's date.
 results.csv         Every value read from your reports, one per line. Opens in Excel or
-                    Google Sheets.
+                    Google Sheets. LOINC is the test's international code, which other
+                    health apps and hospital systems recognise.
 reportsaathi-data.json
                     Everything in your account in one file (people, reports, values and any
                     you corrected, explanations, doctor briefs), for moving to another service.
@@ -107,12 +109,19 @@ def _normal_range(result: TestResult) -> str:
     if result.reference_text:
         return result.reference_text
     if result.ref_low is not None and result.ref_high is not None:
-        return f"{result.ref_low:g} - {result.ref_high:g}"
-    if result.ref_low is not None:
-        return f">= {result.ref_low:g}"
-    if result.ref_high is not None:
-        return f"<= {result.ref_high:g}"
-    return ""
+        text = f"{result.ref_low:g} - {result.ref_high:g}"
+    elif result.ref_low is not None:
+        text = f">= {result.ref_low:g}"
+    elif result.ref_high is not None:
+        text = f"<= {result.ref_high:g}"
+    else:
+        return ""
+    return f"{text} (typical range, not from your lab)" if result.range_source == "typical" else text
+
+
+def _loinc(result: TestResult) -> str | None:
+    test = get_test(result.catalog_key)
+    return test.loinc if test else None
 
 
 def _report_order(report: Report) -> tuple:
@@ -129,9 +138,11 @@ def _result_json(result: TestResult, corrections: list[Correction]) -> dict:
         "normal_range": result.reference_text,
         "range_low": result.ref_low,
         "range_high": result.ref_high,
+        "range_from": result.range_source,
         "lab_flag": result.lab_flag,
         "flag": result.flag.value,
         "catalog_key": result.catalog_key,
+        "loinc": _loinc(result),
         "standard_value": result.std_value,
         "standard_low": result.std_low,
         "standard_high": result.std_high,
@@ -220,6 +231,7 @@ def write_export(session: Session, user: User, storage: Storage, out: IO[bytes])
                             _cell(result.unit),
                             _cell(_normal_range(result)),
                             FLAG_WORDS[result.flag],
+                            _loinc(result) or "",
                         ]
                     )
                 reports_json.append(

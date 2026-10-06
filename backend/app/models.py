@@ -174,6 +174,9 @@ class TestResult(Base):
     ref_high: Mapped[float | None] = mapped_column(Float)
     lab_flag: Mapped[str | None] = mapped_column(String(20))
     flag: Mapped[Flag] = mapped_column(Enum(Flag, native_enum=False, length=20))
+    # Where ref_low/ref_high came from: "lab" (printed on the report) or "typical" (a typical adult
+    # range from the catalog, used only when the report printed none). None when there is no range.
+    range_source: Mapped[str | None] = mapped_column(String(10))
 
     # The same value in the catalog's standard unit, so different labs line up.
     catalog_key: Mapped[str | None] = mapped_column(String(50), index=True)

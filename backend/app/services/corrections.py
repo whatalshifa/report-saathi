@@ -12,8 +12,8 @@ from sqlalchemy.orm import Session
 
 from app.models import Correction, TestResult, User
 from app.services.catalog import conversion_factor, get_test, normalize_unit
-from app.services.flagging import compute_flag, parse_value
-from app.services.processing import convert_to_standard
+from app.services.flagging import parse_value
+from app.services.processing import convert_to_standard, reflag, use_typical_range
 
 
 class CorrectionError(ValueError):
@@ -30,7 +30,7 @@ def _check(result: TestResult, value_text: str, unit: str | None) -> float | Non
 
     value = parse_value(value_text)
     # A printed number range means the lab expects a number here, so a word is most likely a typo.
-    if value is None and (result.ref_low is not None or result.ref_high is not None):
+    if value is None and result.range_source == "lab":
         raise CorrectionError("Enter a number, like 13.2. Signs such as < or > are fine.")
 
     # A unit we can't convert would quietly drop this value from the timeline, so say so instead.
@@ -69,10 +69,12 @@ def correct_result(
         result.original_value_text, result.original_unit = result.value_text, result.unit
 
     result.value_text, result.value, result.unit = value_text, value, unit
-    result.flag = compute_flag(value, value_text, result.ref_low, result.ref_high, result.reference_text)
     catalog_test = get_test(result.catalog_key)
     if catalog_test is not None:
         convert_to_standard(result, catalog_test)
+    # A typical range is kept in the printed unit, so a new unit (or a number for a word) picks it again.
+    use_typical_range(result, result.report.profile.sex)
+    reflag(result)
 
     # Putting back exactly what was read undoes the fix, so the "corrected" marker goes too.
     if (value_text, unit) == (result.original_value_text, result.original_unit):

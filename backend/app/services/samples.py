@@ -16,6 +16,7 @@ from pathlib import Path
 from sqlalchemy.orm import Session
 
 from app.models import Brief, Explanation, JobStatus, Profile, Relation, Report, ReportStatus, User
+from app.schemas import SNAPSHOT_EXCLUDE
 from app.services.extraction import ExtractedReport
 from app.services.processing import _parse_date, build_results
 from app.services.storage import Storage
@@ -66,7 +67,7 @@ def add_sample_profile(session: Session, user: User, storage: Storage) -> Profil
             patient_age=reading.patient_age,
             patient_sex=reading.patient_sex,
             report_date=_parse_date(reading.report_date),
-            results=build_results(reading),
+            results=build_results(reading, profile.sex),
         )
         session.add(report)
         session.flush()  # gives the report its id
@@ -81,7 +82,7 @@ def add_sample_profile(session: Session, user: User, storage: Storage) -> Profil
     session.flush()
     # The brief keeps the numbers it was written from, the same as a freshly written one.
     trends = build_trends(session, profile)
-    snapshot = trends.model_dump(mode="json") if trends else None
+    snapshot = trends.model_dump(mode="json", exclude=SNAPSHOT_EXCLUDE) if trends else None
     brief = Brief(
         profile_id=profile.id, status=JobStatus.done, content={"brief": data["brief"], "snapshot": snapshot}
     )

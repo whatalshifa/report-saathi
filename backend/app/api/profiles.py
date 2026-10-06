@@ -7,6 +7,7 @@ from app.schemas import BriefOut, ProfileIn, ProfileOut, Trends
 from app.services.auth import CurrentUser, SettingsDep
 from app.services.claude import AI_OFF
 from app.services.jobs import run_brief
+from app.services.processing import refresh_typical_ranges
 from app.services.trends import build_trends
 
 router = APIRouter(prefix="/api", tags=["profiles"])
@@ -57,8 +58,13 @@ def update_profile(profile_id: str, body: ProfileIn, user: CurrentUser, session:
         p.relation == Relation.self and p.id != profile.id for p in user.profiles
     ):
         raise HTTPException(status.HTTP_409_CONFLICT, "You already have a profile for yourself")
+    sex_changed = body.sex != profile.sex
     for field, value in body.model_dump().items():
         setattr(profile, field, value)
+    if sex_changed:
+        # Typical ranges depend on sex; ranges the lab printed never change.
+        for report in profile.reports:
+            refresh_typical_ranges(report, profile.sex)
     session.commit()
     return _out(profile)
 
