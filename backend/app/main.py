@@ -6,7 +6,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
-from app.api import auth, demo, profiles, reports
+from app.api import auth, demo, profiles, reports, shares
 from app.api.deps import SessionDep
 from app.config import get_settings
 from app.db import get_session_factory
@@ -64,6 +64,7 @@ app.include_router(auth.router)
 app.include_router(profiles.router)
 app.include_router(reports.router)
 app.include_router(demo.router)
+app.include_router(shares.router)
 
 
 @app.get("/api/health")

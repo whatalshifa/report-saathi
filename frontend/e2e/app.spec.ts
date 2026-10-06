@@ -115,6 +115,40 @@ test("the timeline shows trends and the doctor brief", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Meera Joshi" })).toBeVisible();
 });
 
+test("a doctor can open a shared brief until the link is revoked", async ({ page, browser }) => {
+  await startDemo(page);
+  await page.getByRole("link", { name: /results over time/ }).click();
+  await page.getByRole("button", { name: "Prepare doctor brief" }).click();
+  await expect(page.getByText("Pre-visit lab summary")).toBeVisible();
+
+  const panel = page.getByRole("region", { name: "Share with your doctor" });
+  await panel.getByRole("button", { name: "Create a link" }).click();
+  const url = await panel.getByLabel(/Your link, works until/).inputValue();
+  expect(url).toMatch(/\/shared\/[\w-]{40,}$/);
+  await expect(panel.getByText("Not opened yet")).toBeVisible();
+
+  // The doctor's phone: a separate browser that has never signed in.
+  const doctorContext = await browser.newContext();
+  const doctor = await doctorContext.newPage();
+  await doctor.goto(url);
+  await expect(doctor.getByRole("heading", { name: "Meera Joshi" })).toBeVisible();
+  await expect(doctor.getByText("Shared by a ReportSaathi user")).toBeVisible();
+  await expect(doctor.getByRole("button", { name: "Print or save as PDF" })).toBeVisible();
+  await expect(doctor.getByRole("link", { name: /Back to timeline|Family|Reports/ })).toHaveCount(0);
+  await expect(doctor.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
+
+  await page.reload();
+  await expect(panel.getByText(/Opened 1 time, last on/)).toBeVisible();
+  await panel.getByRole("button", { name: "Revoke" }).click();
+  await expect(panel.getByText("Revoked", { exact: true })).toBeVisible();
+
+  await doctor.reload();
+  await expect(doctor.getByRole("heading", { name: "This link isn't working" })).toBeVisible();
+  await expect(doctor.getByText(/expired or was turned off/)).toBeVisible();
+  await expect(doctor.getByRole("heading", { name: "Meera Joshi" })).toHaveCount(0);
+  await doctorContext.close();
+});
+
 test("a new account can sign up and add the samples", async ({ page }) => {
   await page.goto("/signup");
   await page.getByLabel("Your name").fill("Test Person");

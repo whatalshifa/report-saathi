@@ -25,12 +25,14 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 
 class Limiters:
-    """How often one address may try to sign in or start a demo, and how many demos in total."""
+    """How often one address may try to sign in, start a demo or open a shared brief, and how many
+    demos in total."""
 
     def __init__(self, settings: Settings):
         self.auth = RateLimiter(settings.auth_per_ip_per_10min, 600)
         self.demo_per_ip = RateLimiter(settings.demo_per_ip_per_hour, 3600)
         self.demo_total = RateLimiter(settings.demo_per_hour, 3600)
+        self.shared = RateLimiter(settings.shared_per_ip_per_10min, 600)
 
 
 @lru_cache

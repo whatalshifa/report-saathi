@@ -59,10 +59,14 @@ class Settings(BaseSettings):
     # Every account: new reports read per day, so a leaked login can't run up the AI bill.
     daily_upload_limit: int = 30
 
+    # How long a link to a doctor brief works. Demo accounts' links stop when the account is deleted.
+    share_days: int = 7
+
     # Requests allowed from one address, per window. Kept in memory, so they reset on restart.
     demo_per_ip_per_hour: int = 5
     demo_per_hour: int = 100  # all addresses together
     auth_per_ip_per_10min: int = 20
+    shared_per_ip_per_10min: int = 60  # opening shared briefs, so link tokens can't be guessed at speed
 
     # Error tracking. Set it to a Sentry project's DSN to have crashes reported; empty turns it off.
     sentry_dsn: str | None = None

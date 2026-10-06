@@ -321,3 +321,40 @@ export async function getExplanation(reportId: string, language: Language) {
 }
 
 export const isPending = (status: ReportStatus) => status === "queued" || status === "processing";
+
+// ---------- Phase 5: doctor share links ----------
+
+export type ShareState = "active" | "expired" | "revoked";
+
+/** A link to a brief, as its owner sees it. The token is never sent again after it is made. */
+export interface ShareLink {
+  id: string;
+  brief_id: string;
+  created_at: string;
+  expires_at: string;
+  revoked_at: string | null;
+  state: ShareState;
+  view_count: number;
+  last_viewed_at: string | null;
+}
+
+export interface CreatedShareLink extends ShareLink {
+  /** Shown once: only its hash is kept on the server. */
+  token: string;
+}
+
+/** What the doctor sees. The snapshot comes without the account's profile and report ids. */
+export interface SharedBrief {
+  content: BriefContent;
+  created_at: string;
+  expires_at: string;
+}
+
+export const createShareLink = (briefId: string) =>
+  request<CreatedShareLink>(`/api/briefs/${briefId}/shares`, { method: "POST" });
+export const listShareLinks = (profileId: string) => request<ShareLink[]>(`/api/profiles/${profileId}/shares`);
+export const revokeShareLink = (id: string) => request<void>(`/api/shares/${id}`, { method: "DELETE" });
+/** Public: anyone with the token can read the brief. Expired, revoked and unknown links all answer 404. */
+export const getSharedBrief = (token: string) => request<SharedBrief>(`/api/shared/${encodeURIComponent(token)}`);
+/** The address to send the doctor: on this website, so it opens without the API's address. */
+export const shareUrl = (token: string) => `${window.location.origin}/shared/${token}`;

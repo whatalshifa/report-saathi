@@ -167,3 +167,21 @@ to its owner only (404 for anyone else, as everywhere), inline, with `Cache-Cont
 and `nosniff`. The page shows it in a native `<dialog>` (focus stays inside, Escape and a tap outside
 close it, focus returns to the icon), with no new libraries. PDFs open in the browser's own viewer at
 `#page=N` rather than being rendered in the page, which would need a PDF library.
+
+**Share links are bearer tokens, stored like sessions.** A link to a brief carries a random 32-byte
+token; the database keeps only its SHA-256 hash, so a leaked database opens nothing and the owner sees
+the link only once (making another is one tap). Links last 7 days, and a demo account's links end when
+the account is due to be deleted, so a link never outlives its data. Revoking sets `revoked_at` instead
+of deleting the row, so "opened N times" survives; deleting the profile or account deletes the links
+and their log with it (database cascades). The log keeps only the time of each opening, no address or
+browser, because the owner only needs to know whether the doctor looked.
+
+**One answer for every dead link.** Unknown, expired and revoked tokens all get the same 404 body and
+headers, and opening is rate-limited per address, so tokens can't be probed or guessed. The public
+response is `Cache-Control: no-store` and `Referrer-Policy: no-referrer` (the page sets no-referrer and
+`noindex` too), since the address itself is the key. The shared brief leaves out the account's profile
+and report ids. The page fetches the brief in the browser rather than on the Next server, so the rate
+limit sees the doctor's address, and it reuses the same `BriefSheet` component as the owner's page
+without the app's navigation. A QR code was left out: it would need a new library, and the phone's own
+share sheet already sends the link to WhatsApp.
+

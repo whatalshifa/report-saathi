@@ -27,6 +27,13 @@ keeps the whole family's reports, privately and encrypted.
   the right page in a new tab. "View original" in the report header shows the whole file. The AI now
   returns where it read each value; Meera's sample reports are drawn as clearly marked sample pages
   (`backend/scripts/make_sample_images.py`), so the demo shows this too.
+- **Send the doctor a link.** Under the doctor brief, "Share with your doctor" makes a private link
+  (copy it, or send it straight to WhatsApp from a phone). The doctor reads the brief without an
+  account on a plain read-only page they can print. Links stop after 7 days (sooner on a demo
+  account) or when revoked, and the list shows "opened 2 times, last on 6 Oct 2026" for each.
+- Only a hash of each link's token is stored, unknown, expired and revoked links all get the same
+  "not available" answer, opening is rate-limited per address, and the brief is sent with `no-store`
+  and `no-referrer` so it isn't cached or leaked onward. Works on Meera's sample brief in the demo.
 
 ### Phase 4: production polish
 
@@ -159,9 +166,9 @@ written in advance. Add `ANTHROPIC_API_KEY` and uploads switch on.
 ## Tests
 
 ```bash
-cd backend && pytest        # 190 tests: flags, units, trends, sign-in, privacy, encryption, demo accounts, limits, fixes
+cd backend && pytest        # 218 tests: flags, units, trends, sign-in, privacy, encryption, demo accounts, limits, fixes, share links
 cd frontend && npm run lint && npm run build
-cd frontend && npx playwright test   # 19 browser tests; starts the API and the site itself
+cd frontend && npx playwright test   # 12 browser tests on a computer and a phone; starts the API and the site itself
 ```
 
 The tests never call the real Claude API; they use a stand-in for Claude, so they are free and fast.
@@ -176,6 +183,7 @@ backend/
     api/auth.py           sign up, sign in, sign out, delete account
     api/profiles.py       family profiles, timelines, doctor briefs
     api/reports.py        upload, list, get, move, delete, explanations
+    api/shares.py         doctor share links: make, list, revoke, and the public read-only view
     api/deps.py           ownership checks every endpoint uses
     services/
       uploads.py          checks file type by its bytes, shrinks big photos
@@ -184,6 +192,7 @@ backend/
       corrections.py      saves a value the person fixed, re-flags it, logs the fix
       catalog.py          51 common tests: their spellings and unit conversions
       auth.py             password hashing, sessions, lockout
+      sharing.py          share-link tokens, expiry, and the opening log
       crypto.py           envelope encryption for uploaded files
       names.py            spots a report filed under the wrong person
       trends.py           builds each person's timeline (all numbers, no AI)
@@ -198,7 +207,7 @@ backend/
   accuracy/               the accuracy test on real reports
   tests/
 frontend/
-  src/app/                pages: home, sign in, family, account, accuracy, reports, timelines, briefs
+  src/app/                pages: home, sign in, family, account, accuracy, reports, timelines, briefs, shared briefs
   src/components/         upload, results, trend chart, explanation panel, doctor brief, forms
   src/proxy.ts            sends signed-out visitors to the sign-in page
   src/lib/api.ts          calls to the backend (forwarded to FastAPI by next.config.ts)

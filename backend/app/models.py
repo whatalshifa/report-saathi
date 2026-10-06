@@ -7,7 +7,8 @@ A Report is one uploaded file. Each Report has many TestResults, one per value
 printed on it (Haemoglobin, TSH, Vitamin D, ...). A Correction logs a value
 the person fixed because it was misread. An Explanation is the
 plain-language reading of one report in one language, and a Brief is the
-summary of one profile's reports written for their doctor.
+summary of one profile's reports written for their doctor. A ShareLink lets a
+doctor open one brief without an account, and a ShareView logs each opening.
 """
 
 import enum
@@ -115,6 +116,8 @@ class Profile(Base):
     user: Mapped[User] = relationship(back_populates="profiles")
     reports: Mapped[list["Report"]] = relationship(back_populates="profile", cascade="all, delete-orphan")
     briefs: Mapped[list["Brief"]] = relationship(cascade="all, delete-orphan")
+    # The database deletes these with the profile (or the brief); no need to load them first.
+    shares: Mapped[list["ShareLink"]] = relationship(cascade="all, delete-orphan", passive_deletes=True)
 
 
 class Report(Base):
@@ -235,3 +238,33 @@ class Brief(Base):
     error: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, onupdate=_now)
+
+
+class ShareLink(Base):
+    """A link that lets a doctor read one brief without signing in.
+
+    Like a sign-in session, only a hash of the link's token is stored, so a leaked database
+    can't be used to open anyone's brief. Revoking keeps the row, so the opening log survives.
+    """
+
+    __tablename__ = "share_links"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    profile_id: Mapped[str] = mapped_column(ForeignKey("profiles.id", ondelete="CASCADE"), index=True)
+    brief_id: Mapped[str] = mapped_column(ForeignKey("briefs.id", ondelete="CASCADE"), index=True)
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    brief: Mapped[Brief] = relationship()
+
+
+class ShareView(Base):
+    """One time a share link was opened. No address or browser details are kept."""
+
+    __tablename__ = "share_views"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    share_id: Mapped[str] = mapped_column(ForeignKey("share_links.id", ondelete="CASCADE"), index=True)
+    viewed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)

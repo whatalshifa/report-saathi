@@ -225,3 +225,31 @@ class BriefOut(JobOut):
 
 class ExplanationRequest(BaseModel):
     language: Literal["en", "hi", "mr"] = "en"
+
+
+# ---------- Doctor share links ----------
+
+
+class ShareOut(BaseModel):
+    """A link as its owner sees it later: never the token, which only the person who made it has."""
+
+    id: str
+    brief_id: str
+    created_at: datetime
+    expires_at: datetime
+    revoked_at: datetime | None
+    state: Literal["active", "expired", "revoked"]
+    view_count: int
+    last_viewed_at: datetime | None
+
+
+class ShareCreated(ShareOut):
+    token: str  # shown once; only its hash is kept
+
+
+class SharedBrief(BaseModel):
+    """What a doctor sees: the brief's content, and nothing that leads back into the account."""
+
+    content: dict
+    created_at: datetime
+    expires_at: datetime
