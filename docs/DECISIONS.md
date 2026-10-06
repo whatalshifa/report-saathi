@@ -207,3 +207,30 @@ changed notice asks everyone again, and the API refuses agreement to an out-of-d
 asked when someone chooses a file, not at sign-up, so demo visitors and people trying the sample
 person are never interrupted; the chosen file waits in the page and is sent only after "I agree".
 The AI-off check comes first, since asking for consent to something that can't happen is pointless.
+
+**A hand-written service worker that caches nothing.** Share-to needs a service worker to catch the
+POST WhatsApp sends to `/share-target`, but a caching worker could serve one family's report pages or
+API answers to the next person on a shared phone, or an old version after a fix. So `public/sw.js`
+(no library) answers only that POST and lets every other request go to the network untouched. It
+keeps the shared file in Cache Storage under one key (the `/share` page reads it from there), replaced
+by the next share, and removed on upload, "Discard", sign-out, or after a day. The file is not
+encrypted on the phone; it is the same file WhatsApp already keeps there. The worker registers only in
+production builds over https or localhost. If a share arrives before the worker is running, a small
+`/share-target` route redirects to a kind "please share it again" note instead of an error page.
+
+**Signed-out shares go through sign-in, not around it.** `/share` stays a private page, so the proxy
+sends a signed-out person to sign in with `next=/share`, and the file waits in Cache Storage until they
+come back (the demo button on the sign-in page now honours `next` too). A shared report is never filed
+under the made-up sample person; the picker lists real family members only.
+
+**App icons are drawn at build time from the favicon's shapes.** `src/app/icons/[name]/route.tsx`
+renders the 192 and 512 icons and a full-bleed maskable one with `next/og`, prerendered by
+`generateStaticParams`, so there are no binary files to keep in step with `icon.svg`.
+
+**Read aloud uses the browser's voices, and hides when there is none.** The Web Speech API is free and
+works offline, but which voices exist depends on the device (many have no Marathi voice). The button
+shows only when a voice for the language exists (exact `hi-IN` first, then any `hi`), re-checked when
+the browser's voice list arrives (`voiceschanged`). Text is spoken sentence by sentence because some
+browsers stop one long utterance part-way, and speech stops when the language changes or the page
+closes. It reads the warning (if any), the summary, each flagged test and the questions, and skips
+the long lists of common reasons to keep it listenable.

@@ -112,7 +112,7 @@ export function AuthForm({ mode, next }: { mode: "login" | "signup"; next?: stri
       <div className="mt-8 border-t border-line pt-6">
         <p className="text-sm text-muted">Just looking around?</p>
         <div className="mt-3">
-          <DemoButton className="btn btn-secondary" label="Open the demo account" />
+          <DemoButton className="btn btn-secondary" label="Open the demo account" next={safeNext(next)} />
         </div>
       </div>
       </div>

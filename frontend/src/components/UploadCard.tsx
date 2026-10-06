@@ -4,62 +4,86 @@ import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
 import { ConsentDialog } from "@/components/ConsentDialog";
-import { ApiError, getMe, uploadReport, type Profile } from "@/lib/api";
+import { ApiError, getMe, uploadReport, type Profile, type ReportDetail } from "@/lib/api";
 
 const ACCEPTED = "application/pdf,image/jpeg,image/png,image/webp";
 
-export function UploadCard({ profile, reading }: { profile: Profile; reading: boolean }) {
-  const router = useRouter();
-  const input = useRef<HTMLInputElement>(null);
-  const [dragging, setDragging] = useState(false);
+/**
+ * Sends a report for one person, first asking for consent if they haven't agreed to the data notice.
+ * Shared by the upload box and the /share page (reports shared from WhatsApp). Render `consentDialog`.
+ */
+export function useReportUpload(onUploaded: (report: ReportDetail) => void) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // A chosen file waiting for the person to agree to the data notice before it is sent.
-  const [waiting, setWaiting] = useState<File | null>(null);
+  const [waiting, setWaiting] = useState<{ file: File; profileId: string } | null>(null);
 
-  async function handleFile(file: File | undefined) {
-    if (!file) return;
+  async function upload(file: File, profileId: string) {
     setError(null);
     setUploading(true);
     try {
       // Asked once, before the first upload: nothing is sent until they agree.
       const me = await getMe();
       if (me?.needs_consent) {
-        setWaiting(file);
+        setWaiting({ file, profileId });
         setUploading(false);
         return;
       }
-      const report = await uploadReport(file, profile.id);
-      router.push(`/reports/${report.id}`);
+      onUploaded(await uploadReport(file, profileId));
     } catch (err) {
       // 428: the notice changed since the page loaded; ask now.
-      if (err instanceof ApiError && err.status === 428) setWaiting(file);
+      if (err instanceof ApiError && err.status === 428) setWaiting({ file, profileId });
       else setError(err instanceof Error ? err.message : "Upload failed");
       setUploading(false);
     }
   }
 
-  if (!reading) {
-    return (
-      <div className="card flex gap-4 p-5">
-        <span
-          aria-hidden
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300"
-        >
-          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8}>
-            <path strokeLinecap="round" d="M10 9v6m4-6v6M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-          </svg>
-        </span>
-        <div>
-          <p className="font-semibold">Reading new reports is paused on this demo</p>
-          <p className="mt-1 text-sm text-muted">
-            This copy of ReportSaathi runs without an AI key, so it can&apos;t read new uploads yet. The sample reports
-            show everything it does once a report is read.
-          </p>
-        </div>
+  const consentDialog = waiting && (
+    <ConsentDialog
+      onAgree={() => {
+        setWaiting(null);
+        upload(waiting.file, waiting.profileId);
+      }}
+      onCancel={() => setWaiting(null)}
+    />
+  );
+  return { upload, uploading, error, consentDialog };
+}
+
+/** Shown instead of the upload box when the server has no AI key (demo mode). */
+export function ReadingPaused() {
+  return (
+    <div className="card flex gap-4 p-5">
+      <span
+        aria-hidden
+        className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300"
+      >
+        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8}>
+          <path strokeLinecap="round" d="M10 9v6m4-6v6M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+        </svg>
+      </span>
+      <div>
+        <p className="font-semibold">Reading new reports is paused on this demo</p>
+        <p className="mt-1 text-sm text-muted">
+          This copy of ReportSaathi runs without an AI key, so it can&apos;t read new uploads yet. The sample reports
+          show everything it does once a report is read.
+        </p>
       </div>
-    );
+    </div>
+  );
+}
+
+export function UploadCard({ profile, reading }: { profile: Profile; reading: boolean }) {
+  const router = useRouter();
+  const input = useRef<HTMLInputElement>(null);
+  const [dragging, setDragging] = useState(false);
+  const { upload, uploading, error, consentDialog } = useReportUpload((report) => router.push(`/reports/${report.id}`));
+
+  function handleFile(file: File | undefined) {
+    if (file) upload(file, profile.id);
   }
+
+  if (!reading) return <ReadingPaused />;
 
   return (
     <div>
@@ -103,16 +127,7 @@ export function UploadCard({ profile, reading }: { profile: Profile; reading: bo
           e.target.value = ""; // so choosing the same file again after "Not now" still works
         }}
       />
-      {waiting && (
-        <ConsentDialog
-          onAgree={() => {
-            const file = waiting;
-            setWaiting(null);
-            handleFile(file);
-          }}
-          onCancel={() => setWaiting(null)}
-        />
-      )}
+      {consentDialog}
       {error && (
         <p role="alert" className="mt-3 text-sm text-rose-700 dark:text-rose-300">
           {error}

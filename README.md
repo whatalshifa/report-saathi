@@ -42,6 +42,14 @@ keeps the whole family's reports, privately and encrypted.
 - Before a person's first upload, a short notice asks them to agree (what is stored, encrypted files,
   Claude reads the reports and doesn't train on them, download or delete any time). The server
   records which version they agreed to and when, and refuses uploads until they do.
+- **Share straight from WhatsApp.** The site is an installable app (web app manifest, app icons and a
+  small service worker). Once added to an Android home screen, ReportSaathi appears in WhatsApp's
+  "Share to" menu: the PDF or photo opens on a page that shows its name and size and asks whose report
+  it is, then uploads it. Signed out, it waits on the phone through sign-in. In the demo it shows the
+  same "reading is paused" note as the home page.
+- **Listen in English, Hindi or Marathi.** A Listen button on each explanation reads the summary, every
+  flagged test and the questions for the doctor aloud with the phone's own voices (free, nothing sent
+  anywhere). It only appears when the device has a voice for that language. Try it on Meera's reports.
 
 ### Phase 4: production polish
 

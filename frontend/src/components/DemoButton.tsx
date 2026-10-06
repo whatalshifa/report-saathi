@@ -12,7 +12,8 @@ export function WakeServer() {
   return null;
 }
 
-export function DemoButton({ className = "btn btn-primary", label = "Try the demo" }) {
+/** `next`: where to go once the demo is open (from the sign-in page, the page that asked for it). */
+export function DemoButton({ className = "btn btn-primary", label = "Try the demo", next = "/" }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,8 +24,7 @@ export function DemoButton({ className = "btn btn-primary", label = "Try the dem
       await checkHealth(); // waits out a sleeping server before creating anything
       await startDemo();
       // A full page load, so the header and every page see the new sign-in.
-      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-      window.location.assign("/");
+      window.location.assign(next);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not start the demo");
       setBusy(false);

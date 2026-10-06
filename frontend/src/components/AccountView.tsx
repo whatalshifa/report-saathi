@@ -5,6 +5,7 @@ import Link from "next/link";
 
 import { SkeletonLines } from "@/components/Skeleton";
 import { deleteAccount, downloadExport, getFeatures, getMe, logout, type User } from "@/lib/api";
+import { clearSharedFile } from "@/lib/sharedFile";
 
 type Download =
   | { state: "idle" }
@@ -98,6 +99,8 @@ export function AccountView() {
 
   async function signOut() {
     await logout();
+    // A report shared from WhatsApp but not yet added shouldn't wait for the next person on this device.
+    await clearSharedFile().catch(() => {});
     // Full page loads after signing out, so nothing from the old session stays in memory.
     // eslint-disable-next-line @next/next/no-location-assign-relative-destination
     window.location.assign("/");
@@ -106,6 +109,7 @@ export function AccountView() {
   async function removeAccount() {
     try {
       await deleteAccount();
+      await clearSharedFile().catch(() => {});
       // eslint-disable-next-line @next/next/no-location-assign-relative-destination
       window.location.assign("/signup");
     } catch (err) {

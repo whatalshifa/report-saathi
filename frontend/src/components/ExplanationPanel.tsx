@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useId, useState } from "react";
 
 import { SkeletonLines } from "@/components/Skeleton";
 import {
@@ -13,11 +13,15 @@ import {
 } from "@/lib/api";
 import { serverTime } from "@/lib/format";
 import { usePoll } from "@/lib/usePoll";
+import { useSpeech } from "@/lib/useSpeech";
 
 const LANGUAGES = [
   {
     code: "en",
     label: "English",
+    voice: "en-IN",
+    listen: "Listen",
+    stop: "Stop",
     button: "Explain in simple words",
     waiting: "Writing the explanation…",
     questions: "Questions to ask your doctor",
@@ -27,6 +31,9 @@ const LANGUAGES = [
   {
     code: "hi",
     label: "हिन्दी",
+    voice: "hi-IN",
+    listen: "सुनिए",
+    stop: "रोकिए",
     button: "आसान शब्दों में समझाइए",
     waiting: "आसान भाषा में लिखा जा रहा है…",
     questions: "डॉक्टर से पूछने के सवाल",
@@ -36,6 +43,9 @@ const LANGUAGES = [
   {
     code: "mr",
     label: "मराठी",
+    voice: "mr-IN",
+    listen: "ऐका",
+    stop: "थांबा",
     button: "सोप्या शब्दांत समजावून सांगा",
     waiting: "सोप्या भाषेत लिहिले जात आहे…",
     questions: "डॉक्टरांना विचारायचे प्रश्न",
@@ -56,6 +66,7 @@ export function ExplanationPanel({ reportId, correctedAt = null }: { reportId: s
   const load = useCallback(() => getExplanation(reportId, language), [reportId, language]);
   const { data: job, error, reload } = usePoll<MaybeJob>(load, (j) => j !== null && isPending(j.status));
   const text = LANGUAGES.find((l) => l.code === language)!;
+  const headingId = useId();
 
   async function start() {
     setStarting(true);
@@ -76,11 +87,14 @@ export function ExplanationPanel({ reportId, correctedAt = null }: { reportId: s
 
   return (
     <section
+      aria-labelledby={headingId}
       lang={language}
       className="rounded-2xl border border-teal-200 bg-teal-50/60 p-5 dark:border-teal-900 dark:bg-teal-950/30"
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold">What does this mean?</h2>
+        <h2 id={headingId} className="text-lg font-semibold">
+          What does this mean?
+        </h2>
         <div role="tablist" aria-label="Language" className="flex rounded-lg bg-surface p-1">
           {LANGUAGES.map((l) => (
             <button
@@ -141,6 +155,7 @@ function ExplanationBody({ content, text }: { content: ReportExplanation; text: 
           {content.see_doctor_reason}
         </p>
       )}
+      <ListenButton content={content} text={text} />
       <p>{content.summary}</p>
       {content.flagged.map((item) => (
         <div key={item.test_name} className="rounded-xl border border-line bg-surface p-4">
@@ -170,5 +185,47 @@ function ExplanationBody({ content, text }: { content: ReportExplanation; text: 
       )}
       <p className="text-xs text-muted">{text.note}</p>
     </div>
+  );
+}
+
+/** What "Listen" reads, in order: the warning if any, the summary, each flagged test, then the questions. */
+function spokenParts(content: ReportExplanation, text: Text): string[] {
+  return [
+    content.see_doctor_soon ? (content.see_doctor_reason ?? "") : "",
+    content.summary,
+    ...content.flagged.flatMap((item) => [
+      item.test_name,
+      item.what_it_measures,
+      item.what_your_result_means,
+      item.what_you_can_do,
+    ]),
+    content.questions_for_doctor.length > 0 ? text.questions : "",
+    ...content.questions_for_doctor,
+  ].filter(Boolean);
+}
+
+/** Reads the explanation aloud, for family members who would rather listen. Hidden without a voice for the language. */
+function ListenButton({ content, text }: { content: ReportExplanation; text: Text }) {
+  const { available, speaking, speak, stop } = useSpeech(text.voice);
+  if (!available) return null;
+  return (
+    <button
+      type="button"
+      onClick={() => (speaking ? stop() : speak(spokenParts(content, text)))}
+      className="btn btn-secondary btn-sm"
+    >
+      <svg aria-hidden viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.8}>
+        {speaking ? (
+          <rect x="7" y="7" width="10" height="10" rx="1.5" />
+        ) : (
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M11 5 6 9H3v6h3l5 4V5Zm4.5 3.5a5 5 0 0 1 0 7m2.5-10a8.5 8.5 0 0 1 0 13"
+          />
+        )}
+      </svg>
+      {speaking ? text.stop : text.listen}
+    </button>
   );
 }

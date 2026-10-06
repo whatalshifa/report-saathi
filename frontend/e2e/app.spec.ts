@@ -221,6 +221,223 @@ test("the first upload waits for consent", async ({ page }) => {
   expect(uploads).toHaveLength(1);
 });
 
+/** Shares a file to the installed app the way Android does: a multipart POST to the manifest's share_target. */
+async function shareFile(page: Page, name: string, type: string, size: number) {
+  // The worker must be running to catch the share; it registers itself on every page.
+  await page.evaluate(() => navigator.serviceWorker.ready.then(() => undefined));
+  await page.evaluate(
+    ([name, type, size]) => {
+      const form = Object.assign(document.createElement("form"), {
+        method: "post",
+        enctype: "multipart/form-data",
+        action: "/share-target",
+      });
+      const input = Object.assign(document.createElement("input"), { type: "file", name: "file" });
+      const files = new DataTransfer();
+      files.items.add(new File([new Uint8Array(size)], name, { type }));
+      input.files = files.files;
+      form.append(input);
+      document.body.append(form);
+      form.submit();
+    },
+    [name, type, size] as const,
+  );
+}
+
+test("the app can be installed, with icons and WhatsApp share-to", async ({ page }) => {
+  // Signed out, like a phone checking the site before installing it.
+  await page.goto("/");
+  const href = await page.locator('link[rel="manifest"]').getAttribute("href");
+  const manifest = await (await page.request.get(href!)).json();
+  expect(manifest).toMatchObject({ name: "ReportSaathi", start_url: "/", display: "standalone" });
+  expect(manifest.share_target).toMatchObject({
+    action: "/share-target",
+    method: "POST",
+    enctype: "multipart/form-data",
+    params: { files: [{ name: "file" }] },
+  });
+  expect(manifest.share_target.params.files[0].accept).toEqual(
+    expect.arrayContaining(["application/pdf", "image/jpeg", "image/png"]),
+  );
+  expect(manifest.icons.map((i: { purpose: string }) => i.purpose)).toEqual(["any", "any", "maskable"]);
+
+  for (const icon of manifest.icons as { src: string; sizes: string }[]) {
+    const response = await page.request.get(icon.src);
+    expect(response.status()).toBe(200);
+    expect(response.headers()["content-type"]).toBe("image/png");
+    const png = await response.body();
+    expect(png.subarray(1, 4).toString()).toBe("PNG");
+    // Width and height sit at bytes 16-23 of every PNG.
+    expect(`${png.readUInt32BE(16)}x${png.readUInt32BE(20)}`).toBe(icon.sizes);
+  }
+
+  const worker = await page.request.get("/sw.js", { maxRedirects: 0 });
+  expect(worker.status()).toBe(200);
+  expect(worker.headers()["content-type"]).toMatch(/javascript/);
+  expect(worker.headers()["cache-control"]).toContain("no-store");
+
+  // A share that arrives before the worker is running gets a kind note instead of an error page.
+  const missed = await page.request.post("/share-target", { multipart: { file: "x" }, maxRedirects: 0 });
+  expect(missed.status()).toBe(303);
+  expect(missed.headers()["location"]).toBe("/share?error=missed");
+});
+
+test("the service worker keeps only readable shared files", async ({ page }) => {
+  await page.goto("/login");
+  // Its functions, loaded into a normal page so they can be called directly.
+  await page.addScriptTag({ url: "/sw.js" });
+  const result = await page.evaluate(async () => {
+    const sw = window as unknown as {
+      handleShare(request: Request): Promise<Response>;
+      isShareTarget(request: Request): boolean;
+    };
+    const share = async (file: File) => {
+      const form = new FormData();
+      form.append("file", file);
+      const response = await sw.handleShare(new Request("/share-target", { method: "POST", body: form }));
+      return `${response.status} ${new URL(response.headers.get("Location")!).pathname}${new URL(response.headers.get("Location")!).search}`;
+    };
+    // No type, as some apps send it: the name decides. A Hindi name survives the trip.
+    const pdf = await share(new File(["%PDF-1.4"], "रिपोर्ट.pdf"));
+    const kept = await caches.match("/share-target/file", { cacheName: "rs-share-v1" });
+    const text = await share(new File(["hello"], "notes.txt", { type: "text/plain" }));
+    const big = await share(new File([new Uint8Array(20_000_001)], "scan.pdf", { type: "application/pdf" }));
+    const stillKept = await caches.match("/share-target/file", { cacheName: "rs-share-v1" });
+    return {
+      pdf,
+      text,
+      big,
+      keptType: kept?.headers.get("Content-Type"),
+      keptName: decodeURIComponent(kept?.headers.get("X-File-Name") ?? ""),
+      stillKept: decodeURIComponent(stillKept?.headers.get("X-File-Name") ?? ""),
+      caught: [
+        sw.isShareTarget(new Request("/share-target", { method: "POST" })),
+        sw.isShareTarget(new Request("/share-target")),
+        sw.isShareTarget(new Request("/api/reports", { method: "POST" })),
+      ],
+    };
+  });
+  expect(result).toEqual({
+    pdf: "303 /share",
+    text: "303 /share?error=unsupported",
+    big: "303 /share?error=too-big",
+    keptType: "application/pdf",
+    keptName: "रिपोर्ट.pdf",
+    stillKept: "रिपोर्ट.pdf",
+    caught: [true, false, false],
+  });
+});
+
+test("a report shared from WhatsApp waits through sign-in", async ({ page }) => {
+  await page.goto("/login");
+  await shareFile(page, "blood-test.pdf", "application/pdf", 2400);
+  // Signed out: sign in first, and the file is still there afterwards.
+  await expect(page).toHaveURL(/\/login\?next=%2Fshare$/);
+  await page.getByRole("button", { name: "Open the demo account" }).click();
+  await expect(page).toHaveURL(/\/share$/);
+  await expect(page.getByRole("heading", { name: "Add a shared report" })).toBeVisible();
+  const file = page.getByRole("region", { name: "Shared file" });
+  await expect(file.getByText("blood-test.pdf")).toBeVisible();
+  await expect(file.getByText("PDF · 2 KB")).toBeVisible();
+  // This server has no AI key: the same note as the home page, and no upload button.
+  await expect(page.getByText("Reading new reports is paused on this demo")).toBeVisible();
+  await expect(page.getByRole("button", { name: /^Add to/ })).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Discard" }).click();
+  await expect(page.getByText("Nothing is waiting to be added")).toBeVisible();
+  await page.reload();
+  await expect(page.getByText("Nothing is waiting to be added")).toBeVisible();
+});
+
+test("a shared report is added to the person picked", async ({ page }) => {
+  // The test server has no AI key, so pretend reading is on to show the picker. The rest is real.
+  await page.route("**/api/features", (route) => route.fulfill({ json: { reading: true } }));
+  await page.goto("/signup");
+  await page.getByLabel("Your name").fill("Asha Patil");
+  await page.getByLabel("Email").fill(`e2e-${Date.now()}-${Math.random().toString(36).slice(2)}@example.com`);
+  await page.getByLabel("Password").fill("a long test passphrase");
+  await page.getByRole("button", { name: "Create account" }).click();
+  await expect(page.getByRole("heading", { name: "Whose reports?" })).toBeVisible();
+
+  await shareFile(page, "thyroid.jpg", "image/jpeg", 1_500_000);
+  await expect(page.getByRole("region", { name: "Shared file" }).getByText("Photo · 1.5 MB")).toBeVisible();
+  const picker = page.getByRole("group", { name: "Whose report is this?" });
+  await expect(picker.getByRole("radio", { name: /Asha Patil/ })).toBeChecked();
+  await page.getByRole("button", { name: "Add to Asha Patil’s reports" }).click();
+  // A new account agrees to the data notice first, then the file is sent; this server says the AI is off.
+  const dialog = page.getByRole("dialog", { name: "Before your first upload" });
+  await dialog.getByRole("button", { name: "I agree" }).click();
+  await expect(page.getByRole("alert").filter({ hasText: "The AI is switched off" })).toBeVisible();
+  // Not uploaded, so it is still waiting.
+  await expect(page.getByText("thyroid.jpg")).toBeVisible();
+});
+
+/** Replaces the browser's speech with a recorder, offering voices for these languages only. */
+async function stubSpeech(page: Page, languages: string[]) {
+  await page.addInitScript((languages) => {
+    const spoken: string[] = [];
+    let cancels = 0;
+    const voices = languages.map((lang) => ({ lang, name: `Test ${lang}`, voiceURI: `test-${lang}`, default: false }));
+    class Utterance {
+      voice = null;
+      lang = "";
+      rate = 1;
+      onend = null;
+      onerror = null;
+      constructor(readonly text: string) {}
+    }
+    Object.defineProperty(window, "SpeechSynthesisUtterance", { value: Utterance, configurable: true });
+    Object.defineProperty(window, "speechSynthesis", {
+      configurable: true,
+      value: {
+        getVoices: () => voices,
+        speak: (utterance: Utterance) => spoken.push(utterance.text),
+        cancel: () => cancels++,
+        addEventListener() {},
+        removeEventListener() {},
+      },
+    });
+    Object.assign(window, { speech: { spoken, cancels: () => cancels } });
+  }, languages);
+}
+
+const speechLog = (page: Page) =>
+  page.evaluate(() => {
+    const { speech } = window as unknown as { speech: { spoken: string[]; cancels: () => number } };
+    return { spoken: speech.spoken, cancels: speech.cancels() };
+  });
+
+test("an explanation can be read aloud when the device has a voice", async ({ page }) => {
+  await stubSpeech(page, ["en-IN"]);
+  await startDemo(page);
+  await page.getByRole("link", { name: /Sample Pathology Lab, Pune.*12 Jan 2026/ }).click();
+  const panel = page.getByRole("region", { name: "What does this mean?" });
+  await panel.getByRole("button", { name: "Listen" }).click();
+  await expect(panel.getByRole("button", { name: "Stop" })).toBeVisible();
+  const { spoken } = await speechLog(page);
+  expect(spoken).toContain("Questions to ask your doctor");
+  expect(spoken.length).toBeGreaterThan(5);
+
+  await panel.getByRole("button", { name: "Stop" }).click();
+  await expect(panel.getByRole("button", { name: "Listen" })).toBeVisible();
+  await panel.getByRole("button", { name: "Listen" }).click();
+  const before = (await speechLog(page)).cancels;
+  // No Hindi voice on this "device": switching stops the reading and hides the button.
+  await panel.getByRole("tab").nth(1).click();
+  await expect(panel.getByText(/सामान्य सीमा से बाहर/).first()).toBeVisible();
+  await expect(panel.getByRole("button", { name: /Listen|Stop|सुनिए/ })).toHaveCount(0);
+  expect((await speechLog(page)).cancels).toBeGreaterThan(before);
+});
+
+test("the Listen button is hidden without a voice for the language", async ({ page }) => {
+  await stubSpeech(page, []);
+  await startDemo(page);
+  await page.getByRole("link", { name: /Sample Pathology Lab, Pune.*12 Jan 2026/ }).click();
+  const panel = page.getByRole("region", { name: "What does this mean?" });
+  await expect(panel.getByRole("heading", { name: "Questions to ask your doctor" })).toBeVisible();
+  await expect(panel.getByRole("button", { name: "Listen" })).toHaveCount(0);
+});
+
 test("the theme switch changes and remembers the theme", async ({ page }) => {
   await page.goto("/");
   const html = page.locator("html");
