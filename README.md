@@ -34,6 +34,14 @@ keeps the whole family's reports, privately and encrypted.
 - Only a hash of each link's token is stored, unknown, expired and revoked links all get the same
   "not available" answer, opening is rate-limited per address, and the brief is sent with `no-store`
   and `no-referrer` so it isn't cached or leaked onward. Works on Meera's sample brief in the demo.
+- **Your data, your rights (India's DPDP Act 2023).** "Download all my data" on the Account page gives
+  one ZIP: every original report (decrypted, in a folder per person, named by date), a CSV of every
+  value for Excel, and a JSON file with everything else, including fixes, explanations and briefs.
+  Try it on the demo account. A plain-language [privacy page](frontend/src/app/privacy/page.tsx)
+  (`/privacy`) says what is kept, where, by whom, for how long, and how to use each right in the app.
+- Before a person's first upload, a short notice asks them to agree (what is stored, encrypted files,
+  Claude reads the reports and doesn't train on them, download or delete any time). The server
+  records which version they agreed to and when, and refuses uploads until they do.
 
 ### Phase 4: production polish
 
@@ -166,9 +174,9 @@ written in advance. Add `ANTHROPIC_API_KEY` and uploads switch on.
 ## Tests
 
 ```bash
-cd backend && pytest        # 218 tests: flags, units, trends, sign-in, privacy, encryption, demo accounts, limits, fixes, share links
+cd backend && pytest        # 233 tests: flags, units, trends, sign-in, privacy, encryption, demo accounts, limits, fixes, share links, data export, consent
 cd frontend && npm run lint && npm run build
-cd frontend && npx playwright test   # 12 browser tests on a computer and a phone; starts the API and the site itself
+cd frontend && npx playwright test   # 15 browser tests on a computer and a phone; starts the API and the site itself
 ```
 
 The tests never call the real Claude API; they use a stand-in for Claude, so they are free and fast.
@@ -180,7 +188,7 @@ GitHub Actions runs all of this on every push, plus the database migrations agai
 backend/
   app/
     main.py               FastAPI app, health check
-    api/auth.py           sign up, sign in, sign out, delete account
+    api/auth.py           sign up, sign in, sign out, consent, download all my data, delete account
     api/profiles.py       family profiles, timelines, doctor briefs
     api/reports.py        upload, list, get, move, delete, explanations
     api/shares.py         doctor share links: make, list, revoke, and the public read-only view
@@ -193,6 +201,8 @@ backend/
       catalog.py          51 common tests: their spellings and unit conversions
       auth.py             password hashing, sessions, lockout
       sharing.py          share-link tokens, expiry, and the opening log
+      export.py           "download all my data": the ZIP of files, JSON and CSV
+      consent.py          the data notice version people agree to before uploading
       crypto.py           envelope encryption for uploaded files
       names.py            spots a report filed under the wrong person
       trends.py           builds each person's timeline (all numbers, no AI)
@@ -207,7 +217,7 @@ backend/
   accuracy/               the accuracy test on real reports
   tests/
 frontend/
-  src/app/                pages: home, sign in, family, account, accuracy, reports, timelines, briefs, shared briefs
+  src/app/                pages: home, sign in, family, account, accuracy, privacy, reports, timelines, briefs, shared briefs
   src/components/         upload, results, trend chart, explanation panel, doctor brief, forms
   src/proxy.ts            sends signed-out visitors to the sign-in page
   src/lib/api.ts          calls to the backend (forwarded to FastAPI by next.config.ts)

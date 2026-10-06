@@ -63,6 +63,9 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
               <Link href="/accuracy" className="hover:text-foreground">
                 How accurate is it?
               </Link>
+              <Link href="/privacy" className="hover:text-foreground">
+                Privacy
+              </Link>
               <a href="https://github.com/whatalshifa/report-saathi" className="hover:text-foreground">
                 Source code
               </a>

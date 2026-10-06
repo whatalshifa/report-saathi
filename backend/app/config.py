@@ -67,6 +67,7 @@ class Settings(BaseSettings):
     demo_per_hour: int = 100  # all addresses together
     auth_per_ip_per_10min: int = 20
     shared_per_ip_per_10min: int = 60  # opening shared briefs, so link tokens can't be guessed at speed
+    export_per_user_per_hour: int = 5  # "download all my data" decrypts every file, so it is costly
 
     # Error tracking. Set it to a Sentry project's DSN to have crashes reported; empty turns it off.
     sentry_dsn: str | None = None

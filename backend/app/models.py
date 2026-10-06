@@ -78,6 +78,10 @@ class User(Base):
     locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     # A one-click demo account: no real email or password, deleted after a day.
     is_guest: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
+    # Which version of the "how we look after your reports" notice the person agreed to, and when.
+    # Asked before the first upload; empty for accounts that haven't uploaded since it was added.
+    consent_version: Mapped[str | None] = mapped_column(String(20))
+    consented_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
     profiles: Mapped[list["Profile"]] = relationship(

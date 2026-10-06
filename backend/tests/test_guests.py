@@ -10,7 +10,7 @@ from app.config import Settings, get_settings
 from app.main import app
 from app.models import Report, User
 from app.services.guests import GUEST_DOMAIN, purge_expired_guests
-from tests.conftest import PASSWORD, upload
+from tests.conftest import PASSWORD, agree, upload
 
 
 @pytest.fixture
@@ -113,6 +113,7 @@ def test_starting_a_demo_tidies_up_expired_ones(visitor, session_factory):
 
 def test_demo_accounts_can_read_only_a_few_reports(visitor):
     start_demo(visitor)
+    agree(visitor)  # a guest is asked too, once they choose to upload
     profile_id = visitor.get("/api/profiles").json()[0]["id"]
     for _ in range(get_settings().guest_upload_limit):
         assert upload(visitor, profile_id=profile_id).status_code == 202

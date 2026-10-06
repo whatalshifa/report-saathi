@@ -90,6 +90,15 @@ export function AuthForm({ mode, next }: { mode: "login" | "signup"; next?: stri
             {error}
           </p>
         )}
+        {isSignup && (
+          <p className="text-sm text-muted">
+            Your reports are encrypted and only you can see them. Read how we look after them on our{" "}
+            <Link href="/privacy" className="link">
+              privacy page
+            </Link>
+            .
+          </p>
+        )}
         <button disabled={busy} className="btn btn-primary w-full py-3">
           {busy ? "Please wait…" : isSignup ? "Create account" : "Sign in"}
         </button>

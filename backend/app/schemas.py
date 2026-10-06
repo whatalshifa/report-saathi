@@ -7,6 +7,7 @@ from typing import Annotated, Literal
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field, StringConstraints, computed_field
 
 from app.models import Flag, Relation, ReportStatus
+from app.services.consent import CONSENT_VERSION
 from app.services.names import names_match
 
 # ---------- Accounts ----------
@@ -43,6 +44,20 @@ class UserOut(BaseModel):
     name: str
     email: str
     is_guest: bool = False
+    # Which data notice the person agreed to before uploading, and when; empty until they do.
+    consent_version: str | None = None
+    consented_at: datetime | None = None
+
+    @computed_field
+    @property
+    def needs_consent(self) -> bool:
+        """True until the person agrees to the current notice; the web app asks before an upload."""
+        return self.consent_version != CONSENT_VERSION
+
+
+class ConsentIn(BaseModel):
+    # The notice version the person was shown, so agreeing to an old copy of the page counts for nothing.
+    version: str = Field(max_length=20)
 
 
 # ---------- Family profiles ----------

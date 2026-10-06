@@ -3,7 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
-import { uploadReport, type Profile } from "@/lib/api";
+import { ConsentDialog } from "@/components/ConsentDialog";
+import { ApiError, getMe, uploadReport, type Profile } from "@/lib/api";
 
 const ACCEPTED = "application/pdf,image/jpeg,image/png,image/webp";
 
@@ -13,16 +14,27 @@ export function UploadCard({ profile, reading }: { profile: Profile; reading: bo
   const [dragging, setDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // A chosen file waiting for the person to agree to the data notice before it is sent.
+  const [waiting, setWaiting] = useState<File | null>(null);
 
   async function handleFile(file: File | undefined) {
     if (!file) return;
     setError(null);
     setUploading(true);
     try {
+      // Asked once, before the first upload: nothing is sent until they agree.
+      const me = await getMe();
+      if (me?.needs_consent) {
+        setWaiting(file);
+        setUploading(false);
+        return;
+      }
       const report = await uploadReport(file, profile.id);
       router.push(`/reports/${report.id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed");
+      // 428: the notice changed since the page loaded; ask now.
+      if (err instanceof ApiError && err.status === 428) setWaiting(file);
+      else setError(err instanceof Error ? err.message : "Upload failed");
       setUploading(false);
     }
   }
@@ -86,8 +98,21 @@ export function UploadCard({ profile, reading }: { profile: Profile; reading: bo
         type="file"
         accept={ACCEPTED}
         className="hidden"
-        onChange={(e) => handleFile(e.target.files?.[0])}
+        onChange={(e) => {
+          handleFile(e.target.files?.[0]);
+          e.target.value = ""; // so choosing the same file again after "Not now" still works
+        }}
       />
+      {waiting && (
+        <ConsentDialog
+          onAgree={() => {
+            const file = waiting;
+            setWaiting(null);
+            handleFile(file);
+          }}
+          onCancel={() => setWaiting(null)}
+        />
+      )}
       {error && (
         <p role="alert" className="mt-3 text-sm text-rose-700 dark:text-rose-300">
           {error}

@@ -133,6 +133,11 @@ export interface User {
   email: string;
   /** A one-click demo account, deleted after a day. */
   is_guest: boolean;
+  /** Which data notice the person agreed to before uploading, and when; null until they do. */
+  consent_version: string | null;
+  consented_at: string | null;
+  /** True until they agree to the current notice; asked before an upload. */
+  needs_consent: boolean;
 }
 
 export const signup = (name: string, email: string, password: string) =>
@@ -146,6 +151,38 @@ export const checkHealth = () => request<{ status: string }>("/api/health");
 export const startDemo = () => request<User>("/api/auth/demo", { method: "POST" });
 export const logout = () => request<void>("/api/auth/logout", { method: "POST" });
 export const deleteAccount = () => request<void>("/api/auth/me", { method: "DELETE" });
+/** Records that the person agreed to this version of the data notice (see ConsentDialog). */
+export const giveConsent = (version: string) => request<User>("/api/auth/me/consent", json("POST", { version }));
+
+/**
+ * Downloads everything in the account as one ZIP, reporting progress as it arrives.
+ * `total` is null if the size isn't known. Resolves with the file and the name the server gave it.
+ */
+export async function downloadExport(
+  onProgress: (received: number, total: number | null) => void,
+): Promise<{ blob: Blob; filename: string }> {
+  const response = await fetchWithWake("/api/auth/me/export");
+  if (!response.ok || !response.body) {
+    const body = await response.json().catch(() => null);
+    throw new ApiError(typeof body?.detail === "string" ? body.detail : friendlyStatus(response.status), response.status);
+  }
+  const length = Number(response.headers.get("Content-Length"));
+  const total = length > 0 ? length : null;
+  const reader = response.body.getReader();
+  const chunks: Uint8Array<ArrayBuffer>[] = [];
+  let received = 0;
+  onProgress(0, total);
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    received += value.length;
+    onProgress(received, total);
+  }
+  const match = /filename="([^"]+)"/.exec(response.headers.get("Content-Disposition") ?? "");
+  const filename = match?.[1] ?? "reportsaathi-export.zip";
+  return { blob: new Blob(chunks, { type: "application/zip" }), filename };
+}
 
 /** The signed-in user, or null when nobody is signed in. */
 export async function getMe(): Promise<User | null> {

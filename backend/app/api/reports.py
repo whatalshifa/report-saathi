@@ -28,6 +28,7 @@ from app.schemas import (
 )
 from app.services.auth import CurrentUser, SettingsDep
 from app.services.claude import AI_OFF
+from app.services.consent import NEEDS_CONSENT, has_consented
 from app.services.corrections import CorrectionError, correct_result
 from app.services.extraction import Extractor, get_extractor
 from app.services.jobs import run_explanation
@@ -77,6 +78,9 @@ def upload_report(
     profile = owned_profile(session, user, profile_id)
     if not settings.ai_enabled:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, AI_OFF)
+    # 428 Precondition Required: the web app shows the consent notice and then sends the file again.
+    if not has_consented(user):
+        raise HTTPException(status.HTTP_428_PRECONDITION_REQUIRED, NEEDS_CONSENT)
     _check_upload_allowance(session, user, settings)
     max_bytes = settings.max_upload_mb * 1_000_000
     try:

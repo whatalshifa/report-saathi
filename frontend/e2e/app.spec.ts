@@ -1,3 +1,5 @@
+import { readFile } from "node:fs/promises";
+
 import { expect, test, type Page } from "@playwright/test";
 
 async function startDemo(page: Page) {
@@ -160,6 +162,63 @@ test("a new account can sign up and add the samples", async ({ page }) => {
 
   await page.getByRole("button", { name: "Add sample reports" }).click();
   await expect(page.getByRole("heading", { name: "Meera Joshi’s reports" })).toBeVisible();
+});
+
+test("the privacy page is public and explains your rights", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("contentinfo").getByRole("link", { name: "Privacy" }).click();
+  await expect(page).toHaveURL(/\/privacy$/);
+  await expect(page.getByRole("heading", { name: "How we look after your reports" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Your rights, and how to use them" })).toBeVisible();
+  await expect(page.getByText(/Digital Personal Data Protection Act, 2023/)).toBeVisible();
+  await expect(page.getByRole("link", { name: "GitHub repository" }).first()).toHaveAttribute("href", /github\.com/);
+
+  await page.goto("/signup");
+  await expect(page.getByRole("main").getByRole("link", { name: "privacy page" })).toHaveAttribute("href", "/privacy");
+});
+
+test("a demo account can download all its data", async ({ page }) => {
+  await startDemo(page);
+  await page.goto("/account");
+  const section = page.getByRole("region", { name: "Your data" });
+  await expect(page.getByRole("link", { name: "Read the privacy page" })).toHaveAttribute("href", "/privacy");
+
+  const downloading = page.waitForEvent("download");
+  await section.getByRole("button", { name: "Download all my data" }).click();
+  const download = await downloading;
+  expect(download.suggestedFilename()).toMatch(/^reportsaathi-export-\d{4}-\d{2}-\d{2}\.zip$/);
+  const zip = await readFile(await download.path());
+  expect(zip.subarray(0, 2).toString()).toBe("PK");
+  // Meera's three report pages are inside, under her name.
+  expect(zip.toString("latin1")).toContain("reports/Meera-Joshi/");
+  await expect(section.getByText("Done. Look for the file in your Downloads folder.")).toBeVisible();
+});
+
+test("the first upload waits for consent", async ({ page }) => {
+  // The test server has no AI key, so pretend reading is on to show the upload box. The rest is real.
+  await page.route("**/api/features", (route) => route.fulfill({ json: { reading: true } }));
+  await startDemo(page);
+  const uploads: string[] = [];
+  page.on("request", (r) => {
+    if (r.method() === "POST" && new URL(r.url()).pathname === "/api/reports") uploads.push(r.url());
+  });
+  const file = { name: "report.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4\n") };
+  const dialog = page.getByRole("dialog", { name: "Before your first upload" });
+
+  await page.locator('input[type="file"]').setInputFiles(file);
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByText(/encrypted before they are stored/)).toBeVisible();
+  await expect(dialog.getByRole("link", { name: "Read the full privacy page" })).toHaveAttribute("href", "/privacy");
+  await dialog.getByRole("button", { name: "Not now" }).click();
+  await expect(dialog).toBeHidden();
+  expect(uploads).toHaveLength(0);
+
+  await page.locator('input[type="file"]').setInputFiles(file);
+  await dialog.getByRole("button", { name: "I agree" }).click();
+  await expect(dialog).toBeHidden();
+  // Past consent, the file is sent; this server then answers that the AI is off.
+  await expect(page.getByRole("alert").filter({ hasText: "The AI is switched off" })).toBeVisible();
+  expect(uploads).toHaveLength(1);
 });
 
 test("the theme switch changes and remembers the theme", async ({ page }) => {

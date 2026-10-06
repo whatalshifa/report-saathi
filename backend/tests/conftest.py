@@ -12,6 +12,7 @@ from app.api.auth import Limiters, get_limiters
 from app.config import get_settings
 from app.db import Base, get_session_factory, make_engine
 from app.main import app
+from app.services.consent import CONSENT_VERSION
 from app.services.crypto import LocalKeyWrapper
 from app.services.extraction import ExtractedReport, ExtractedTest, get_extractor
 from app.services.storage import EncryptedStorage, LocalStorage, get_storage
@@ -163,7 +164,9 @@ def client(session_factory, storage, extractor, writer):
     app.dependency_overrides[get_limiters] = lambda: limiters
     with TestClient(app) as test_client:
         signup(test_client)
-        # Every test starts signed in, with the profile created at sign-up.
+        # Every test starts signed in, with the profile created at sign-up, and has agreed to the
+        # data notice so it can upload (tests/test_privacy.py covers asking for it).
+        agree(test_client)
         test_client.profile_id = test_client.get("/api/profiles").json()[0]["id"]
         yield test_client
     app.dependency_overrides.clear()
@@ -174,6 +177,13 @@ PASSWORD = "correct horse battery"
 
 def signup(client, email="asha@example.com", name="Asha Patel", password=PASSWORD):
     return client.post("/api/auth/signup", json={"name": name, "email": email, "password": password})
+
+
+def agree(client):
+    """Agrees to the data notice, as the web app's consent dialog does before the first upload."""
+    response = client.post("/api/auth/me/consent", json={"version": CONSENT_VERSION})
+    assert response.status_code == 200
+    return response
 
 
 def upload(client, data=PDF_BYTES, name="report.pdf", profile_id=None):

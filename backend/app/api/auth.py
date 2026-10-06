@@ -1,14 +1,17 @@
-from datetime import timedelta
+import tempfile
+from collections.abc import Iterator
+from datetime import UTC, datetime, timedelta
 from functools import lru_cache
-from typing import Annotated
+from typing import IO, Annotated
 
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 
 from app.api.deps import SessionDep, StorageDep
 from app.config import Settings, get_settings
 from app.models import Profile, Relation, User
-from app.schemas import LoginIn, SignupIn, UserOut
+from app.schemas import ConsentIn, LoginIn, SignupIn, UserOut
 from app.services.auth import (
     AuthError,
     CurrentUser,
@@ -18,6 +21,8 @@ from app.services.auth import (
     hash_password,
     start_session,
 )
+from app.services.consent import CONSENT_VERSION, record_consent
+from app.services.export import write_export
 from app.services.guests import create_guest, delete_user_files, purge_expired_guests
 from app.services.ratelimit import RateLimiter, client_ip
 
@@ -25,14 +30,15 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 
 class Limiters:
-    """How often one address may try to sign in, start a demo or open a shared brief, and how many
-    demos in total."""
+    """How often one address may try to sign in, start a demo or open a shared brief, how many demos
+    in total, and how often one account may download all its data."""
 
     def __init__(self, settings: Settings):
         self.auth = RateLimiter(settings.auth_per_ip_per_10min, 600)
         self.demo_per_ip = RateLimiter(settings.demo_per_ip_per_hour, 3600)
         self.demo_total = RateLimiter(settings.demo_per_hour, 3600)
         self.shared = RateLimiter(settings.shared_per_ip_per_10min, 600)
+        self.export = RateLimiter(settings.export_per_user_per_hour, 3600)
 
 
 @lru_cache
@@ -115,6 +121,64 @@ def logout(
 @router.get("/me", response_model=UserOut)
 def me(user: CurrentUser) -> User:
     return user
+
+
+@router.post("/me/consent", response_model=UserOut)
+def give_consent(body: ConsentIn, user: CurrentUser, session: SessionDep) -> User:
+    """Records that the person agreed to the data notice; asked once, before their first upload."""
+    if body.version != CONSENT_VERSION:
+        # The page they agreed on is out of date: show them the current notice instead.
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "This notice has been updated. Please reload the page and read it again.",
+        )
+    record_consent(user)
+    session.commit()
+    return user
+
+
+# Exports up to this size are built in memory; bigger ones spill to a temporary file on disk.
+_EXPORT_IN_MEMORY = 16 * 1024 * 1024
+_CHUNK = 256 * 1024
+
+
+def _chunks(file: IO[bytes]) -> Iterator[bytes]:
+    try:
+        while chunk := file.read(_CHUNK):
+            yield chunk
+    finally:
+        file.close()
+
+
+@router.get("/me/export")
+def export_data(
+    user: CurrentUser, session: SessionDep, storage: StorageDep, limiters: LimitersDep
+) -> StreamingResponse:
+    """Everything the account holds as one ZIP: the original files, a JSON file and a CSV of every value."""
+    limiters.export.check(
+        user.id, "You've downloaded your data several times this hour. Please try again later."
+    )
+    file = tempfile.SpooledTemporaryFile(max_size=_EXPORT_IN_MEMORY)
+    try:
+        write_export(session, user, storage, file)
+        size = file.tell()
+        file.seek(0)
+    except BaseException:
+        file.close()
+        raise
+    day = datetime.now(UTC).date().isoformat()
+    return StreamingResponse(
+        _chunks(file),
+        media_type="application/zip",
+        headers={
+            "Content-Disposition": f'attachment; filename="reportsaathi-export-{day}.zip"',
+            # Known up front, so the page can show how far the download has got.
+            "Content-Length": str(size),
+            # Health records: no shared or on-disk caches.
+            "Cache-Control": "private, no-store",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
 
 
 @router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)

@@ -185,3 +185,25 @@ limit sees the doctor's address, and it reuses the same `BriefSheet` component a
 without the app's navigation. A QR code was left out: it would need a new library, and the phone's own
 share sheet already sends the link to WhatsApp.
 
+**Data rights are buttons, not emails.** India's DPDP Act 2023 gives access, correction, erasure and
+grievance rights. Access is "Download all my data", correction is the fix-it pencil, erasure is the
+existing delete buttons, and grievances go to a GitHub issue (the project has no support inbox, and an
+invented address would be worse than none). The privacy page says how to use each one in the app.
+
+**The export is one ZIP built on the server with the standard library.** `zipfile` writes into a
+`SpooledTemporaryFile` (memory up to 16 MB, then disk), which is streamed back with its
+`Content-Length`, so the page can show a real percentage. Original files are decrypted and stored
+without recompression (PDFs and images are already compressed), named `reports/<person>/<date>.<ext>`
+rather than by upload name. The JSON leaves out every secret (password hash, token hashes) and a demo
+account's made-up email; the CSV has a byte-order mark so Excel shows Hindi and Marathi names, and
+cells starting with `=`, `+`, `-` or `@` get a leading apostrophe so text read off a report can never
+run as a spreadsheet formula. A file missing from storage is noted in the JSON instead of failing the
+whole download. Decrypting everything is costly, so it is limited to 5 an hour per account.
+
+**Consent is versioned, asked at the first upload, and checked by the server.** The notice's text has
+a version (`CONSENT_VERSION`, the same in the dialog and the API); the user row keeps the version
+agreed to and when (migration 0009). Uploads answer 428 until the current version is agreed, so a
+changed notice asks everyone again, and the API refuses agreement to an out-of-date version. It is
+asked when someone chooses a file, not at sign-up, so demo visitors and people trying the sample
+person are never interrupted; the chosen file waits in the page and is sent only after "I agree".
+The AI-off check comes first, since asking for consent to something that can't happen is pointless.
