@@ -25,7 +25,7 @@ export function ReportList({ profileId }: { profileId: string }) {
 
   if (error) return <p className="text-sm text-rose-700 dark:text-rose-300">{error}</p>;
   if (reports === null) return <p className="text-sm text-slate-500">Loading…</p>;
-  if (reports.length === 0) return <p className="text-sm text-slate-500">No reports yet. Upload one above.</p>;
+  if (reports.length === 0) return <p className="text-sm text-slate-500">No reports yet.</p>;
 
   return (
     <ul className="divide-y divide-slate-200 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900">

@@ -77,7 +77,14 @@ def _file_block(data: bytes, content_type: str) -> dict:
 
 class ClaudeExtractor:
     def __init__(self, client: anthropic.Anthropic | None = None):
-        self.client = client or make_client()
+        self._client = client
+
+    @property
+    def client(self) -> anthropic.Anthropic:
+        # Made on first use, so the app starts (as a demo) even without an API key.
+        if self._client is None:
+            self._client = make_client()
+        return self._client
 
     def extract(self, data: bytes, content_type: str) -> ExtractedReport:
         return ask_structured(

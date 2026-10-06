@@ -149,7 +149,14 @@ class Writer(Protocol):
 
 class ClaudeWriter:
     def __init__(self, client: anthropic.Anthropic | None = None):
-        self.client = client or make_client()
+        self._client = client
+
+    @property
+    def client(self) -> anthropic.Anthropic:
+        # Made on first use, so the app starts (as a demo) even without an API key.
+        if self._client is None:
+            self._client = make_client()
+        return self._client
 
     def explain(self, report: Report, language: str) -> ReportExplanation:
         system = EXPLAIN_PROMPT.format(language=LANGUAGES[language], script_note=_SCRIPT_NOTES[language])

@@ -111,6 +111,8 @@ export interface ProfileInput {
 
 export interface Profile extends ProfileInput {
   id: string;
+  /** The ready-made example person from demo mode. */
+  is_sample: boolean;
   report_count: number;
   last_report_date: string | null;
 }
@@ -120,6 +122,17 @@ export const createProfile = (input: ProfileInput) => request<Profile>("/api/pro
 export const updateProfile = (id: string, input: ProfileInput) =>
   request<Profile>(`/api/profiles/${id}`, json("PUT", input));
 export const deleteProfile = (id: string) => request<void>(`/api/profiles/${id}`, { method: "DELETE" });
+
+// ---------- Demo mode ----------
+
+export interface Features {
+  /** False when the server has no Anthropic key: only the sample reports work. */
+  reading: boolean;
+}
+
+export const getFeatures = () => request<Features>("/api/features");
+/** Adds the example person with three pre-read reports (or returns them if already added). */
+export const addSamples = () => request<Profile>("/api/samples", { method: "POST" });
 
 // ---------- Reports ----------
 

@@ -2,6 +2,7 @@ import os
 
 # Tests start their own jobs; don't let the app's restart recovery run alongside them.
 os.environ.setdefault("RS_RECOVER_JOBS_ON_START", "false")
+os.environ.setdefault("ANTHROPIC_API_KEY", "test-key-not-used")  # fakes stand in for Claude
 
 import pytest
 from fastapi.testclient import TestClient

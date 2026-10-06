@@ -13,7 +13,20 @@ import enum
 import uuid
 from datetime import UTC, date, datetime
 
-from sqlalchemy import JSON, Date, DateTime, Enum, Float, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    Date,
+    DateTime,
+    Enum,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+    false,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
@@ -92,6 +105,8 @@ class Profile(Base):
     relation: Mapped[Relation] = mapped_column(Enum(Relation, native_enum=False, length=20))
     birth_year: Mapped[int | None] = mapped_column(Integer)
     sex: Mapped[str | None] = mapped_column(String(20))
+    # A ready-made example person with pre-read reports, so the app can be tried without an upload.
+    is_sample: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
     user: Mapped[User] = relationship(back_populates="profiles")

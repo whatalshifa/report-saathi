@@ -2,9 +2,10 @@ from fastapi import APIRouter, BackgroundTasks, HTTPException, status
 from sqlalchemy import func, select
 
 from app.api.deps import FactoryDep, SessionDep, StorageDep, WriterDep, owned_brief, owned_profile
-from app.models import Brief, Profile, Relation, Report, ReportStatus
+from app.models import Brief, JobStatus, Profile, Relation, Report, ReportStatus
 from app.schemas import BriefOut, ProfileIn, ProfileOut, Trends
-from app.services.auth import CurrentUser
+from app.services.auth import CurrentUser, SettingsDep
+from app.services.claude import AI_OFF
 from app.services.jobs import run_brief
 from app.services.trends import build_trends
 
@@ -90,9 +91,22 @@ def request_brief(
     session: SessionDep,
     factory: FactoryDep,
     writer: WriterDep,
+    settings: SettingsDep,
 ) -> Brief:
     """Start a fresh doctor brief from everything on file for this profile."""
     profile = owned_profile(session, user, profile_id)
+    if profile.is_sample:
+        # The example person's reports never change, so the ready-made brief is always current.
+        ready = session.scalar(
+            select(Brief)
+            .where(Brief.profile_id == profile.id, Brief.status == JobStatus.done)
+            .order_by(Brief.created_at.desc())
+            .limit(1)
+        )
+        if ready is not None:
+            return ready
+    if not settings.ai_enabled:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, AI_OFF)
     has_reports = session.scalar(
         select(Report.id).where(Report.profile_id == profile.id, Report.status == ReportStatus.done).limit(1)
     )

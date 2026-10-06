@@ -7,7 +7,7 @@ import { uploadReport, type Profile } from "@/lib/api";
 
 const ACCEPTED = "application/pdf,image/jpeg,image/png,image/webp";
 
-export function UploadCard({ profile }: { profile: Profile }) {
+export function UploadCard({ profile, reading }: { profile: Profile; reading: boolean }) {
   const router = useRouter();
   const input = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
@@ -25,6 +25,18 @@ export function UploadCard({ profile }: { profile: Profile }) {
       setError(err instanceof Error ? err.message : "Upload failed");
       setUploading(false);
     }
+  }
+
+  if (!reading) {
+    return (
+      <div className="rounded-2xl border-2 border-dashed border-slate-300 bg-white px-6 py-8 text-center dark:border-slate-700 dark:bg-slate-900">
+        <p className="text-lg font-semibold">Reading new reports is paused on this demo</p>
+        <p className="mx-auto mt-2 max-w-prose text-sm text-slate-500 dark:text-slate-400">
+          This copy of ReportSaathi runs without an AI key, so it can&apos;t read new uploads yet. The sample reports
+          below show everything it does with a report once it&apos;s read.
+        </p>
+      </div>
+    );
   }
 
   return (

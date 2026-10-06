@@ -16,7 +16,7 @@ cookie stays first-party and no CORS setup is needed.
 
 | Variable | Value |
 |---|---|
-| `ANTHROPIC_API_KEY` | Your Anthropic key |
+| `ANTHROPIC_API_KEY` | Your Anthropic key. Optional: without it the site runs in demo mode (sample reports only, uploads paused) |
 | `RS_ENV` | `production` (secure cookies; refuses to start without an encryption key) |
 | `RS_DATABASE_URL` | `postgresql://USER:PASSWORD@HOST/DB?sslmode=require` (pasted as given; the app picks the psycopg driver itself) |
 | `RS_MASTER_KEY` | 32 random bytes, base64: `python -c "import base64, secrets; print(base64.b64encode(secrets.token_bytes(32)).decode())"` |
@@ -44,8 +44,9 @@ first request after a quiet spell takes about a minute while it wakes.
    On the same branch, open **Storage**, create a private bucket named `reports`, then under
    **Connect → Storage → Parameters only** copy the endpoint, access key id and secret.
 2. **Render** (API): **New → Blueprint** → pick the repo. Render reads [`render.yaml`](../render.yaml),
-   generates `RS_MASTER_KEY`, and asks for the five values it can't know: `ANTHROPIC_API_KEY`,
-   `RS_DATABASE_URL`, `RS_S3_ENDPOINT_URL`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`.
+   generates `RS_MASTER_KEY`, and asks for the four values it can't know: `RS_DATABASE_URL`,
+   `RS_S3_ENDPOINT_URL`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`. Add `ANTHROPIC_API_KEY` in the
+   Environment tab whenever you want real uploads read.
    Afterwards, copy `RS_MASTER_KEY` from the service's Environment tab to a password manager.
 3. **Vercel** (website): import the repo → root directory `frontend` → add
    `API_URL=https://<your service>.onrender.com` → deploy.
