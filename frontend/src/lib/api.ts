@@ -19,6 +19,12 @@ export interface TestResult {
   ref_high: number | null;
   lab_flag: string | null;
   flag: Flag;
+  /** True when the person fixed a value the AI misread. */
+  corrected: boolean;
+  corrected_at: string | null;
+  /** What the AI first read, kept after a fix so the page can show it. */
+  original_value_text: string | null;
+  original_unit: string | null;
 }
 
 export interface ReportSummary {
@@ -190,6 +196,12 @@ export const moveReport = (id: string, profileId: string) =>
   request<ReportDetail>(`/api/reports/${id}`, json("PATCH", { profile_id: profileId }));
 export const getReport = (id: string) => request<ReportDetail>(`/api/reports/${id}`);
 export const deleteReport = (id: string) => request<void>(`/api/reports/${id}`, { method: "DELETE" });
+/** Fixes a misread value. The server re-flags it; an empty unit clears the unit. */
+export const correctResult = (reportId: string, resultId: number, valueText: string, unit: string) =>
+  request<TestResult>(
+    `/api/reports/${reportId}/results/${resultId}`,
+    json("PATCH", { value_text: valueText, unit }),
+  );
 
 export const isOutOfRange = (flag: Flag) => flag === "low" || flag === "high" || flag === "abnormal";
 

@@ -10,7 +10,7 @@ from fastapi import Depends, HTTPException, status
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.db import get_session, get_session_factory
-from app.models import Brief, Profile, Report, User
+from app.models import Brief, Profile, Report, TestResult, User
 from app.services.storage import Storage, get_storage
 from app.services.writing import Writer, get_writer
 
@@ -36,6 +36,14 @@ def owned_report(session: Session, user: User, report_id: str) -> Report:
     if report is None or report.profile.user_id != user.id:
         raise _not_found("Report")
     return report
+
+
+def owned_result(session: Session, user: User, report_id: str, result_id: int) -> TestResult:
+    report = owned_report(session, user, report_id)
+    result = session.get(TestResult, result_id)
+    if result is None or result.report_id != report.id:
+        raise _not_found("Result")
+    return result
 
 
 def owned_brief(session: Session, user: User, brief_id: str) -> Brief:

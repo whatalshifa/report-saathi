@@ -122,3 +122,23 @@ visitor picks one, and printing always uses the light theme.
 the range band fell off the chart. The y-axis now always includes both ends of the range, and each
 card says in words whether the latest reading moved towards or away from it.
 
+## Phase 5
+
+**A fix is re-flagged by code, and the first reading is kept.** When someone corrects a value, the app
+parses, flags and converts it with exactly the code a fresh reading uses, against the range printed on
+the report. The result keeps what the AI first read, so the page can say "it was read as 10.6", and
+every fix goes into a `corrections` log. Putting the original value back removes the "Corrected" chip;
+the log keeps both steps.
+
+**Refuse fixes that would quietly break the timeline.** A word where the lab printed a number range,
+or a unit the catalog can't convert for that test, is refused with a plain message instead of being
+saved and silently dropping the value off the chart.
+
+**Explanations are not rewritten after a fix.** Rewriting needs the AI, which the demo doesn't have,
+and the sample explanations would be lost. Instead the explanation says it was written before a value
+was corrected.
+
+**Corrections feed the accuracy kit as test cases, without personal data.** The export keeps only the
+test name, the value and unit read, and the value and unit corrected. It leaves out the sample
+reports (typed by hand, so a change there is someone trying the button) and fixes the scoring treats
+as no change ("2,50,000" to "250000"). It goes to the git-ignored `accuracy/data/` folder by default.

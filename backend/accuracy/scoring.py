@@ -60,14 +60,14 @@ def _name_key(name: str, catalog_key: str | None = None) -> str:
     return " ".join("".join(c if c.isalnum() else " " for c in name.lower()).split())
 
 
-def _same_value(expected: str, got: str) -> bool:
+def same_value(expected: str, got: str) -> bool:
     a, b = parse_value(expected), parse_value(got)
     if a is not None and b is not None:
         return abs(a - b) <= 1e-9 * max(1, abs(a))
     return " ".join(expected.lower().split()) == " ".join(got.lower().split())
 
 
-def _same_unit(expected: str | None, got: str | None) -> bool:
+def same_unit(expected: str | None, got: str | None) -> bool:
     return normalize_unit(expected or "") == normalize_unit(got or "")
 
 
@@ -92,11 +92,11 @@ def score_report(
             continue
         unused.remove(match)
         score.found += 1
-        if _same_value(test["value"], match.value):
+        if same_value(test["value"], match.value):
             score.value_ok += 1
         else:
             score.wrong_value.append(key)
-        score.unit_ok += _same_unit(test.get("unit"), match.unit)
+        score.unit_ok += same_unit(test.get("unit"), match.unit)
         if test["flag"] == match.flag:
             score.flag_ok += 1
         else:

@@ -15,6 +15,14 @@ keeps the whole family's reports, privately and encrypted.
 
 ## What works today
 
+### Phase 5: beating the competition on trust
+
+- **Fix a misread value.** A pencil beside every value opens a small form; the fixed value is flagged
+  again by the same plain-Python code, so the badge, the range bar, "needs attention" and the timeline
+  all follow it. A "Corrected" chip shows what the AI had read. Works on the sample reports too.
+- Every fix is logged, and `python -m accuracy.run corrections` exports them as test cases for the
+  accuracy kit (test name, value read, value corrected, units; nothing personal).
+
 ### Phase 4: production polish
 
 - A public landing page, and **Try the demo**: one click opens a private guest account with the
@@ -146,9 +154,9 @@ written in advance. Add `ANTHROPIC_API_KEY` and uploads switch on.
 ## Tests
 
 ```bash
-cd backend && pytest        # 176 tests: flags, units, trends, sign-in, privacy, encryption, demo accounts, limits
+cd backend && pytest        # 190 tests: flags, units, trends, sign-in, privacy, encryption, demo accounts, limits, fixes
 cd frontend && npm run lint && npm run build
-cd frontend && npx playwright test   # 17 browser tests; starts the API and the site itself
+cd frontend && npx playwright test   # 19 browser tests; starts the API and the site itself
 ```
 
 The tests never call the real Claude API; they use a stand-in for Claude, so they are free and fast.
@@ -168,6 +176,7 @@ backend/
       uploads.py          checks file type by its bytes, shrinks big photos
       extraction.py       sends the report to Claude, gets structured data back
       flagging.py         parses reference ranges, decides low / high / normal
+      corrections.py      saves a value the person fixed, re-flags it, logs the fix
       catalog.py          51 common tests: their spellings and unit conversions
       auth.py             password hashing, sessions, lockout
       crypto.py           envelope encryption for uploaded files

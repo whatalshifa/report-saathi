@@ -48,3 +48,8 @@ export function formatSex(sex: string | null): string {
   if (s === "m" || s === "male") return "Male";
   return sex.trim();
 }
+
+/** Server times are UTC, but SQLite drops the zone; read a bare time as UTC, not local time. */
+export function serverTime(value: string): number {
+  return Date.parse(/(?:Z|[+-]\d\d:?\d\d)$/i.test(value) ? value : `${value}Z`);
+}

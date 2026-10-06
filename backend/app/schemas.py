@@ -98,6 +98,25 @@ class TestResultOut(BaseModel):
     lab_flag: str | None
     flag: Flag
     catalog_key: str | None
+    # Filled in when the person fixed a misread value: when, and what the AI first read.
+    corrected_at: datetime | None = None
+    original_value_text: str | None = None
+    original_unit: str | None = None
+
+    @computed_field
+    @property
+    def corrected(self) -> bool:
+        return self.corrected_at is not None
+
+
+class ResultCorrection(BaseModel):
+    """A value fixed by hand. Leaving `unit` out keeps the unit as it was; null or "" clears it.
+
+    Only types are checked here; the service checks the rest, with messages meant for people.
+    """
+
+    value_text: str
+    unit: str | None = None
 
 
 class ReportSummary(BaseModel):

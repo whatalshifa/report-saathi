@@ -14,6 +14,11 @@
        to accuracy/results.json, docs/RESULTS.md and the web app's results page.
 
 Needs ANTHROPIC_API_KEY. Scoring 50 reports makes 50 Claude calls.
+
+    python -m accuracy.run corrections [--out FILE]
+       Exports the values people fixed in the app (RS_DATABASE_URL picks the
+       database) as test cases: test name, value read, value corrected, units.
+       See accuracy/corrections.py. Needs no API key.
 """
 
 import argparse
@@ -23,8 +28,10 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
 from pathlib import Path
 
+from accuracy.corrections import write_corrections
 from accuracy.scoring import Predicted, score_report, summarize
 from app.config import get_settings
+from app.db import SessionLocal
 from app.services.extraction import ClaudeExtractor, ExtractedReport
 from app.services.processing import build_results
 from app.services.uploads import prepare_upload
@@ -32,6 +39,8 @@ from app.services.uploads import prepare_upload
 ROOT = Path(__file__).resolve().parents[2]
 RESULTS_FILES = [ROOT / "backend/accuracy/results.json", ROOT / "frontend/src/data/accuracy.json"]
 SUFFIXES = {".pdf", ".jpg", ".jpeg", ".png", ".webp"}
+# In the git-ignored data folder: the cases come from real people's reports, even without their names.
+CORRECTIONS_FILE = Path(__file__).resolve().parent / "data" / "corrections.json"
 
 
 def _reports(folder: Path) -> list[Path]:
@@ -116,6 +125,12 @@ def score(folder: Path, reuse: str | None) -> None:
     print(json.dumps(results["overall"], indent=2))
 
 
+def corrections(out: Path) -> None:
+    with SessionLocal() as session:
+        count = write_corrections(session, out)
+    print(f"Wrote {count} corrected values to {out}")
+
+
 def _cell(value: float | None) -> str:
     return "–" if value is None else f"{value}%"
 
@@ -165,9 +180,13 @@ def main() -> None:
     score_parser = sub.add_parser("score")
     score_parser.add_argument("folder", type=Path)
     score_parser.add_argument("--reuse", help="re-score a saved run (its folder name) without calling Claude")
+    corrections_parser = sub.add_parser("corrections")
+    corrections_parser.add_argument("--out", type=Path, default=CORRECTIONS_FILE)
     args = parser.parse_args()
     if args.command == "draft":
         draft(args.folder)
+    elif args.command == "corrections":
+        corrections(args.out)
     else:
         score(args.folder, args.reuse)
 

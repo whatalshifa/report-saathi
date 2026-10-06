@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { ExplanationPanel } from "@/components/ExplanationPanel";
 import { FlagBadge } from "@/components/FlagBadge";
 import { RangeBar } from "@/components/RangeBar";
 import { SkeletonPage } from "@/components/Skeleton";
+import { CorrectedChip, FixButton, ValueEditor } from "@/components/ValueFix";
 import {
   deleteReport,
   getReport,
@@ -18,7 +19,7 @@ import {
   type ReportDetail,
   type TestResult,
 } from "@/lib/api";
-import { formatAge, formatDate, formatRange, formatSex, possessive } from "@/lib/format";
+import { formatAge, formatDate, formatRange, formatSex, possessive, serverTime } from "@/lib/format";
 
 const POLL_MS = 2000;
 
@@ -26,6 +27,7 @@ export function ReportView({ id }: { id: string }) {
   const router = useRouter();
   const [report, setReport] = useState<ReportDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [announcement, setAnnouncement] = useState("");
 
   // Reading a report takes a little while, so ask the server again until it is done.
   useEffect(() => {
@@ -47,6 +49,14 @@ export function ReportView({ id }: { id: string }) {
       clearTimeout(timer);
     };
   }, [id]);
+
+  // A fixed value comes back re-flagged; the stats, "needs attention" and the table all follow it.
+  function handleCorrected(updated: TestResult) {
+    setReport((current) =>
+      current && { ...current, results: current.results.map((r) => (r.id === updated.id ? updated : r)) },
+    );
+    setAnnouncement(`Saved. ${updated.name} is now ${[updated.value_text, updated.unit].filter(Boolean).join(" ")}.`);
+  }
 
   async function handleDelete() {
     if (!confirm("Delete this report and its file?")) return;
@@ -71,6 +81,11 @@ export function ReportView({ id }: { id: string }) {
 
   const flagged = report.results.filter((r) => isOutOfRange(r.flag));
   const sections = groupBySection(report.results);
+  const lastCorrection = report.results
+    .map((r) => r.corrected_at)
+    .filter((t): t is string => t !== null)
+    .sort((a, b) => serverTime(a) - serverTime(b))
+    .at(-1);
 
   return (
     <div className="space-y-8">
@@ -105,13 +120,15 @@ export function ReportView({ id }: { id: string }) {
 
       <section className="grid grid-cols-3 gap-3">
         <Stat label="Values read" value={report.results.length} />
-        <Stat label="Outside normal range" value={report.out_of_range} highlight={report.out_of_range > 0} />
+        <Stat label="Outside normal range" value={flagged.length} highlight={flagged.length > 0} />
         <Stat label="Within range" value={report.results.filter((r) => r.flag === "normal").length} />
       </section>
 
       {flagged.length > 0 && (
-        <section>
-          <h2 className="mb-3 text-lg font-semibold">Needs attention</h2>
+        <section aria-labelledby="needs-attention">
+          <h2 id="needs-attention" className="mb-3 text-lg font-semibold">
+            Needs attention
+          </h2>
           <ul className="grid gap-3 sm:grid-cols-2">
             {flagged.map((r) => (
               <li
@@ -129,37 +146,33 @@ export function ReportView({ id }: { id: string }) {
                   Normal: {formatRange(r.ref_low, r.ref_high, r.reference_text)}
                 </p>
                 <RangeBar result={r} />
+                {r.corrected && (
+                  <div className="mt-3">
+                    <CorrectedChip result={r} showReading />
+                  </div>
+                )}
               </li>
             ))}
           </ul>
         </section>
       )}
 
-      <ExplanationPanel reportId={report.id} />
+      <ExplanationPanel reportId={report.id} correctedAt={lastCorrection ?? null} />
 
-      <section className="space-y-6">
-        <h2 className="text-lg font-semibold">All results</h2>
+      <section aria-labelledby="all-results" className="space-y-6">
+        <div>
+          <h2 id="all-results" className="text-lg font-semibold">
+            All results
+          </h2>
+          <p className="mt-1 text-sm text-muted">Something read wrongly? Use the pencil beside a value to fix it.</p>
+        </div>
         {sections.map(([section, results]) => (
           <div key={section}>
             <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted">{section}</h3>
             {/* Phones get a stacked list; wider screens get a table. */}
             <ul className="card divide-y divide-line sm:hidden">
               {results.map((r) => (
-                <li key={r.id} className="space-y-2 px-4 py-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <p className="font-medium">{r.name}</p>
-                    <FlagBadge flag={r.flag} />
-                  </div>
-                  <p className="text-sm">
-                    <span className="font-semibold">{r.value_text}</span>{" "}
-                    <span className="text-muted">{r.unit}</span>
-                    <span className="text-muted">
-                      {" "}
-                      · Normal: {formatRange(r.ref_low, r.ref_high, r.reference_text)}
-                    </span>
-                  </p>
-                  <RangeBar result={r} />
-                </li>
+                <ResultItem key={r.id} reportId={report.id} result={r} onSaved={handleCorrected} />
               ))}
             </ul>
             <div className="card hidden overflow-hidden sm:block">
@@ -182,21 +195,7 @@ export function ReportView({ id }: { id: string }) {
                 </thead>
                 <tbody className="divide-y divide-line">
                   {results.map((r) => (
-                    <tr key={r.id}>
-                      <td className="px-4 py-2.5">{r.name}</td>
-                      <td className="px-4 py-2.5 font-medium">
-                        {r.value_text} <span className="font-normal text-muted">{r.unit}</span>
-                      </td>
-                      <td className="px-4 py-2.5 text-muted">
-                        {formatRange(r.ref_low, r.ref_high, r.reference_text)}
-                      </td>
-                      <td className="px-4 py-2.5">
-                        <RangeBar result={r} />
-                      </td>
-                      <td className="px-4 py-2.5">
-                        <FlagBadge flag={r.flag} />
-                      </td>
-                    </tr>
+                    <ResultRow key={r.id} reportId={report.id} result={r} onSaved={handleCorrected} />
                   ))}
                 </tbody>
               </table>
@@ -209,7 +208,83 @@ export function ReportView({ id }: { id: string }) {
         ReportSaathi reads your report with AI and can make mistakes. Check values against the original
         report, and talk to your doctor before acting on anything here.
       </p>
+      <p aria-live="polite" className="sr-only">
+        {announcement}
+      </p>
     </div>
+  );
+}
+
+interface ResultProps {
+  reportId: string;
+  result: TestResult;
+  onSaved: (updated: TestResult) => void;
+}
+
+/** Opening and closing the fix form, with focus going back to the pencil when it closes. */
+function useFixForm() {
+  const [editing, setEditing] = useState(false);
+  const button = useRef<HTMLButtonElement>(null);
+  const close = () => {
+    button.current?.focus();
+    setEditing(false);
+  };
+  return { editing, button, toggle: () => setEditing((open) => !open), close };
+}
+
+// Phones get a stacked list.
+function ResultItem({ reportId, result: r, onSaved }: ResultProps) {
+  const { editing, button, toggle, close } = useFixForm();
+  return (
+    <li className="space-y-2 px-4 py-3">
+      <div className="flex items-start justify-between gap-3">
+        <p className="font-medium">{r.name}</p>
+        <FlagBadge flag={r.flag} />
+      </div>
+      <p className="text-sm">
+        <span className="font-semibold">{r.value_text}</span> <span className="text-muted">{r.unit}</span>{" "}
+        <FixButton ref={button} name={r.name} open={editing} onClick={toggle} />
+        <span className="text-muted"> · Normal: {formatRange(r.ref_low, r.ref_high, r.reference_text)}</span>
+      </p>
+      <CorrectedChip result={r} showReading />
+      {editing && <ValueEditor reportId={reportId} result={r} onSaved={onSaved} onClose={close} />}
+      <RangeBar result={r} />
+    </li>
+  );
+}
+
+// Wider screens get a table; the fix form opens in a full-width row under the value.
+function ResultRow({ reportId, result: r, onSaved }: ResultProps) {
+  const { editing, button, toggle, close } = useFixForm();
+  return (
+    <>
+      <tr className={editing ? "border-b-0" : undefined}>
+        <td className="px-4 py-2.5">{r.name}</td>
+        <td className="px-4 py-2.5 font-medium">
+          {r.value_text} <span className="font-normal text-muted">{r.unit}</span>{" "}
+          <FixButton ref={button} name={r.name} open={editing} onClick={toggle} />
+          {r.corrected && (
+            <div className="mt-1">
+              <CorrectedChip result={r} />
+            </div>
+          )}
+        </td>
+        <td className="px-4 py-2.5 text-muted">{formatRange(r.ref_low, r.ref_high, r.reference_text)}</td>
+        <td className="px-4 py-2.5">
+          <RangeBar result={r} />
+        </td>
+        <td className="px-4 py-2.5">
+          <FlagBadge flag={r.flag} />
+        </td>
+      </tr>
+      {editing && (
+        <tr>
+          <td colSpan={5} className="px-4 pb-3">
+            <ValueEditor reportId={reportId} result={r} onSaved={onSaved} onClose={close} />
+          </td>
+        </tr>
+      )}
+    </>
   );
 }
 

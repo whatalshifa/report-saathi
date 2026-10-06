@@ -11,7 +11,7 @@ from datetime import date
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.models import Report, ReportStatus, TestResult
-from app.services.catalog import conversion_factor, match_test
+from app.services.catalog import TestDef, conversion_factor, match_test
 from app.services.extraction import ExtractedReport, ExtractedTest, ExtractionError, Extractor
 from app.services.flagging import compute_flag, parse_value, resolve_range
 from app.services.storage import Storage
@@ -42,7 +42,12 @@ def standardize(result: TestResult, test: ExtractedTest) -> None:
     if catalog_test is None:
         return
     result.catalog_key = catalog_test.key
-    factor = conversion_factor(catalog_test, test.unit)
+    convert_to_standard(result, catalog_test)
+
+
+def convert_to_standard(result: TestResult, catalog_test: TestDef) -> None:
+    """The value and range in the catalog's standard unit (None when the unit is unknown)."""
+    factor = conversion_factor(catalog_test, result.unit)
     result.std_value = _scale(result.value, factor)
     result.std_low = _scale(result.ref_low, factor)
     result.std_high = _scale(result.ref_high, factor)

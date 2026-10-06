@@ -11,6 +11,7 @@ import {
   type Language,
   type ReportExplanation,
 } from "@/lib/api";
+import { serverTime } from "@/lib/format";
 import { usePoll } from "@/lib/usePoll";
 
 const LANGUAGES = [
@@ -21,6 +22,7 @@ const LANGUAGES = [
     waiting: "Writing the explanation…",
     questions: "Questions to ask your doctor",
     note: "Written by AI from your report. It is not medical advice.",
+    outdated: "This was written before you corrected a value, so it may still mention the old reading.",
   },
   {
     code: "hi",
@@ -29,6 +31,7 @@ const LANGUAGES = [
     waiting: "आसान भाषा में लिखा जा रहा है…",
     questions: "डॉक्टर से पूछने के सवाल",
     note: "यह जानकारी AI ने आपकी रिपोर्ट से लिखी है। यह डॉक्टर की सलाह नहीं है।",
+    outdated: "यह आपके एक मान को ठीक करने से पहले लिखा गया था, इसलिए इसमें पुरानी रीडिंग हो सकती है।",
   },
   {
     code: "mr",
@@ -37,6 +40,7 @@ const LANGUAGES = [
     waiting: "सोप्या भाषेत लिहिले जात आहे…",
     questions: "डॉक्टरांना विचारायचे प्रश्न",
     note: "हे स्पष्टीकरण AI ने तुमच्या रिपोर्टवरून लिहिले आहे. हा वैद्यकीय सल्ला नाही.",
+    outdated: "हे तुम्ही एखादे मूल्य दुरुस्त करण्यापूर्वी लिहिले होते, त्यामुळे यात जुनी नोंद असू शकते.",
   },
 ] as const satisfies readonly { code: Language; [text: string]: string }[];
 
@@ -44,7 +48,8 @@ type Text = (typeof LANGUAGES)[number];
 
 type MaybeJob = Job<ReportExplanation> | null;
 
-export function ExplanationPanel({ reportId }: { reportId: string }) {
+/** `correctedAt` is when a value on this report was last fixed by hand, if ever. */
+export function ExplanationPanel({ reportId, correctedAt = null }: { reportId: string; correctedAt?: string | null }) {
   const [language, setLanguage] = useState<Language>("en");
   const [starting, setStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
@@ -66,6 +71,8 @@ export function ExplanationPanel({ reportId }: { reportId: string }) {
   }
 
   const content = job?.status === "done" ? job.content : null;
+  // An explanation isn't rewritten when a value is fixed, so say when it predates the fix.
+  const outdated = !!content && !!job && !!correctedAt && serverTime(job.created_at) < serverTime(correctedAt);
 
   return (
     <section
@@ -109,6 +116,11 @@ export function ExplanationPanel({ reportId }: { reportId: string }) {
           <p className="flex items-center gap-3 text-sm text-muted">
             <span className="h-4 w-4 animate-spin rounded-full border-2 border-teal-200 border-t-teal-700" />
             {text.waiting}
+          </p>
+        )}
+        {outdated && (
+          <p className="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+            {text.outdated}
           </p>
         )}
         {content && <ExplanationBody content={content} text={text} />}

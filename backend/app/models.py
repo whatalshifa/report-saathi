@@ -4,7 +4,8 @@ A User signs in and owns Profiles: themselves and family members they look after
 Every Report belongs to one Profile. A Session is one signed-in browser.
 
 A Report is one uploaded file. Each Report has many TestResults, one per value
-printed on it (Haemoglobin, TSH, Vitamin D, ...). An Explanation is the
+printed on it (Haemoglobin, TSH, Vitamin D, ...). A Correction logs a value
+the person fixed because it was misread. An Explanation is the
 plain-language reading of one report in one language, and a Brief is the
 summary of one profile's reports written for their doctor.
 """
@@ -171,7 +172,33 @@ class TestResult(Base):
     std_low: Mapped[float | None] = mapped_column(Float)
     std_high: Mapped[float | None] = mapped_column(Float)
 
+    # Set when the person fixed a misread value. The first reading is kept so the page can say
+    # what it was read as; every fix is also logged in Correction.
+    corrected_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    original_value_text: Mapped[str | None] = mapped_column(String(255))
+    original_unit: Mapped[str | None] = mapped_column(String(50))
+
     report: Mapped[Report] = relationship(back_populates="results")
+
+
+class Correction(Base):
+    """One fix a person made to a value the AI misread, kept so it can become an accuracy test case.
+
+    Deleted with the value (and so with the report, profile or account), like everything else.
+    """
+
+    __tablename__ = "corrections"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    result_id: Mapped[int] = mapped_column(ForeignKey("test_results.id", ondelete="CASCADE"), index=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    old_value_text: Mapped[str] = mapped_column(String(255))
+    old_value: Mapped[float | None] = mapped_column(Float)
+    old_unit: Mapped[str | None] = mapped_column(String(50))
+    new_value_text: Mapped[str] = mapped_column(String(255))
+    new_value: Mapped[float | None] = mapped_column(Float)
+    new_unit: Mapped[str | None] = mapped_column(String(50))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
 
 class Explanation(Base):

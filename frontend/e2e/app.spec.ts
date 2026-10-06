@@ -35,6 +35,44 @@ test("a report shows flags and explains them in Hindi", async ({ page }) => {
   await expect(page.getByText(/सामान्य सीमा से बाहर/).first()).toBeVisible();
 });
 
+test("a misread value can be fixed, and its flag follows the fix", async ({ page }) => {
+  await startDemo(page);
+  await page.getByRole("link", { name: /Sample Pathology Lab, Pune.*12 Jan 2026/ }).click();
+  const attention = page.getByRole("region", { name: "Needs attention" });
+  await expect(attention.getByText("Haemoglobin (Hb)")).toBeVisible();
+  // The table on a computer, the stacked list on a phone: whichever is showing.
+  const row = page
+    .getByRole("region", { name: "All results" })
+    .locator("tr, li")
+    .filter({ hasText: "Haemoglobin (Hb)", visible: true });
+  await expect(row.getByText("Low", { exact: true })).toBeVisible();
+
+  const pencil = page.getByRole("button", { name: "Fix Haemoglobin (Hb)" });
+  const form = page.getByRole("form", { name: "Fix Haemoglobin (Hb)" });
+  await pencil.click();
+  await expect(form.getByLabel("Value", { exact: true })).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(form).toBeHidden();
+  await expect(pencil).toBeFocused();
+
+  await pencil.click();
+  await form.getByLabel("Value", { exact: true }).fill("");
+  await form.getByRole("button", { name: "Save" }).click();
+  await expect(form.getByRole("alert")).toHaveText(/Enter the value/);
+  await form.getByLabel("Value", { exact: true }).fill("13");
+  await form.getByLabel("Value", { exact: true }).press("Enter");
+
+  await expect(form).toBeHidden();
+  await expect(row.getByText("Normal", { exact: true })).toBeVisible();
+  await expect(row.getByTitle("You corrected this; it was read as 10.6 g/dL")).toBeVisible();
+  await expect(attention.getByText("Haemoglobin (Hb)")).toHaveCount(0);
+  await expect(page.getByText(/written before you corrected a value/)).toBeVisible();
+
+  // The fix is saved, not just shown.
+  await page.reload();
+  await expect(row.getByText("Normal", { exact: true })).toBeVisible();
+});
+
 test("the timeline shows trends and the doctor brief", async ({ page }) => {
   await startDemo(page);
   await page.getByRole("link", { name: /results over time/ }).click();

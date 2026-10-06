@@ -6,12 +6,29 @@ from fastapi import APIRouter, BackgroundTasks, Depends, Form, HTTPException, Up
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.api.deps import FactoryDep, SessionDep, StorageDep, WriterDep, owned_profile, owned_report
+from app.api.deps import (
+    FactoryDep,
+    SessionDep,
+    StorageDep,
+    WriterDep,
+    owned_profile,
+    owned_report,
+    owned_result,
+)
 from app.config import Settings, get_settings
-from app.models import Explanation, JobStatus, Profile, Report, User
-from app.schemas import ExplanationOut, ExplanationRequest, MoveReport, ReportDetail, ReportSummary
+from app.models import Explanation, JobStatus, Profile, Report, TestResult, User
+from app.schemas import (
+    ExplanationOut,
+    ExplanationRequest,
+    MoveReport,
+    ReportDetail,
+    ReportSummary,
+    ResultCorrection,
+    TestResultOut,
+)
 from app.services.auth import CurrentUser, SettingsDep
 from app.services.claude import AI_OFF
+from app.services.corrections import CorrectionError, correct_result
 from app.services.extraction import Extractor, get_extractor
 from app.services.jobs import run_explanation
 from app.services.processing import process_report
@@ -106,6 +123,22 @@ def move_report(report_id: str, body: MoveReport, user: CurrentUser, session: Se
     report.profile = owned_profile(session, user, body.profile_id)
     session.commit()
     return report
+
+
+@router.patch("/{report_id}/results/{result_id}", response_model=TestResultOut)
+def correct_value(
+    report_id: str, result_id: int, body: ResultCorrection, user: CurrentUser, session: SessionDep
+) -> TestResult:
+    """Fix a value the AI misread. Its flag and the timeline follow the new value; the fix is logged."""
+    result = owned_result(session, user, report_id, result_id)
+    unit = body.unit if "unit" in body.model_fields_set else result.unit
+    try:
+        correct_result(session, result, user, body.value_text, unit)
+    except CorrectionError as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
+    session.commit()
+    session.refresh(result)  # answer with what was stored, exactly as a later GET will
+    return result
 
 
 @router.delete("/{report_id}", status_code=status.HTTP_204_NO_CONTENT)
