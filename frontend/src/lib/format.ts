@@ -32,3 +32,19 @@ export const RELATION_LABEL: Record<string, string> = {
 
 /** "Papa's" / "Asha's" for headings. */
 export const possessive = (name: string) => (name.endsWith("s") ? `${name}’` : `${name}’s`);
+
+/** Labs print ages as "54 Years", "54 Y" or "54Yrs"; show them all as "54 years". */
+export function formatAge(age: string | null): string {
+  if (!age) return "";
+  const match = age.trim().match(/^(\d{1,3})\s*(?:y|yr|yrs|year|years)\.?$/i);
+  return match ? `${match[1]} years` : age.trim();
+}
+
+/** "Female" / "F" / "male" → "Female" / "Male"; anything else as printed. */
+export function formatSex(sex: string | null): string {
+  if (!sex) return "";
+  const s = sex.trim().toLowerCase();
+  if (s === "f" || s === "female") return "Female";
+  if (s === "m" || s === "male") return "Male";
+  return sex.trim();
+}

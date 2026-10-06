@@ -94,3 +94,31 @@ than a broken upload box, the site says reading is paused and offers sample repo
 are stored as a pre-made reading (the same shape Claude returns), so flags, units and trends still
 come from the app's own code, not from the sample file. Clients to Claude are created on first use,
 so the server boots without a key.
+
+## Phase 4: production polish
+
+**A one-click guest account instead of a shared demo login.** A shared login would let one visitor see
+or delete what another added. Each "Try the demo" click makes its own account with the sample person
+in it, signed in with a cookie that lasts 24 hours. Expired guests are deleted (with their files)
+whenever a new demo starts and when the API starts, so no scheduler is needed.
+
+**Limits that cap cost, not just abuse.** Guests can have 3 reports read and every account 30 a day.
+With the AI switched on, that puts a ceiling on what one person can spend. Sign-in and demo creation
+are rate limited per address in memory; with one API copy that is enough, and the limiter keeps the
+same interface if it later moves to Redis.
+
+**The server can be asleep; the site should say so.** Render's free API sleeps after 15 quiet minutes.
+Reads that fail while it wakes are retried for about a minute, and the page shows "waking up the
+server" after 2.5 seconds instead of looking frozen. Writes are never retried, so nothing is created
+twice. A GitHub Action pings the API every 10 minutes, which keeps it awake within the free plan's
+hours.
+
+**Design tokens, not a component library.** Colours live as CSS variables with light and dark values,
+and a handful of shared classes (`card`, `btn`, `input`) are used everywhere. That keeps the bundle
+small and the look consistent without adding a dependency. Dark mode follows the device unless the
+visitor picks one, and printing always uses the light theme.
+
+**Charts keep the normal range in view.** Previously, when every reading was above the range (LDL),
+the range band fell off the chart. The y-axis now always includes both ends of the range, and each
+card says in words whether the latest reading moved towards or away from it.
+

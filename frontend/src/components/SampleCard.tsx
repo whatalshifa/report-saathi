@@ -21,25 +21,19 @@ export function SampleCard({ onAdded }: { onAdded: (profile: Profile) => void })
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-5 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800 dark:bg-slate-900">
-      <div>
-        <p className="font-semibold">No report handy? Try sample reports</p>
-        <p className="text-sm text-slate-500 dark:text-slate-400">
-          Adds Meera, a made-up example person, with three reports from two labs: flags, trends, explanations in
-          English, Hindi and Marathi, and a doctor brief.
+    <div className="card p-5">
+      <p className="eyebrow">No report handy?</p>
+      <p className="mt-2 font-semibold">Try the sample reports</p>
+      <p className="mt-1 text-sm text-muted">
+        Adds Meera, a made-up person, with three reports from two labs, explanations in three languages and a doctor
+        brief.
+      </p>
+      {error && (
+        <p role="alert" className="mt-2 text-sm text-rose-700 dark:text-rose-300">
+          {error}
         </p>
-        {error && (
-          <p role="alert" className="mt-2 text-sm text-rose-700 dark:text-rose-300">
-            {error}
-          </p>
-        )}
-      </div>
-      <button
-        type="button"
-        onClick={add}
-        disabled={adding}
-        className="shrink-0 rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800 disabled:cursor-wait disabled:opacity-70"
-      >
+      )}
+      <button type="button" onClick={add} disabled={adding} className="btn btn-secondary mt-4 w-full">
         {adding ? "Adding…" : "Add sample reports"}
       </button>
     </div>

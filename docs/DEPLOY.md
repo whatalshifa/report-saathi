@@ -26,10 +26,18 @@ cookie stays first-party and no CORS setup is needed.
 | `RS_S3_REGION` | The bucket's region (`auto` for R2) |
 | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` | The bucket's keys (not needed on AWS with an IAM role) |
 | `RS_KMS_KEY_ID` | AWS only, instead of `RS_MASTER_KEY`: a KMS key id or alias |
+| `RS_SENTRY_DSN` | Optional. A Sentry project's DSN to have crashes reported (sentry.io has a free plan) |
+| `RS_GUEST_HOURS`, `RS_GUEST_UPLOAD_LIMIT`, `RS_DAILY_UPLOAD_LIMIT` | Optional. Demo accounts last 24 hours and can read 3 reports; every account can have 30 read a day |
 
 **Back up `RS_MASTER_KEY`.** Every stored file is encrypted with it; losing it means losing the files.
 Switching between `RS_MASTER_KEY` and KMS later makes earlier files unreadable, so pick one before real
 users arrive.
+
+The website takes `API_URL` (the API's address) and, optionally, `SITE_URL` (its own public address,
+used in share previews and the sitemap) at build time.
+
+`.github/workflows/keep-warm.yml` pings the API every 10 minutes so Render's free plan rarely puts it to
+sleep. Set the repository variable `API_HEALTH_URL` if the API lives at a different address.
 
 The API answers `GET /api/health` only when the database answers; point the platform's health check at
 it. Run one copy of the API: background jobs run inside it, and a restarted API re-reads any report it

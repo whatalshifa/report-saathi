@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from "react";
 
+import { SkeletonLines } from "@/components/Skeleton";
 import {
   getExplanation,
   isPending,
@@ -73,7 +74,7 @@ export function ExplanationPanel({ reportId }: { reportId: string }) {
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-lg font-semibold">What does this mean?</h2>
-        <div role="tablist" aria-label="Language" className="flex rounded-lg bg-white p-1 dark:bg-slate-900">
+        <div role="tablist" aria-label="Language" className="flex rounded-lg bg-surface p-1">
           {LANGUAGES.map((l) => (
             <button
               key={l.code}
@@ -82,8 +83,8 @@ export function ExplanationPanel({ reportId }: { reportId: string }) {
               onClick={() => setLanguage(l.code)}
               className={`rounded-md px-3 py-1 text-sm ${
                 language === l.code
-                  ? "bg-teal-700 font-semibold text-white"
-                  : "text-slate-600 hover:text-slate-900 dark:text-slate-300"
+                  ? "bg-teal-700 font-semibold text-white dark:bg-teal-600"
+                  : "text-muted hover:text-foreground"
               }`}
             >
               {l.label}
@@ -94,22 +95,18 @@ export function ExplanationPanel({ reportId }: { reportId: string }) {
 
       <div className="mt-4">
         {error && <p className="text-sm text-rose-700 dark:text-rose-300">{error}</p>}
-        {!error && job === undefined && <p className="text-sm text-slate-500">Loading…</p>}
+        {!error && job === undefined && <SkeletonLines />}
         {(job === null || job?.status === "failed") && (
           <div>
             {job?.error && <p className="mb-3 text-sm text-rose-700 dark:text-rose-300">{job.error}</p>}
-            <button
-              onClick={start}
-              disabled={starting}
-              className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-60"
-            >
+            <button onClick={start} disabled={starting} className="btn btn-primary">
               {job?.status === "failed" ? "Try again" : text.button}
             </button>
             {startError && <p className="mt-2 text-sm text-rose-700 dark:text-rose-300">{startError}</p>}
           </div>
         )}
         {job && isPending(job.status) && (
-          <p className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
+          <p className="flex items-center gap-3 text-sm text-muted">
             <span className="h-4 w-4 animate-spin rounded-full border-2 border-teal-200 border-t-teal-700" />
             {text.waiting}
           </p>
@@ -124,14 +121,17 @@ function ExplanationBody({ content, text }: { content: ReportExplanation; text: 
   return (
     <div className="space-y-5 leading-relaxed">
       {content.see_doctor_soon && (
-        <p role="alert" className="rounded-lg border border-rose-300 bg-rose-50 p-3 text-rose-900 dark:border-rose-800 dark:bg-rose-950 dark:text-rose-100">
+        <p
+          role="alert"
+          className="rounded-lg border border-rose-300 bg-rose-50 p-3 text-rose-900 dark:border-rose-800 dark:bg-rose-950 dark:text-rose-100"
+        >
           <strong>⚠ </strong>
           {content.see_doctor_reason}
         </p>
       )}
       <p>{content.summary}</p>
       {content.flagged.map((item) => (
-        <div key={item.test_name} className="rounded-xl bg-white p-4 dark:bg-slate-900">
+        <div key={item.test_name} className="rounded-xl border border-line bg-surface p-4">
           <h3 className="font-semibold">{item.test_name}</h3>
           <p className="mt-1 text-slate-700 dark:text-slate-300">{item.what_it_measures}</p>
           <p className="mt-2">{item.what_your_result_means}</p>
@@ -156,7 +156,7 @@ function ExplanationBody({ content, text }: { content: ReportExplanation; text: 
           </ul>
         </div>
       )}
-      <p className="text-xs text-slate-500">{text.note}</p>
+      <p className="text-xs text-muted">{text.note}</p>
     </div>
   );
 }

@@ -5,11 +5,29 @@ flags the ones outside the normal range, explains them in plain English, Hindi o
 up reports from different labs into one health timeline you can hand to your doctor. One account
 keeps the whole family's reports, privately and encrypted.
 
+**Live demo:** https://report-saathi-six.vercel.app (click "Try the demo", no sign-up needed)
+
+![ReportSaathi home page](docs/screenshots/landing.png)
+
 ![Health timeline](docs/screenshots/timeline.png)
 
 > Screenshots use sample data.
 
 ## What works today
+
+### Phase 4: production polish
+
+- A public landing page, and **Try the demo**: one click opens a private guest account with the
+  sample reports in it. Guest accounts and their files are deleted after 24 hours.
+- One design system across every page, a light/dark/system theme switch, loading skeletons,
+  friendly 404 and error pages, a logo, and a share image for WhatsApp and LinkedIn previews.
+- Trend charts always show the normal range, say whether each test is moving towards or away from
+  it, and show a reading on tap on phones.
+- When the free API is asleep, the site says "waking up the server" and retries reads instead of
+  failing; a scheduled GitHub Action pings it every 10 minutes so it rarely sleeps.
+- Rate limits on sign-in and demo creation, a cap on how many reports guests and accounts can have
+  read (which caps the AI bill), and optional Sentry error tracking (`RS_SENTRY_DSN`).
+- Browser tests (Playwright) drive the real site and API on a desktop and a phone screen in CI.
 
 ### Phase 3: accounts, family profiles, encryption, accuracy test
 
@@ -114,7 +132,8 @@ docker compose up --build
 
 ## Demo mode
 
-With no Anthropic key, the app still runs: uploads are paused and anyone can add **sample reports**
+With no Anthropic key, the app still runs: uploads are paused, and visitors can open the one-click demo
+or add **sample reports**
 (Meera, a made-up person with three reports from two labs). They go through the same flagging, unit
 conversion and trend code as real uploads, with explanations in three languages and a doctor brief
 written in advance. Add `ANTHROPIC_API_KEY` and uploads switch on.
@@ -127,8 +146,9 @@ written in advance. Add `ANTHROPIC_API_KEY` and uploads switch on.
 ## Tests
 
 ```bash
-cd backend && pytest        # 164 tests: flags, units, trends, sign-in, privacy, encryption, accuracy scoring
+cd backend && pytest        # 176 tests: flags, units, trends, sign-in, privacy, encryption, demo accounts, limits
 cd frontend && npm run lint && npm run build
+cd frontend && npx playwright test   # 17 browser tests; starts the API and the site itself
 ```
 
 The tests never call the real Claude API; they use a stand-in for Claude, so they are free and fast.

@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { ExplanationPanel } from "@/components/ExplanationPanel";
 import { FlagBadge } from "@/components/FlagBadge";
 import { RangeBar } from "@/components/RangeBar";
+import { SkeletonPage } from "@/components/Skeleton";
 import {
   deleteReport,
   getReport,
@@ -17,7 +18,7 @@ import {
   type ReportDetail,
   type TestResult,
 } from "@/lib/api";
-import { formatDate, formatRange, possessive } from "@/lib/format";
+import { formatAge, formatDate, formatRange, formatSex, possessive } from "@/lib/format";
 
 const POLL_MS = 2000;
 
@@ -54,7 +55,7 @@ export function ReportView({ id }: { id: string }) {
   }
 
   if (error) return <Notice title="Something went wrong" body={error} />;
-  if (!report) return <Notice title="Loading…" />;
+  if (!report) return <SkeletonPage />;
   if (report.status === "queued" || report.status === "processing") {
     return (
       <Notice
@@ -75,11 +76,14 @@ export function ReportView({ id }: { id: string }) {
     <div className="space-y-8">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">{report.lab_name ?? report.filename}</h1>
-          <p className="mt-1 text-slate-600 dark:text-slate-400">
+          <Link href={`/?profile=${report.profile.id}`} className="back-link">
+            ← {possessive(report.profile.name)} reports
+          </Link>
+          <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">{report.lab_name ?? report.filename}</h1>
+          <p className="mt-1 text-muted">
             {[
               report.patient_name,
-              [report.patient_age, report.patient_sex].filter(Boolean).join(", "),
+              [formatAge(report.patient_age), formatSex(report.patient_sex)].filter(Boolean).join(", "),
               formatDate(report.report_date),
             ]
               .filter(Boolean)
@@ -87,15 +91,12 @@ export function ReportView({ id }: { id: string }) {
           </p>
           <Link
             href={`/profiles/${report.profile.id}`}
-            className="mt-2 inline-block text-sm font-medium text-teal-700 hover:underline dark:text-teal-400"
+            className="link mt-2 inline-block text-sm"
           >
-            See {possessive(report.profile.name)} reports over time →
+            See {possessive(report.profile.name)} results over time →
           </Link>
         </div>
-        <button
-          onClick={handleDelete}
-          className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-600 hover:border-rose-400 hover:text-rose-700 dark:border-slate-700 dark:text-slate-300"
-        >
+        <button onClick={handleDelete} className="btn btn-secondary btn-sm hover:border-rose-400 hover:text-rose-700 dark:hover:text-rose-300">
           Delete
         </button>
       </header>
@@ -115,16 +116,16 @@ export function ReportView({ id }: { id: string }) {
             {flagged.map((r) => (
               <li
                 key={r.id}
-                className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900"
+                className="card p-4"
               >
                 <div className="flex items-start justify-between gap-2">
                   <p className="font-medium">{r.name}</p>
                   <FlagBadge flag={r.flag} />
                 </div>
                 <p className="mt-1 text-2xl font-semibold">
-                  {r.value_text} <span className="text-sm font-normal text-slate-500">{r.unit}</span>
+                  {r.value_text} <span className="text-sm font-normal text-muted">{r.unit}</span>
                 </p>
-                <p className="mb-3 text-sm text-slate-500">
+                <p className="mb-3 text-sm text-muted">
                   Normal: {formatRange(r.ref_low, r.ref_high, r.reference_text)}
                 </p>
                 <RangeBar result={r} />
@@ -140,9 +141,9 @@ export function ReportView({ id }: { id: string }) {
         <h2 className="text-lg font-semibold">All results</h2>
         {sections.map(([section, results]) => (
           <div key={section}>
-            <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">{section}</h3>
+            <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted">{section}</h3>
             {/* Phones get a stacked list; wider screens get a table. */}
-            <ul className="divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white sm:hidden dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900">
+            <ul className="card divide-y divide-line sm:hidden">
               {results.map((r) => (
                 <li key={r.id} className="space-y-2 px-4 py-3">
                   <div className="flex items-start justify-between gap-3">
@@ -151,8 +152,8 @@ export function ReportView({ id }: { id: string }) {
                   </div>
                   <p className="text-sm">
                     <span className="font-semibold">{r.value_text}</span>{" "}
-                    <span className="text-slate-500">{r.unit}</span>
-                    <span className="text-slate-500">
+                    <span className="text-muted">{r.unit}</span>
+                    <span className="text-muted">
                       {" "}
                       · Normal: {formatRange(r.ref_low, r.ref_high, r.reference_text)}
                     </span>
@@ -161,7 +162,7 @@ export function ReportView({ id }: { id: string }) {
                 </li>
               ))}
             </ul>
-            <div className="hidden overflow-hidden rounded-xl border border-slate-200 bg-white sm:block dark:border-slate-800 dark:bg-slate-900">
+            <div className="card hidden overflow-hidden sm:block">
               <table className="w-full table-fixed text-sm">
                 <colgroup>
                   <col className="w-[26%]" />
@@ -170,7 +171,7 @@ export function ReportView({ id }: { id: string }) {
                   <col className="w-[20%]" />
                   <col className="w-[14%]" />
                 </colgroup>
-                <thead className="bg-slate-50 text-left text-slate-500 dark:bg-slate-800/60">
+                <thead className="bg-slate-50 text-left text-muted dark:bg-slate-800/60">
                   <tr>
                     <th className="px-4 py-2 font-medium">Test</th>
                     <th className="px-4 py-2 font-medium">Result</th>
@@ -179,14 +180,14 @@ export function ReportView({ id }: { id: string }) {
                     <th className="px-4 py-2 font-medium">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                <tbody className="divide-y divide-line">
                   {results.map((r) => (
                     <tr key={r.id}>
                       <td className="px-4 py-2.5">{r.name}</td>
                       <td className="px-4 py-2.5 font-medium">
-                        {r.value_text} <span className="font-normal text-slate-500">{r.unit}</span>
+                        {r.value_text} <span className="font-normal text-muted">{r.unit}</span>
                       </td>
-                      <td className="px-4 py-2.5 text-slate-600 dark:text-slate-400">
+                      <td className="px-4 py-2.5 text-muted">
                         {formatRange(r.ref_low, r.ref_high, r.reference_text)}
                       </td>
                       <td className="px-4 py-2.5">
@@ -204,7 +205,7 @@ export function ReportView({ id }: { id: string }) {
         ))}
       </section>
 
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-muted">
         ReportSaathi reads your report with AI and can make mistakes. Check values against the original
         report, and talk to your doctor before acting on anything here.
       </p>
@@ -223,22 +224,22 @@ function groupBySection(results: TestResult[]): [string, TestResult[]][] {
 
 function Stat({ label, value, highlight = false }: { label: string; value: number; highlight?: boolean }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-3 sm:p-4 dark:border-slate-800 dark:bg-slate-900">
+    <div className="card p-3 sm:p-4">
       <p className={`text-2xl font-bold sm:text-3xl ${highlight ? "text-rose-700 dark:text-rose-300" : ""}`}>{value}</p>
-      <p className="text-sm text-slate-500">{label}</p>
+      <p className="text-sm text-muted">{label}</p>
     </div>
   );
 }
 
 function Notice({ title, body, spinner = false }: { title: string; body?: string; spinner?: boolean }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center dark:border-slate-800 dark:bg-slate-900">
+    <div className="card p-10 text-center">
       {spinner && (
         <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-4 border-teal-200 border-t-teal-600" />
       )}
       <h1 className="text-xl font-semibold">{title}</h1>
-      {body && <p className="mx-auto mt-2 max-w-md text-slate-600 dark:text-slate-400">{body}</p>}
-      <Link href="/" className="mt-6 inline-block text-sm font-medium text-teal-700 dark:text-teal-400">
+      {body && <p className="mx-auto mt-2 max-w-md text-muted">{body}</p>}
+      <Link href="/" className="back-link mt-6">
         ← Back to all reports
       </Link>
     </div>
@@ -279,7 +280,7 @@ function WrongPersonWarning({ report, onMoved }: { report: ReportDetail; onMoved
             value={target}
             onChange={(e) => setTarget(e.target.value)}
             aria-label="Move to"
-            className="rounded-lg border border-amber-300 bg-white px-3 py-1.5 dark:border-amber-800 dark:bg-slate-900"
+            className="rounded-lg border border-amber-300 bg-surface px-3 py-1.5 dark:border-amber-800"
           >
             <option value="">Move to…</option>
             {profiles.map((p) => (

@@ -13,6 +13,7 @@ __pycache__/
 .venv/
 *.db
 backend/uploads/
+backend/e2e-uploads/
 
 # Node
 node_modules/

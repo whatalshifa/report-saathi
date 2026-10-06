@@ -48,8 +48,10 @@ export function TrendChart({ series }: { series: TrendSeries }) {
 
   const { points, ref_low: low, ref_high: high } = series;
   const values = points.map((p) => p.value);
-  const lowest = Math.min(...values, low ?? Infinity);
-  const highest = Math.max(...values, high ?? -Infinity);
+  // Both ends of the normal range stay in view, so the band shows even when every reading is outside it.
+  const limits = [low, high].filter((v): v is number => v !== null);
+  const lowest = Math.min(...values, ...limits);
+  const highest = Math.max(...values, ...limits);
   const spread = highest - lowest || Math.abs(highest) || 1;
   const yMin = Math.max(0, lowest - spread * 0.25);
   const yMax = highest + spread * 0.25;
@@ -85,6 +87,7 @@ export function TrendChart({ series }: { series: TrendSeries }) {
     }
   }
 
+  // A mouse shows a reading on hover; on a phone a tap shows it until the next tap.
   const shown = active === null ? null : points[active];
 
   return (
@@ -97,7 +100,7 @@ export function TrendChart({ series }: { series: TrendSeries }) {
           aria-label={`${series.name} over time: ${points
             .map((p) => `${formatDate(p.date)} ${formatNumber(p.value)} ${series.unit} (${p.flag})`)
             .join("; ")}`}
-          onPointerLeave={() => setActive(null)}
+          onPointerLeave={(e) => e.pointerType === "mouse" && setActive(null)}
           className="overflow-visible"
         >
           {/* Normal range band */}
@@ -107,9 +110,22 @@ export function TrendChart({ series }: { series: TrendSeries }) {
               y={bandTop}
               width={plotW}
               height={Math.max(bandBottom - bandTop, 0)}
-              className="fill-emerald-100 dark:fill-emerald-950"
+              className="fill-emerald-50 dark:fill-emerald-950/60"
             />
           )}
+          {/* Edges of the normal range */}
+          {limits.map((limit) => (
+            <line
+              key={limit}
+              x1={PAD.left}
+              x2={PAD.left + plotW}
+              y1={y(limit)}
+              y2={y(limit)}
+              strokeDasharray="4 4"
+              strokeWidth={1}
+              className="stroke-emerald-500/70 dark:stroke-emerald-600/70"
+            />
+          ))}
           {/* Recessive grid and y-axis labels */}
           {ticks.map((t) => (
             <g key={t}>
@@ -118,7 +134,7 @@ export function TrendChart({ series }: { series: TrendSeries }) {
                 x2={PAD.left + plotW}
                 y1={y(t)}
                 y2={y(t)}
-                className="stroke-slate-200 dark:stroke-slate-800"
+                className="stroke-slate-200/80 dark:stroke-slate-800"
                 strokeWidth={1}
               />
               <text
@@ -177,7 +193,8 @@ export function TrendChart({ series }: { series: TrendSeries }) {
               fill="transparent"
               tabIndex={0}
               aria-label={`${formatDate(p.date)}: ${p.printed}, ${p.flag}`}
-              onPointerEnter={() => setActive(i)}
+              onPointerEnter={(e) => e.pointerType === "mouse" && setActive(i)}
+              onClick={() => setActive(active === i ? null : i)}
               onFocus={() => setActive(i)}
               onBlur={() => setActive(null)}
               className="outline-none"
@@ -187,7 +204,7 @@ export function TrendChart({ series }: { series: TrendSeries }) {
       )}
       {shown && active !== null && (
         <div
-          className="pointer-events-none absolute top-0 z-10 w-48 rounded-lg border border-slate-200 bg-white p-3 text-sm shadow-lg dark:border-slate-700 dark:bg-slate-900"
+          className="pointer-events-none absolute top-0 z-10 w-48 rounded-lg border border-line bg-surface p-3 text-sm shadow-lg"
           style={{ left: Math.min(Math.max(x(times[active]) - 96, 0), Math.max(width - 192, 0)) }}
         >
           <div className="flex items-center justify-between gap-2">
@@ -195,9 +212,9 @@ export function TrendChart({ series }: { series: TrendSeries }) {
             <FlagBadge flag={shown.flag} />
           </div>
           <p className="mt-1 text-lg font-semibold tabular-nums">
-            {formatNumber(shown.value)} <span className="text-sm font-normal text-slate-500">{series.unit}</span>
+            {formatNumber(shown.value)} <span className="text-sm font-normal text-muted">{series.unit}</span>
           </p>
-          <p className="text-slate-500">
+          <p className="text-muted">
             {shown.lab_name ?? "Unknown lab"} printed {shown.printed}
           </p>
         </div>

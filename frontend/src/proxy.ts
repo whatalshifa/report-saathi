@@ -1,7 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 // Pages anyone can open. Everything else needs a sign-in cookie.
-const PUBLIC = ["/login", "/signup", "/accuracy"];
+const PUBLIC = new Set(["/", "/login", "/signup", "/accuracy", "/robots.txt", "/sitemap.xml"]);
+// Generated images (the share preview and icons) are public too.
+const PUBLIC_PREFIXES = ["/opengraph-image", "/twitter-image", "/icon", "/apple-icon"];
 
 /**
  * Sends signed-out visitors to the sign-in page before any private page loads.
@@ -10,9 +12,10 @@ const PUBLIC = ["/login", "/signup", "/accuracy"];
  */
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
-  if (PUBLIC.includes(pathname) || request.cookies.has("rs_session")) return NextResponse.next();
+  const isPublic = PUBLIC.has(pathname) || PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+  if (isPublic || request.cookies.has("rs_session")) return NextResponse.next();
   const login = new URL("/login", request.url);
-  if (pathname !== "/") login.searchParams.set("next", pathname + search);
+  login.searchParams.set("next", pathname + search);
   return NextResponse.redirect(login);
 }
 
