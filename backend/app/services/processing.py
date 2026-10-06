@@ -72,6 +72,7 @@ def build_results(extracted: ExtractedReport) -> list[TestResult]:
             ref_high=high,
             lab_flag=_clip(test.lab_flag, 20),
             flag=compute_flag(value, test.value_text, low, high, test.reference_text),
+            box=test.box.model_dump() if test.box else None,
         )
         standardize(result, test)
         results.append(result)

@@ -9,13 +9,33 @@ import base64
 from typing import Literal, Protocol
 
 import anthropic
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from app.services.catalog import CATALOG_KEYS
 from app.services.claude import AIError, ask_structured, make_client
 
 # The catalog keys Claude may choose from, plus "other" for anything else.
 CatalogKey = Literal[(*CATALOG_KEYS, "other")]
+
+
+class SourceBox(BaseModel):
+    """Where a result is printed, so the app can show it on the original page."""
+
+    page: int = Field(description="Page number in the file, starting at 1")
+    x0: float = Field(description="Left edge, as a fraction 0-1 of the page width")
+    y0: float = Field(description="Top edge, as a fraction 0-1 of the page height")
+    x1: float = Field(description="Right edge, as a fraction 0-1 of the page width")
+    y1: float = Field(description="Bottom edge, as a fraction 0-1 of the page height")
+
+
+def clean_box(box: SourceBox | None) -> SourceBox | None:
+    """Keeps a box only if it is a real area on a real page; a wrong highlight is worse than none."""
+    if box is None or box.page < 1:
+        return None
+    x0, y0, x1, y1 = (min(max(v, 0.0), 1.0) for v in (box.x0, box.y0, box.x1, box.y1))
+    if x1 <= x0 or y1 <= y0:
+        return None
+    return SourceBox(page=box.page, x0=x0, y0=y0, x1=x1, y1=y1)
 
 
 class ExtractedTest(BaseModel):
@@ -29,6 +49,17 @@ class ExtractedTest(BaseModel):
     ref_low: float | None = Field(description="Lower bound of the normal range for this patient, or null")
     ref_high: float | None = Field(description="Upper bound of the normal range for this patient, or null")
     lab_flag: str | None = Field(description="Any H/L/High/Low/* mark the lab printed next to the value")
+    # Schema limits like minimum/maximum aren't available for structured outputs, so it is checked below.
+    box: SourceBox | None = Field(
+        default=None,
+        description="A tight box around the printed result value (not the test name): its page, and its "
+        "edges as fractions 0-1 of that page's width and height from the top-left corner",
+    )
+
+    @field_validator("box")
+    @classmethod
+    def _check_box(cls, box: SourceBox | None) -> SourceBox | None:
+        return clean_box(box)
 
 
 class ExtractedReport(BaseModel):
@@ -55,6 +86,11 @@ no numeric range.
 
 For catalog_key, pick the standard test this line measures (for example 'Hb' and \
 'Haemoglobin' are both hemoglobin). Use 'other' when none fits; never force a match.
+
+For box, mark where the result value itself is printed (not the test name, unit or \
+range): the page number counting from 1, and the left, top, right and bottom edges as \
+fractions of that page's width and height, measured from its top-left corner. Keep it \
+tight around the value. Leave box null if you can't tell where the value is.
 
 If a value is unreadable, leave it out rather than guessing. If the file is not a lab \
 report, set is_lab_report to false and return no tests."""

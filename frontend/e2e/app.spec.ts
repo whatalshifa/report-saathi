@@ -73,6 +73,36 @@ test("a misread value can be fixed, and its flag follows the fix", async ({ page
   await expect(row.getByText("Normal", { exact: true })).toBeVisible();
 });
 
+test("a value can be traced back to the original report", async ({ page }) => {
+  await startDemo(page);
+  await page.getByRole("link", { name: /Sample Pathology Lab, Pune.*12 Jan 2026/ }).click();
+  await expect(page.getByRole("link", { name: "View original" })).toHaveAttribute("href", /\/api\/reports\/.+\/file$/);
+
+  const source = page
+    .getByRole("region", { name: "Needs attention" })
+    .getByRole("button", { name: "See Haemoglobin (Hb) on the original report" });
+  await source.click();
+  const dialog = page.getByRole("dialog", { name: "Where this number came from" });
+  const original = dialog.getByRole("img", { name: "Page 1 of the original report, with Haemoglobin (Hb) highlighted" });
+  await expect(original).toBeVisible();
+  await expect.poll(() => original.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
+  // The highlight is on screen: the page was scrolled to the value, not left at the top corner.
+  const highlight = dialog.getByTestId("source-highlight");
+  await expect(highlight).toBeVisible();
+  await expect(highlight).toBeInViewport();
+  await expect(dialog.getByText("Read from page 1 of the original")).toBeVisible();
+
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+  await expect(source).toBeFocused();
+
+  // A tap outside closes it too.
+  await source.click();
+  await expect(dialog).toBeVisible();
+  await page.mouse.click(4, 4);
+  await expect(dialog).toBeHidden();
+});
+
 test("the timeline shows trends and the doctor brief", async ({ page }) => {
   await startDemo(page);
   await page.getByRole("link", { name: /results over time/ }).click();

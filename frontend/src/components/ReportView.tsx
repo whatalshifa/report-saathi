@@ -8,13 +8,16 @@ import { ExplanationPanel } from "@/components/ExplanationPanel";
 import { FlagBadge } from "@/components/FlagBadge";
 import { RangeBar } from "@/components/RangeBar";
 import { SkeletonPage } from "@/components/Skeleton";
+import { SourceButton, SourceDialog } from "@/components/SourceView";
 import { CorrectedChip, FixButton, ValueEditor } from "@/components/ValueFix";
 import {
   deleteReport,
   getReport,
+  hasOriginal,
   isOutOfRange,
   listProfiles,
   moveReport,
+  reportFileUrl,
   type Profile,
   type ReportDetail,
   type TestResult,
@@ -28,6 +31,8 @@ export function ReportView({ id }: { id: string }) {
   const [report, setReport] = useState<ReportDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [announcement, setAnnouncement] = useState("");
+  // The value whose source is showing, and the button that opened it (focus goes back there).
+  const [source, setSource] = useState<{ result: TestResult; trigger: HTMLElement } | null>(null);
 
   // Reading a report takes a little while, so ask the server again until it is done.
   useEffect(() => {
@@ -58,6 +63,11 @@ export function ReportView({ id }: { id: string }) {
     setAnnouncement(`Saved. ${updated.name} is now ${[updated.value_text, updated.unit].filter(Boolean).join(" ")}.`);
   }
 
+  function closeSource() {
+    source?.trigger.focus();
+    setSource(null);
+  }
+
   async function handleDelete() {
     if (!confirm("Delete this report and its file?")) return;
     await deleteReport(id);
@@ -80,6 +90,10 @@ export function ReportView({ id }: { id: string }) {
   }
 
   const flagged = report.results.filter((r) => isOutOfRange(r.flag));
+  // Only values with a known spot on a file we can show get a source button.
+  const canShowSource = hasOriginal(report);
+  const showSource = (r: TestResult) =>
+    canShowSource && r.box ? (trigger: HTMLElement) => setSource({ result: r, trigger }) : undefined;
   const sections = groupBySection(report.results);
   const lastCorrection = report.results
     .map((r) => r.corrected_at)
@@ -104,12 +118,16 @@ export function ReportView({ id }: { id: string }) {
               .filter(Boolean)
               .join(" · ")}
           </p>
-          <Link
-            href={`/profiles/${report.profile.id}`}
-            className="link mt-2 inline-block text-sm"
-          >
-            See {possessive(report.profile.name)} results over time →
-          </Link>
+          <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm">
+            <Link href={`/profiles/${report.profile.id}`} className="link">
+              See {possessive(report.profile.name)} results over time →
+            </Link>
+            {canShowSource && (
+              <a href={reportFileUrl(report.id)} target="_blank" rel="noopener noreferrer" className="link">
+                View original
+              </a>
+            )}
+          </div>
         </div>
         <button onClick={handleDelete} className="btn btn-secondary btn-sm hover:border-rose-400 hover:text-rose-700 dark:hover:text-rose-300">
           Delete
@@ -140,7 +158,8 @@ export function ReportView({ id }: { id: string }) {
                   <FlagBadge flag={r.flag} />
                 </div>
                 <p className="mt-1 text-2xl font-semibold">
-                  {r.value_text} <span className="text-sm font-normal text-muted">{r.unit}</span>
+                  {r.value_text} <span className="text-sm font-normal text-muted">{r.unit}</span>{" "}
+                  <SourceToggle name={r.name} onShow={showSource(r)} />
                 </p>
                 <p className="mb-3 text-sm text-muted">
                   Normal: {formatRange(r.ref_low, r.ref_high, r.reference_text)}
@@ -164,7 +183,11 @@ export function ReportView({ id }: { id: string }) {
           <h2 id="all-results" className="text-lg font-semibold">
             All results
           </h2>
-          <p className="mt-1 text-sm text-muted">Something read wrongly? Use the pencil beside a value to fix it.</p>
+          <p className="mt-1 text-sm text-muted">
+            {canShowSource && report.results.some((r) => r.box)
+              ? "Tap the page icon beside a value to see it on the original report. Read wrongly? Use the pencil to fix it."
+              : "Something read wrongly? Use the pencil beside a value to fix it."}
+          </p>
         </div>
         {sections.map(([section, results]) => (
           <div key={section}>
@@ -172,15 +195,21 @@ export function ReportView({ id }: { id: string }) {
             {/* Phones get a stacked list; wider screens get a table. */}
             <ul className="card divide-y divide-line sm:hidden">
               {results.map((r) => (
-                <ResultItem key={r.id} reportId={report.id} result={r} onSaved={handleCorrected} />
+                <ResultItem
+                  key={r.id}
+                  reportId={report.id}
+                  result={r}
+                  onSaved={handleCorrected}
+                  onShowSource={showSource(r)}
+                />
               ))}
             </ul>
             <div className="card hidden overflow-hidden sm:block">
               <table className="w-full table-fixed text-sm">
                 <colgroup>
-                  <col className="w-[26%]" />
-                  <col className="w-[18%]" />
+                  <col className="w-[24%]" />
                   <col className="w-[22%]" />
+                  <col className="w-[20%]" />
                   <col className="w-[20%]" />
                   <col className="w-[14%]" />
                 </colgroup>
@@ -195,7 +224,13 @@ export function ReportView({ id }: { id: string }) {
                 </thead>
                 <tbody className="divide-y divide-line">
                   {results.map((r) => (
-                    <ResultRow key={r.id} reportId={report.id} result={r} onSaved={handleCorrected} />
+                    <ResultRow
+                      key={r.id}
+                      reportId={report.id}
+                      result={r}
+                      onSaved={handleCorrected}
+                      onShowSource={showSource(r)}
+                    />
                   ))}
                 </tbody>
               </table>
@@ -211,6 +246,15 @@ export function ReportView({ id }: { id: string }) {
       <p aria-live="polite" className="sr-only">
         {announcement}
       </p>
+      {source?.result.box && (
+        <SourceDialog
+          reportId={report.id}
+          contentType={report.content_type}
+          result={source.result}
+          box={source.result.box}
+          onClose={closeSource}
+        />
+      )}
     </div>
   );
 }
@@ -219,6 +263,12 @@ interface ResultProps {
   reportId: string;
   result: TestResult;
   onSaved: (updated: TestResult) => void;
+  /** Opens the original with this value highlighted; missing when its place on the page isn't known. */
+  onShowSource?: (trigger: HTMLElement) => void;
+}
+
+function SourceToggle({ name, onShow }: { name: string; onShow?: (trigger: HTMLElement) => void }) {
+  return onShow ? <SourceButton name={name} onClick={onShow} /> : null;
 }
 
 /** Opening and closing the fix form, with focus going back to the pencil when it closes. */
@@ -233,7 +283,7 @@ function useFixForm() {
 }
 
 // Phones get a stacked list.
-function ResultItem({ reportId, result: r, onSaved }: ResultProps) {
+function ResultItem({ reportId, result: r, onSaved, onShowSource }: ResultProps) {
   const { editing, button, toggle, close } = useFixForm();
   return (
     <li className="space-y-2 px-4 py-3">
@@ -243,6 +293,7 @@ function ResultItem({ reportId, result: r, onSaved }: ResultProps) {
       </div>
       <p className="text-sm">
         <span className="font-semibold">{r.value_text}</span> <span className="text-muted">{r.unit}</span>{" "}
+        <SourceToggle name={r.name} onShow={onShowSource} />
         <FixButton ref={button} name={r.name} open={editing} onClick={toggle} />
         <span className="text-muted"> · Normal: {formatRange(r.ref_low, r.ref_high, r.reference_text)}</span>
       </p>
@@ -254,7 +305,7 @@ function ResultItem({ reportId, result: r, onSaved }: ResultProps) {
 }
 
 // Wider screens get a table; the fix form opens in a full-width row under the value.
-function ResultRow({ reportId, result: r, onSaved }: ResultProps) {
+function ResultRow({ reportId, result: r, onSaved, onShowSource }: ResultProps) {
   const { editing, button, toggle, close } = useFixForm();
   return (
     <>
@@ -262,7 +313,10 @@ function ResultRow({ reportId, result: r, onSaved }: ResultProps) {
         <td className="px-4 py-2.5">{r.name}</td>
         <td className="px-4 py-2.5 font-medium">
           {r.value_text} <span className="font-normal text-muted">{r.unit}</span>{" "}
-          <FixButton ref={button} name={r.name} open={editing} onClick={toggle} />
+          <span className="inline-flex align-middle">
+            <SourceToggle name={r.name} onShow={onShowSource} />
+            <FixButton ref={button} name={r.name} open={editing} onClick={toggle} />
+          </span>
           {r.corrected && (
             <div className="mt-1">
               <CorrectedChip result={r} />

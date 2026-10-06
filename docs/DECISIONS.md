@@ -142,3 +142,28 @@ was corrected.
 test name, the value and unit read, and the value and unit corrected. It leaves out the sample
 reports (typed by hand, so a change there is someone trying the button) and fixes the scoring treats
 as no change ("2,50,000" to "250000"). It goes to the git-ignored `accuracy/data/` folder by default.
+
+**Show the source with a box from the reading itself, not OCR.** Claude already sees the page, so it
+returns a box (page, and edges as fractions of the page) around each printed result in the same
+structured reply. Fractions keep it independent of image size and zoom. Structured outputs can't
+enforce number limits, so the server clamps edges to the page and drops a box with no area or no page;
+a value with no box simply has no source button, because a wrong highlight is worse than none. Old
+reports have no boxes and keep working.
+
+**Draw the sample pages, and take the boxes from the drawing.** The demo has no AI key, so the sample
+person's reports are drawn once by a script (Pillow, DejaVu Sans) as obviously made-up pages with a
+"SAMPLE - made-up data" watermark, and the script writes each value's box into `meera.json` from where
+it drew the value. The highlight is therefore exact, and the committed PNGs (about 50 KB each) mean the
+server needs no font. They are stored encrypted per account like an upload, so viewing and deleting a
+sample work the same way.
+
+**Mark sample reports with a flag, not by their file type.** Upload limits and the corrections export
+used to spot sample reports by their text placeholder. Now that samples are images, `reports.is_sample`
+says so directly (migration 0007 sets it for existing text placeholders). A real report filed under the
+sample person still counts against the limits.
+
+**Serve the original from the API, privately.** `GET /api/reports/{id}/file` returns the decrypted file
+to its owner only (404 for anyone else, as everywhere), inline, with `Cache-Control: private, no-store`
+and `nosniff`. The page shows it in a native `<dialog>` (focus stays inside, Escape and a tap outside
+close it, focus returns to the icon), with no new libraries. PDFs open in the browser's own viewer at
+`#page=N` rather than being rendered in the page, which would need a PDF library.

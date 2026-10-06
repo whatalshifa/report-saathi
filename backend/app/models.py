@@ -125,6 +125,8 @@ class Report(Base):
     filename: Mapped[str] = mapped_column(String(255))
     content_type: Mapped[str] = mapped_column(String(100))
     storage_key: Mapped[str] = mapped_column(String(255))
+    # One of the ready-made example reports: not read by the AI, so not counted against upload limits.
+    is_sample: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
     status: Mapped[ReportStatus] = mapped_column(
         Enum(ReportStatus, native_enum=False, length=20), default=ReportStatus.queued
     )
@@ -171,6 +173,10 @@ class TestResult(Base):
     std_value: Mapped[float | None] = mapped_column(Float)
     std_low: Mapped[float | None] = mapped_column(Float)
     std_high: Mapped[float | None] = mapped_column(Float)
+
+    # Where the value is printed in the original file: {"page": 1, "x0": .., "y0": .., "x1": .., "y1": ..},
+    # each edge a fraction of the page. None when the AI couldn't say, and for reports read before Phase 5.
+    box: Mapped[dict | None] = mapped_column(JSON)
 
     # Set when the person fixed a misread value. The first reading is kept so the page can say
     # what it was read as; every fix is also logged in Correction.

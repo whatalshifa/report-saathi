@@ -32,8 +32,8 @@ def export_corrections(session: Session) -> list[dict]:
         select(Correction, TestResult.name)
         .join(TestResult, Correction.result_id == TestResult.id)
         .join(Report, TestResult.report_id == Report.id)
-        # Uploads are PDFs or images; the ready-made sample reports are the only text/plain ones.
-        .where(Report.content_type != "text/plain")
+        # The ready-made sample reports were typed in by hand, not read by the AI.
+        .where(Report.is_sample.is_(False))
         .order_by(Correction.result_id, Correction.created_at, Correction.id)
     )
     # A value may be fixed more than once (a typo in the fix); keep the first reading and the last fix.

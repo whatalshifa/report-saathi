@@ -7,6 +7,15 @@ import { serverStatus } from "@/lib/serverStatus";
 export type Flag = "low" | "high" | "normal" | "abnormal" | "unknown";
 export type ReportStatus = "queued" | "processing" | "done" | "failed";
 
+/** Where a value is printed in the original file: a page (from 1), and edges as fractions 0-1 of it. */
+export interface SourceBox {
+  page: number;
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+}
+
 export interface TestResult {
   id: number;
   section: string | null;
@@ -25,6 +34,8 @@ export interface TestResult {
   /** What the AI first read, kept after a fix so the page can show it. */
   original_value_text: string | null;
   original_unit: string | null;
+  /** Where the value is printed in the original; null when not known (older reports, or the AI couldn't say). */
+  box: SourceBox | null;
 }
 
 export interface ReportSummary {
@@ -40,6 +51,8 @@ export interface ReportSummary {
 }
 
 export interface ReportDetail extends ReportSummary {
+  /** The original file's type: a PDF or an image (older sample reports: text/plain, no file to show). */
+  content_type: string;
   patient_age: string | null;
   patient_sex: string | null;
   profile: { id: string; name: string };
@@ -196,6 +209,11 @@ export const moveReport = (id: string, profileId: string) =>
   request<ReportDetail>(`/api/reports/${id}`, json("PATCH", { profile_id: profileId }));
 export const getReport = (id: string) => request<ReportDetail>(`/api/reports/${id}`);
 export const deleteReport = (id: string) => request<void>(`/api/reports/${id}`, { method: "DELETE" });
+/** The original uploaded file, for an <img> or a new tab; the browser sends the sign-in cookie itself. */
+export const reportFileUrl = (id: string) => `/api/reports/${id}/file`;
+/** Whether there is an original file to show; the oldest sample reports have only a text placeholder. */
+export const hasOriginal = (report: ReportDetail) =>
+  report.content_type === "application/pdf" || report.content_type.startsWith("image/");
 /** Fixes a misread value. The server re-flags it; an empty unit clears the unit. */
 export const correctResult = (reportId: string, resultId: number, valueText: string, unit: string) =>
   request<TestResult>(

@@ -82,6 +82,16 @@ class MoveReport(BaseModel):
 # ---------- Reports ----------
 
 
+class SourceBoxOut(BaseModel):
+    """Where a value is printed on the original: a page, and edges as fractions of that page."""
+
+    page: int
+    x0: float
+    y0: float
+    x1: float
+    y1: float
+
+
 class TestResultOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     __test__ = False
@@ -102,6 +112,8 @@ class TestResultOut(BaseModel):
     corrected_at: datetime | None = None
     original_value_text: str | None = None
     original_unit: str | None = None
+    # Where the value is printed in the original file, for "where did this number come from?".
+    box: SourceBoxOut | None = None
 
     @computed_field
     @property
@@ -134,6 +146,7 @@ class ReportSummary(BaseModel):
 
 
 class ReportDetail(ReportSummary):
+    content_type: str  # the original file's type, so the page knows how to show it
     patient_age: str | None
     patient_sex: str | None
     profile: ProfileRef

@@ -2,7 +2,7 @@ import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
-from fastapi import APIRouter, BackgroundTasks, Depends, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Form, HTTPException, Response, UploadFile, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -39,11 +39,11 @@ router = APIRouter(prefix="/api/reports", tags=["reports"])
 
 def _check_upload_allowance(session: Session, user: User, settings: Settings) -> None:
     """Caps how many new reports an account can have read, which caps what the AI can cost."""
-    # Uploads are PDFs or images; the ready-made sample reports are the only text/plain ones.
+    # The ready-made sample reports were never read by the AI, so they don't count.
     own_reports = (
         select(func.count(Report.id))
         .join(Profile)
-        .where(Profile.user_id == user.id, Report.content_type != "text/plain")
+        .where(Profile.user_id == user.id, Report.is_sample.is_(False))
     )
     if user.is_guest and session.scalar(own_reports) >= settings.guest_upload_limit:
         raise HTTPException(
@@ -114,6 +114,24 @@ def list_reports(user: CurrentUser, session: SessionDep, profile_id: str | None 
 @router.get("/{report_id}", response_model=ReportDetail)
 def get_report(report_id: str, user: CurrentUser, session: SessionDep) -> Report:
     return owned_report(session, user, report_id)
+
+
+@router.get("/{report_id}/file")
+def get_report_file(report_id: str, user: CurrentUser, session: SessionDep, storage: StorageDep) -> Response:
+    """The original file, decrypted, so a value can be checked against the page it was read from."""
+    report = owned_report(session, user, report_id)
+    extension = report.storage_key.rpartition(".")[2]
+    return Response(
+        storage.read(report.storage_key),
+        media_type=report.content_type,
+        headers={
+            # Shown in the browser, never saved under a name taken from the upload.
+            "Content-Disposition": f'inline; filename="report.{extension}"',
+            # A medical file: no shared or on-disk caches.
+            "Cache-Control": "private, no-store",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
 
 
 @router.patch("/{report_id}", response_model=ReportDetail)

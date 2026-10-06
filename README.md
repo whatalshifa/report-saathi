@@ -22,6 +22,11 @@ keeps the whole family's reports, privately and encrypted.
   all follow it. A "Corrected" chip shows what the AI had read. Works on the sample reports too.
 - Every fix is logged, and `python -m accuracy.run corrections` exports them as test cases for the
   accuracy kit (test name, value read, value corrected, units; nothing personal).
+- **Where did this number come from?** A page icon beside each value opens the original report with
+  that value highlighted and zoomed into view ("Read from page 1 of the original"); for a PDF it opens
+  the right page in a new tab. "View original" in the report header shows the whole file. The AI now
+  returns where it read each value; Meera's sample reports are drawn as clearly marked sample pages
+  (`backend/scripts/make_sample_images.py`), so the demo shows this too.
 
 ### Phase 4: production polish
 
