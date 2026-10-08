@@ -113,7 +113,7 @@ Every lab writes things its own way. Lab A prints `Haemoglobin (Hb) 13.4 g/dL`, 
 `HGB 128 g/L`, lab C prints `Hemoglobin 12.4 gm%`. To draw one chart we need to know these are the
 same test, and put them in the same unit.
 
-The catalog lists 162 tests. Each has:
+The catalog lists 229 tests. Each has:
 
 - a **key** (`hemoglobin`) and a display name,
 - a **standard unit** (`g/dL`),

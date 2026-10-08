@@ -50,8 +50,9 @@ keeps the whole family's reports, privately and encrypted.
 - **Listen in English, Hindi or Marathi.** A Listen button on each explanation reads the summary, every
   flagged test and the questions for the doctor aloud with the phone's own voices (free, nothing sent
   anywhere). It only appears when the device has a voice for that language. Try it on Meera's reports.
-- **A bigger test catalog with international codes.** 162 tests (up from 51): absolute blood counts,
-  urine routine, iron studies, kidney ratios, hormones, cardiac markers, clotting and more. 152 of them
+- **A bigger test catalog with international codes.** 229 tests (up from 51): absolute blood counts,
+  the full urine routine (colour, bile pigments, nitrite, casts, crystals), 24-hour urine tests, iron
+  studies, kidney ratios, electrolytes, hormones, cardiac markers, clotting controls and more. 216 of them
   carry their LOINC code (the international ID for a lab test), shown small under each test name in the
   doctor brief, and included in the report API and in "Download all my data". Every code passes LOINC's
   check digit, and a test makes sure no spelling can match two tests.
@@ -98,7 +99,7 @@ keeps the whole family's reports, privately and encrypted.
 ### Phase 2: trends, explanations, doctor brief
 
 - **One timeline across labs.** "Hb 13.4 g/dL", "HGB 128 g/L" and "Hemoglobin 12.4 gm%" from three
-  labs are recognised as the same test and converted to one unit. A catalog of common tests (162 now)
+  labs are recognised as the same test and converted to one unit. A catalog of common tests (229 now)
   handles the spellings and units Indian labs use (lakhs/cumm, gm%, mmol/L and more).
 - **Trend charts** for every test seen more than once: the normal range as a band, each reading
   coloured and labelled low/high/normal, hover for what the lab actually printed, and a table view.
@@ -219,7 +220,7 @@ backend/
       extraction.py       sends the report to Claude, gets structured data back
       flagging.py         parses reference ranges, decides low / high / normal
       corrections.py      saves a value the person fixed, re-flags it, logs the fix
-      catalog.py          162 tests: spellings, units, LOINC codes, typical ranges, recheck intervals
+      catalog.py          229 tests: spellings, units, LOINC codes, typical ranges, recheck intervals
       auth.py             password hashing, sessions, lockout
       sharing.py          share-link tokens, expiry, and the opening log
       export.py           "download all my data": the ZIP of files, JSON and CSV

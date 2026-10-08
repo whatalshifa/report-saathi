@@ -146,7 +146,7 @@ def test_every_alias_means_exactly_one_test():
 def test_keys_are_unique_and_offered_to_the_reader():
     keys = [t.key for t in CATALOG]
     assert len(keys) == len(set(keys)) == len(CATALOG_KEYS)
-    assert len(keys) >= 150
+    assert len(keys) >= 225
     assert set(get_args(CatalogKey)) == {*keys, "other"}
 
 
@@ -195,6 +195,17 @@ def test_typical_ranges_and_recheck_intervals_name_their_source():
         ("Pus Cells (Urine)", "urine_pus_cells"),
         ("Anti Müllerian Hormone", "amh"),
         ("Transferrin Saturation", "transferrin_saturation"),
+        ("Bile Pigments", "urine_bilirubin"),
+        ("Urobilinogen", "urine_urobilinogen"),
+        ("Haemoglobin (Urine)", "urine_blood"),
+        ("PT Control", "pt_control"),
+        ("APTT Control", "aptt_control"),
+        ("Total Protein (24 Hour Urine)", "urine_protein_24h"),
+        ("Urine Protein/Creatinine Ratio", "urine_pcr"),
+        ("Corrected Calcium", "calcium_corrected"),
+        ("Band Forms", "band_forms"),
+        ("Total CO2", "total_co2"),
+        ("Urine Colour", "urine_colour"),
     ],
 )
 def test_new_tests_match_by_alias(printed, key):
@@ -213,3 +224,30 @@ def test_typical_range_picks_by_sex_and_never_guesses_one():
     assert typical_range(wbc, "female").high == 10000
     assert typical_range(psa, "female") is None
     assert get_test("hba1c").loinc == "4548-4"
+
+
+@pytest.mark.parametrize(
+    ("key", "unit", "factor"),
+    [
+        ("urine_protein_24h", "g/24 hrs", 1000),
+        ("urine_protein_24h", "mg/24 hr", 1),
+        ("urine_creatinine_24h", "mmol/24 hr", 1000 / 8.842),
+        ("urine_pcr", "mg/g", 0.001),
+        ("urine_bilirubin", "µmol/L", 1 / 17.1),
+        ("beta_hydroxybutyrate", "µmol/L", 0.001),
+        ("urine_microalbumin_24h", "µg/min", 1.44),
+    ],
+)
+def test_new_tests_convert_their_units(key, unit, factor):
+    assert conversion_factor(get_test(key), unit) == pytest.approx(factor)
+
+
+def test_new_tests_carry_only_their_verified_data():
+    clearance = get_test("creatinine_clearance")
+    assert (typical_range(clearance, "male").low, typical_range(clearance, "female").low) == (97, 88)
+    assert typical_range(clearance, None) is None
+    assert get_test("hba1c_ifcc").recheck_months == 3
+    # No verified code or range: left empty rather than guessed.
+    assert get_test("mid_cells").loinc is None and get_test("urine_crystals").loinc is None
+    assert get_test("ldh").loinc is None
+    assert get_test("egfr").typical == ()

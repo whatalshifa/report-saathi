@@ -247,8 +247,9 @@ tests (AMH, IGF-1, DHEA-S) and cycle-dependent hormones get no typical range at 
 **Only codes, ranges and intervals two reviewers verified.** A wrong LOINC code sends a doctor's system
 the wrong test, and a wrong range or recheck interval reads as medical guidance. Every entry was checked
 against its named source by two independent reviewers; anything they couldn't confirm is left empty
-rather than filled from memory (10 tests have no code, and four proposed tests were dropped over
-disputed unit factors). Tests guard the rest: each code must pass LOINC's mod-10 check digit, no code
+rather than filled from memory: 13 tests have no code, LDH lost its code because no one re-reviewed
+it, eGFR lost its typical range, and three proposed tests (anti-TPO, anti-thyroglobulin and TRAb) were
+dropped because the reviewers disagreed on their unit factors. Tests guard the rest: each code must pass LOINC's mod-10 check digit, no code
 is used twice, no spelling may match two tests, and every unit factor must be positive and agree with
 any other spelling of the same unit.
 
