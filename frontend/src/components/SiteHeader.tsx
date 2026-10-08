@@ -35,7 +35,7 @@ export function SiteHeader({ signedIn }: { signedIn: boolean }) {
   }
 
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-background/80 backdrop-blur-md print:hidden">
+    <header className="sticky top-0 z-40 border-b border-line bg-background/95 backdrop-blur-lg print:hidden">
       {user?.is_guest && (
         <div className="bg-teal-800 px-4 py-2 text-center text-sm text-teal-50 dark:bg-teal-900">
           You&apos;re exploring a demo account. It&apos;s deleted after 24 hours.{" "}
@@ -61,7 +61,7 @@ export function SiteHeader({ signedIn }: { signedIn: boolean }) {
               <Link
                 href="/account"
                 aria-label="Your account"
-                className="ml-1 flex items-center gap-2 rounded-full py-1 pr-1 pl-1 text-muted hover:text-foreground sm:pr-3"
+                className="ml-1 flex items-center gap-2 rounded-full p-1 text-sm font-medium text-muted transition-colors hover:bg-slate-100 hover:text-foreground md:pr-3 dark:hover:bg-slate-800"
               >
                 <span
                   aria-hidden
@@ -77,7 +77,7 @@ export function SiteHeader({ signedIn }: { signedIn: boolean }) {
               <ThemeToggle />
               {!signedIn && !onAuthPage && (
                 <>
-                  <Link href="/login" className="btn btn-sm hidden text-muted hover:text-foreground sm:inline-flex">
+                  <Link href="/login" className="btn btn-sm btn-ghost hidden sm:inline-flex">
                     Sign in
                   </Link>
                   <Link href="/signup" className="btn btn-sm btn-primary">
@@ -98,7 +98,7 @@ function NavLink({ href, active, children }: { href: string; active: boolean; ch
     <Link
       href={href}
       aria-current={active ? "page" : undefined}
-      className={`rounded-lg px-3 py-2 font-medium transition ${
+      className={`rounded-lg px-3 py-2 font-medium transition-colors ${
         active
           ? "bg-teal-50 text-teal-800 dark:bg-teal-950 dark:text-teal-200"
           : "text-muted hover:bg-slate-100 hover:text-foreground dark:hover:bg-slate-800"

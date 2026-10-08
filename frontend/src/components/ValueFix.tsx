@@ -29,7 +29,7 @@ export function FixButton({
       aria-label={`Fix ${name}`}
       aria-expanded={open}
       title="Read wrongly? Fix it"
-      className="-my-1 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg align-middle text-muted transition-colors hover:bg-slate-100 hover:text-teal-700 focus-visible:outline-2 focus-visible:outline-teal-600 dark:hover:bg-slate-800 dark:hover:text-teal-300"
+      className="icon-btn -my-1 h-8 w-8 align-middle hover:text-teal-700 dark:hover:text-teal-300"
     >
       <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden>
         <path strokeLinecap="round" strokeLinejoin="round" d="M4 20h4L19 9l-4-4L4 16v4ZM13.5 6.5l4 4" />
@@ -45,7 +45,7 @@ export function CorrectedChip({ result, showReading = false }: { result: TestRes
   const chip = (
     <span
       title={`You corrected this; it was read as ${reading}`}
-      className="inline-flex rounded-full bg-sky-100 px-2 py-0.5 text-xs font-semibold text-sky-800 dark:bg-sky-950 dark:text-sky-200"
+      className="badge bg-sky-50 text-sky-800 ring-1 ring-sky-600/20 ring-inset dark:bg-sky-950/60 dark:text-sky-200 dark:ring-sky-400/25"
     >
       Corrected
       {!showReading && <span className="sr-only">. You corrected this; it was read as {reading}.</span>}
@@ -101,7 +101,7 @@ export function ValueEditor({
         if (e.key === "Escape") onClose();
       }}
       aria-label={`Fix ${result.name}`}
-      className="space-y-2 rounded-xl border border-line bg-background p-3 text-sm"
+      className="space-y-2 rounded-xl border border-line bg-background p-3 text-sm sm:p-4"
     >
       <p className="text-muted">Type it exactly as printed on the report.</p>
       <div className="flex flex-wrap items-end gap-2">
@@ -118,7 +118,7 @@ export function ValueEditor({
             maxLength={255}
             aria-invalid={error ? true : undefined}
             aria-describedby={error ? `${id}-error` : undefined}
-            className="input block w-28 px-2.5 py-1.5 text-sm"
+            className="input mt-1 min-h-9 w-28 px-2.5 py-1 text-sm"
           />
         </label>
         <label className="text-xs font-medium text-muted" htmlFor={`${id}-unit`}>
@@ -129,14 +129,14 @@ export function ValueEditor({
             onChange={(e) => setUnit(e.target.value)}
             autoComplete="off"
             maxLength={50}
-            className="input block w-28 px-2.5 py-1.5 text-sm"
+            className="input mt-1 min-h-9 w-28 px-2.5 py-1 text-sm"
           />
         </label>
         <div className="flex gap-2">
-          <button type="submit" disabled={saving} className="btn btn-primary btn-sm">
+          <button type="submit" disabled={saving} className="btn btn-primary btn-sm min-h-9">
             {saving ? "Saving…" : "Save"}
           </button>
-          <button type="button" onClick={onClose} className="btn btn-secondary btn-sm">
+          <button type="button" onClick={onClose} className="btn btn-ghost btn-sm min-h-9">
             Cancel
           </button>
         </div>

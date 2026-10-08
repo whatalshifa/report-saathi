@@ -17,7 +17,7 @@ export function SourceButton({ name, onClick }: { name: string; onClick: (trigge
       aria-label={`See ${name} on the original report`}
       aria-haspopup="dialog"
       title="Where did this number come from?"
-      className="-my-1 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg align-middle text-muted transition-colors hover:bg-slate-100 hover:text-teal-700 focus-visible:outline-2 focus-visible:outline-teal-600 dark:hover:bg-slate-800 dark:hover:text-teal-300"
+      className="icon-btn -my-1 h-8 w-8 align-middle hover:text-teal-700 dark:hover:text-teal-300"
     >
       <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden>
         <path
@@ -105,7 +105,7 @@ export function SourceDialog({
             type="button"
             onClick={() => dialog.current?.close()}
             aria-label="Close"
-            className="-mr-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-slate-100 hover:text-foreground focus-visible:outline-2 focus-visible:outline-teal-600 dark:hover:bg-slate-800"
+            className="icon-btn -mr-1"
           >
             <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
               <path strokeLinecap="round" d="M6 6l12 12M18 6 6 18" />
