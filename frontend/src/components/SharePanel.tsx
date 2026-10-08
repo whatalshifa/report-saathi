@@ -6,6 +6,7 @@ import { ErrorNote } from "@/components/Skeleton";
 import {
   createShareLink,
   getMe,
+  getShareQr,
   listShareLinks,
   revokeShareLink,
   shareUrl,
@@ -32,6 +33,7 @@ export function SharePanel({
   const [created, setCreated] = useState<CreatedShareLink | null>(null);
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // A demo account's links end with the account, within a day, not after 7 days.
   const [guest, setGuest] = useState(false);
@@ -56,6 +58,7 @@ export function SharePanel({
     setBusy(true);
     setError(null);
     setCopied(false);
+    setQrOpen(false);
     try {
       setCreated(await createShareLink(briefId));
       await reload();
@@ -133,7 +136,17 @@ export function SharePanel({
                 Send on WhatsApp or another app
               </button>
             )}
+            <button
+              onClick={() => setQrOpen((open) => !open)}
+              aria-expanded={qrOpen}
+              aria-controls="share-qr"
+              className="btn btn-secondary btn-sm"
+            >
+              {qrOpen ? "Hide QR code" : "Show QR code"}
+            </button>
           </div>
+          {/* Keyed by link, so a new link never shows the last one's code. */}
+          {qrOpen && <ShareQr key={created.id} url={url} />}
           <p className="mt-2 text-xs text-muted">
             Send it now: for your privacy we show each link only once. You can always make a new one.
           </p>
@@ -164,6 +177,81 @@ export function SharePanel({
         </div>
       )}
     </section>
+  );
+}
+
+/** The link as a QR code a doctor can scan off this screen, and the same code to save. */
+function ShareQr({ url }: { url: string }) {
+  const [svg, setSvg] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    getShareQr(url)
+      .then((qr) => setSvg(qr.svg))
+      .catch((err) => setError(err instanceof Error ? err.message : "Could not make the QR code"));
+  }, [url]);
+
+  const image = svg ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}` : "";
+
+  function save(href: string, name: string) {
+    const a = document.createElement("a");
+    a.href = href;
+    a.download = name;
+    a.click();
+  }
+
+  // Phones' galleries and WhatsApp don't take SVGs, so the main download is a PNG drawn from it.
+  function savePng() {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = canvas.height = 600;
+      const draw = canvas.getContext("2d");
+      if (!draw) return;
+      draw.imageSmoothingEnabled = false; // crisp squares scan best
+      draw.drawImage(img, 0, 0, canvas.width, canvas.height);
+      save(canvas.toDataURL("image/png"), "reportsaathi-doctor-link.png");
+    };
+    img.src = image;
+  }
+
+  return (
+    <div id="share-qr" className="mt-4 flex flex-col items-center gap-3 sm:flex-row sm:items-start">
+      {error ? (
+        <ErrorNote message={error} />
+      ) : (
+        <>
+          {/* Always black on a white tile: scanners need the contrast, in dark mode too. */}
+          <div className="h-48 w-48 shrink-0 rounded-xl border border-line bg-white p-1 shadow-sm">
+            {svg ? (
+              // A data URL made here, not a remote image, so not one for Next's image optimiser.
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={image} alt="QR code for your link" className="h-full w-full [image-rendering:pixelated]" />
+            ) : (
+              <div role="status" className="h-full w-full animate-pulse rounded-lg bg-slate-100">
+                <span className="sr-only">Making the QR code…</span>
+              </div>
+            )}
+          </div>
+          <div className="text-sm text-muted sm:pt-1">
+            <p>Your doctor can scan this with their phone&apos;s camera to open the summary.</p>
+            <p className="mt-1">Anyone who scans it can read the summary, so show it only to your doctor.</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button onClick={savePng} disabled={!svg} className="btn btn-secondary btn-sm">
+                Download image
+              </button>
+              <button
+                onClick={() => save(image, "reportsaathi-doctor-link.svg")}
+                disabled={!svg}
+                className="btn btn-secondary btn-sm"
+              >
+                Download SVG
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
   );
 }
 

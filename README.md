@@ -15,6 +15,14 @@ keeps the whole family's reports, privately and encrypted.
 
 ## What works today
 
+### Phase 6
+
+- **A QR code for the doctor's link.** Right after making a link, "Show QR code" draws it as a black
+  and white code (on a white tile, in dark mode too), so a doctor across the desk can scan it off the
+  patient's phone. "Download image" saves it as a PNG for the gallery or WhatsApp, "Download SVG" for
+  printing. The code is drawn by the API (`qrcode`), only for the owner's own working links, and the
+  link travels in the request body, so its token still never reaches a log.
+
 ### Phase 5: beating the competition on trust
 
 - **Fix a misread value.** A pencil beside every value opens a small form; the fixed value is flagged
@@ -196,9 +204,9 @@ written in advance. Add `ANTHROPIC_API_KEY` and uploads switch on.
 ## Tests
 
 ```bash
-cd backend && pytest        # 318 tests: flags, units, trends, sign-in, privacy, encryption, demo accounts, limits, fixes, share links, data export, consent
+cd backend && pytest        # 321 tests: flags, units, trends, sign-in, privacy, encryption, demo accounts, limits, fixes, share links, data export, consent, QR codes
 cd frontend && npm run lint && npm run build
-cd frontend && npx playwright test   # 27 browser tests, 53 runs on a computer and a phone (one is phone-only); starts the API and the site itself
+cd frontend && npx playwright test   # 28 browser tests, 55 runs on a computer and a phone (one is phone-only); starts the API and the site itself
 ```
 
 The tests never call the real Claude API; they use a stand-in for Claude, so they are free and fast.

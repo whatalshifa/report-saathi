@@ -11,10 +11,10 @@ from app.api.auth import LimitersDep
 from app.api.deps import SessionDep, owned_brief, owned_profile
 from app.config import Settings, get_settings
 from app.models import Brief, JobStatus, Profile, ShareLink, ShareView
-from app.schemas import OpenShared, ShareCreated, SharedBrief, ShareOut
-from app.services.auth import CurrentUser, as_utc
+from app.schemas import OpenShared, ShareCreated, SharedBrief, ShareOut, ShareQr, ShareQrRequest
+from app.services.auth import CurrentUser, as_utc, hash_token
 from app.services.ratelimit import client_ip
-from app.services.sharing import create_share, open_share, share_state
+from app.services.sharing import create_share, link_token, open_share, qr_svg, share_state
 
 router = APIRouter(prefix="/api", tags=["shares"])
 
@@ -59,6 +59,28 @@ def make_share(
         )
     link, token = create_share(session, user, brief, settings)
     return ShareCreated(**_out(link).model_dump(), token=token)
+
+
+@router.post("/shares/qr", response_model=ShareQr)
+def share_qr(body: ShareQrRequest, user: CurrentUser, session: SessionDep, response: Response) -> ShareQr:
+    """The QR code for a working link of the owner's, to show a doctor sitting across the desk.
+
+    The page sends the whole link in the body, as it showed it (the API doesn't know the website's
+    address), so the token stays out of logs here too. Only the owner's own working links are drawn,
+    so this can't be used to make QR codes of anything else, and the code isn't cached anywhere.
+    """
+    token = link_token(body.url)
+    link = None
+    if token:
+        link = session.scalar(select(ShareLink).where(ShareLink.token_hash == hash_token(token)))
+    if (
+        link is None
+        or session.get(Profile, link.profile_id).user_id != user.id
+        or share_state(link) != "active"
+    ):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Link not found", PRIVATE_HEADERS)
+    response.headers.update(PRIVATE_HEADERS)
+    return ShareQr(svg=qr_svg(body.url))
 
 
 @router.get("/profiles/{profile_id}/shares", response_model=list[ShareOut])

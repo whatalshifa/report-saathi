@@ -281,3 +281,16 @@ is on warfarin, which is what its guideline is about. The longest overdue (earli
 computed in the trends service (with `today` passed in for tests), not stored, and is left out of the
 doctor brief's saved snapshot because it is meant for the family.
 
+
+## Phase 6
+
+**The QR code is drawn on the server, for the owner's own working links only.** Phase 5 left a QR code
+out to avoid a frontend library; the small Python `qrcode` package draws it as an SVG instead, so the
+website gains no dependency. The page sends the whole link it showed (the API doesn't know the
+website's address) in a POST body to `/api/shares/qr`, never in the address, so the token stays out of
+logs as before. The API checks that the token is one of the signed-in owner's working links before
+drawing anything, so the endpoint can't be used to make codes for other addresses, and answers with
+`no-store`. The code is always black on a white tile with the standard four-square quiet border,
+because many scanners fail on light-on-dark codes, and it uses medium error correction, which still
+scans off a phone screen with some glare. The PNG download is drawn from the SVG in the browser, since
+phone galleries and WhatsApp don't take SVGs.

@@ -1,9 +1,11 @@
 """Doctor share links: hashed tokens, expiry, revoking, the opening log, and who may do what."""
 
 import hashlib
+import re
 from datetime import UTC, datetime, timedelta
 
 import pytest
+import qrcode
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 
@@ -246,3 +248,57 @@ def test_uploading_a_report_leaves_links_alone(client, brief_id, doctor):
     link = share(client, brief_id)
     upload(client)
     assert opened(doctor, link["token"]).status_code == 200
+
+
+def qr(client, url):
+    return client.post("/api/shares/qr", json={"url": url})
+
+
+def dark_squares(svg: str) -> set[tuple[int, int]]:
+    """The QR code's dark squares, read back out of the SVG path ("M4,4H5V5H4z" is one square)."""
+    return {(int(x), int(y)) for x, y in re.findall(r"M(\d+),(\d+)H", svg)}
+
+
+def test_a_new_link_can_be_shown_as_a_qr_code(client, brief_id):
+    url = f"https://report-saathi.example/shared#{share(client, brief_id)['token']}"
+    response = qr(client, url)
+    assert response.status_code == 200
+    assert response.headers["cache-control"] == "no-store"
+    svg = response.json()["svg"]
+    assert svg.startswith("<svg") and '<rect fill="white"' in svg  # black on white, in dark mode too
+    # The squares are exactly the code for this link, quiet border included.
+    code = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_M, border=4)
+    code.add_data(url)
+    expected = {(x, y) for y, row in enumerate(code.get_matrix()) for x, dark in enumerate(row) if dark}
+    assert dark_squares(svg) == expected
+
+
+def test_only_the_owners_working_links_get_a_qr_code(client, brief_id, session_factory):
+    link, revoked, expired = share(client, brief_id), share(client, brief_id), share(client, brief_id)
+    client.delete(f"/api/shares/{revoked['id']}")
+    expire(session_factory, expired["id"])
+    site = "http://localhost:3000"
+    for url in [
+        f"{site}/shared#{revoked['token']}",
+        f"{site}/shared#{expired['token']}",
+        f"{site}/shared#{'x' * 43}",
+        f"{site}/shared#",
+        f"{site}/somewhere-else#{link['token']}",  # not a share link
+        f"javascript:alert(1)//{site}/shared#{link['token']}",
+        "https://example.com/anything",
+    ]:
+        answer = qr(client, url)
+        assert answer.status_code == 404, url
+        assert answer.headers["cache-control"] == "no-store"
+    assert qr(client, f"{site}/shared#{link['token']}").status_code == 200
+    assert qr(client, f"{site}/shared#{link['token']}" + "x" * 500).status_code == 422  # too long
+
+    signup(client, email="someone@example.com", name="Someone Else")
+    assert qr(client, f"{site}/shared#{link['token']}").status_code == 404
+    client.post("/api/auth/logout")
+    assert qr(client, f"{site}/shared#{link['token']}").status_code == 401
+
+
+def test_the_token_for_a_qr_code_never_travels_in_the_address(client, brief_id):
+    token = share(client, brief_id)["token"]
+    assert client.get(f"/api/shares/qr?url=http://x/shared%23{token}").status_code == 405

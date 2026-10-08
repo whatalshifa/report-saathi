@@ -268,6 +268,16 @@ against answers a person checked by hand: how many printed values it finds, how 
 how often the number, unit and low/high flag are right, split by PDFs and phone photos. How to run it
 is in [ACCURACY.md](ACCURACY.md); only totals are published, never a report.
 
+## Phase 6
+
+### 19. A QR code for a doctor's link (`backend/app/services/sharing.py`, `frontend/src/components/SharePanel.tsx`)
+
+A share link is shown once, right after it is made. Next to "Copy link", "Show QR code" posts the link
+to `POST /api/shares/qr`. The API takes the token after `#`, hashes it, checks it belongs to one of the
+signed-in person's working links, and returns the link drawn as an SVG by the `qrcode` package. The
+page shows it on a white tile (scanners need dark squares on light, whatever the theme) and can save
+it as a PNG or an SVG.
+
 ## The database
 
 Seven tables, defined in `backend/app/models.py`:

@@ -223,6 +223,42 @@ test("a doctor can open a shared brief until the link is revoked", async ({ page
   await doctorContext.close();
 });
 
+test("a new link can be shown as a QR code to scan, in dark mode too", async ({ page }) => {
+  await page.emulateMedia({ colorScheme: "dark" });
+  await startDemo(page);
+  await page.getByRole("link", { name: /results over time/ }).click();
+  await page.getByRole("button", { name: "Prepare doctor brief" }).click();
+  const panel = page.getByRole("region", { name: "Share with your doctor" });
+  await panel.getByRole("button", { name: "Create a link" }).click();
+  const url = await panel.getByLabel(/Your link, works until/).inputValue();
+
+  const asked = page.waitForRequest("**/api/shares/qr");
+  await panel.getByRole("button", { name: "Show QR code" }).click();
+  const request = await asked;
+  // The link, token and all, travels in the body only, never in the address.
+  expect(request.method()).toBe("POST");
+  expect(request.postDataJSON()).toEqual({ url });
+  expect(request.url()).not.toContain(url.split("#")[1]);
+
+  const qr = panel.getByRole("img", { name: "QR code for your link" });
+  await expect(qr).toBeVisible();
+  expect(await qr.getAttribute("src")).toMatch(/^data:image\/svg\+xml/);
+  // Black on a white tile even though the page is dark, so a camera can read it.
+  const tile = await qr.evaluate((img) => getComputedStyle(img.parentElement!).backgroundColor);
+  expect(tile).toBe("rgb(255, 255, 255)");
+
+  const download = page.waitForEvent("download");
+  await panel.getByRole("button", { name: "Download image" }).click();
+  expect((await download).suggestedFilename()).toBe("reportsaathi-doctor-link.png");
+
+  await panel.getByRole("button", { name: "Hide QR code" }).click();
+  await expect(qr).toHaveCount(0);
+  // A new link starts with its code hidden, and the old code is never shown for it.
+  await panel.getByRole("button", { name: "Make another link" }).click();
+  await expect(panel.getByRole("button", { name: "Show QR code" })).toBeVisible();
+  await expect(qr).toHaveCount(0);
+});
+
 test("a new account can sign up and add the samples", async ({ page }) => {
   await page.goto("/signup");
   await page.getByLabel("Your name").fill("Test Person");

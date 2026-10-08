@@ -439,5 +439,10 @@ export const revokeShareLink = (id: string) => request<void>(`/api/shares/${id}`
  */
 export const getSharedBrief = (token: string) =>
   request<SharedBrief>("/api/shared", json("POST", { token }), true);
+/**
+ * A working link of yours as a QR code: an SVG of black squares on white. The link goes in the body,
+ * like the token above, so it never lands in a request log.
+ */
+export const getShareQr = (url: string) => request<{ svg: string }>("/api/shares/qr", json("POST", { url }));
 /** The address to send the doctor: on this website, with the token after "#", which browsers never send. */
 export const shareUrl = (token: string) => `${window.location.origin}/shared#${token}`;
