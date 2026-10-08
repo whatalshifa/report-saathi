@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
 import { ConsentDialog } from "@/components/ConsentDialog";
+import { ErrorNote } from "@/components/Skeleton";
 import { ApiError, getMe, uploadReport, type Profile, type ReportDetail } from "@/lib/api";
 
 const ACCEPTED = "application/pdf,image/jpeg,image/png,image/webp";
@@ -101,19 +102,24 @@ export function UploadCard({ profile, reading }: { profile: Profile; reading: bo
           handleFile(e.dataTransfer.files[0]);
         }}
         disabled={uploading}
-        className={`flex w-full flex-col items-center gap-3 rounded-2xl border-2 border-dashed px-6 py-12 text-center transition ${
+        className={`flex w-full flex-col items-center gap-3 rounded-2xl border-2 border-dashed px-6 py-10 text-center transition-colors sm:py-12 ${
           dragging
             ? "border-teal-600 bg-teal-50 dark:bg-teal-950/40"
             : "border-line bg-surface hover:border-teal-500 hover:bg-teal-50/40 dark:hover:bg-teal-950/20"
         } disabled:cursor-wait disabled:opacity-70`}
       >
-        <svg aria-hidden viewBox="0 0 24 24" className="h-10 w-10 text-teal-600" fill="none" stroke="currentColor">
-          <path strokeWidth={1.5} strokeLinecap="round" d="M12 16V4m0 0-4 4m4-4 4 4M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
-        </svg>
+        <span
+          aria-hidden
+          className="grid h-12 w-12 place-items-center rounded-full bg-teal-50 text-teal-700 dark:bg-teal-950 dark:text-teal-300"
+        >
+          <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor">
+            <path strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" d="M12 16V4m0 0-4 4m4-4 4 4M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+          </svg>
+        </span>
         <span className="text-lg font-semibold">
           {uploading ? "Uploading…" : `Upload a report for ${profile.name}`}
         </span>
-        <span className="text-sm text-muted">
+        <span className="max-w-md text-sm text-pretty text-muted">
           Drop a PDF or a photo here, or tap to choose one. Up to 20 MB. Files are stored encrypted.
         </span>
       </button>
@@ -129,9 +135,9 @@ export function UploadCard({ profile, reading }: { profile: Profile; reading: bo
       />
       {consentDialog}
       {error && (
-        <p role="alert" className="mt-3 text-sm text-rose-700 dark:text-rose-300">
-          {error}
-        </p>
+        <div className="mt-3">
+          <ErrorNote message={error} />
+        </div>
       )}
     </div>
   );

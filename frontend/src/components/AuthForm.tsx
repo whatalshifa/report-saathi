@@ -5,9 +5,17 @@ import { useState } from "react";
 
 import { DemoButton } from "@/components/DemoButton";
 import { LogoMark } from "@/components/Logo";
+import { ErrorNote } from "@/components/Skeleton";
 import { login, signup } from "@/lib/api";
 
 const HERE = "https://reportsaathi.invalid";
+
+const POINTS = [
+  "Reads photos and PDFs from any lab",
+  "Explains results in English, Hindi and Marathi",
+  "Tracks your family’s results across labs",
+  "Files encrypted, visible only to you",
+];
 
 /**
  * Only go back to a page on this site, never to an address someone put in the link. Browsers read
@@ -50,37 +58,48 @@ export function AuthForm({ mode, next }: { mode: "login" | "signup"; next?: stri
   return (
     <div className="mx-auto grid max-w-4xl overflow-hidden rounded-3xl border border-line bg-surface shadow-sm md:grid-cols-2">
       <aside className="hidden flex-col justify-between bg-teal-800 p-10 text-teal-50 md:flex dark:bg-teal-950">
-        <LogoMark className="h-10 w-10" />
+        <span className="flex items-center gap-2.5 text-lg font-bold tracking-tight text-white">
+          <LogoMark className="h-9 w-9 rounded-[10px] ring-1 ring-white/25" />
+          ReportSaathi
+        </span>
         <div>
           <p className="text-2xl font-semibold text-white">Every value read. Every flag explained.</p>
-          <ul className="mt-6 space-y-3 text-sm text-teal-100">
-            <li>✓ Reads photos and PDFs from any lab</li>
-            <li>✓ Explains results in English, Hindi and Marathi</li>
-            <li>✓ Tracks your family&apos;s results across labs</li>
-            <li>✓ Files encrypted, visible only to you</li>
+          <ul className="mt-6 space-y-3 text-sm text-teal-50">
+            {POINTS.map((point) => (
+              <li key={point} className="flex items-start gap-3">
+                <svg viewBox="0 0 20 20" className="mt-0.5 h-4 w-4 shrink-0 text-teal-300" fill="currentColor" aria-hidden>
+                  <path
+                    fillRule="evenodd"
+                    d="M16.7 5.3a1 1 0 0 1 0 1.4l-8 8a1 1 0 0 1-1.4 0l-4-4a1 1 0 1 1 1.4-1.4L8 12.58l7.3-7.3a1 1 0 0 1 1.4 0Z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                {point}
+              </li>
+            ))}
           </ul>
         </div>
-        <p className="text-xs text-teal-200/80">Not medical advice. Always check with your doctor.</p>
+        <p className="text-xs text-teal-100/80">Not medical advice. Always check with your doctor.</p>
       </aside>
       <div className="p-6 sm:p-10">
-      <h1 className="text-2xl font-bold tracking-tight">{isSignup ? "Create your account" : "Sign in"}</h1>
-      <p className="mt-1 text-muted">
+      <h1 className="page-title">{isSignup ? "Create your account" : "Sign in"}</h1>
+      <p className="mt-2 text-muted">
         {isSignup
           ? "Keep your family’s lab reports in one private place."
           : "Welcome back. Your reports are waiting."}
       </p>
-      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+      <form onSubmit={handleSubmit} className="mt-8 space-y-5">
         {isSignup && (
-          <label className="block text-sm font-medium">
+          <label className="label">
             Your name
             <input name="name" required maxLength={100} autoComplete="name" className="input" />
           </label>
         )}
-        <label className="block text-sm font-medium">
+        <label className="label">
           Email
           <input name="email" type="email" required autoComplete="email" className="input" />
         </label>
-        <label className="block text-sm font-medium">
+        <label className="label">
           Password
           <input
             name="password"
@@ -92,15 +111,13 @@ export function AuthForm({ mode, next }: { mode: "login" | "signup"; next?: stri
             className="input"
           />
           {isSignup && (
-            <span className="mt-1 block font-normal text-muted">
+            <span className="hint">
               At least 10 characters. A short phrase is easier to remember than a jumble.
             </span>
           )}
         </label>
         {error && (
-          <p role="alert" className="text-sm text-rose-700 dark:text-rose-300">
-            {error}
-          </p>
+          <ErrorNote message={error} />
         )}
         {isSignup && (
           <p className="text-sm text-muted">
@@ -111,7 +128,7 @@ export function AuthForm({ mode, next }: { mode: "login" | "signup"; next?: stri
             .
           </p>
         )}
-        <button disabled={busy} className="btn btn-primary w-full py-3">
+        <button disabled={busy} className="btn btn-primary btn-lg w-full">
           {busy ? "Please wait…" : isSignup ? "Create account" : "Sign in"}
         </button>
       </form>
@@ -122,9 +139,9 @@ export function AuthForm({ mode, next }: { mode: "login" | "signup"; next?: stri
         </Link>
       </p>
       <div className="mt-8 border-t border-line pt-6">
-        <p className="text-sm text-muted">Just looking around?</p>
+        <p className="text-sm text-muted">Just looking around? Open a private sample account, nothing to fill in.</p>
         <div className="mt-3">
-          <DemoButton className="btn btn-secondary" label="Open the demo account" next={safeNext(next)} />
+          <DemoButton full className="btn btn-secondary w-full sm:w-auto" label="Open the demo account" next={safeNext(next)} />
         </div>
       </div>
       </div>

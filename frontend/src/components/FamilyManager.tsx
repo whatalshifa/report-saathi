@@ -1,9 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 
+import { PageHeader } from "@/components/PageHeader";
 import { ErrorNote, SkeletonList } from "@/components/Skeleton";
+import { LoadError } from "@/components/StatusPanel";
 import {
   createProfile,
   deleteProfile,
@@ -24,8 +25,18 @@ export function FamilyManager() {
   const { data: profiles, error, reload } = usePoll(listProfiles, noRepeat);
   const [editing, setEditing] = useState<string | null>(null);
 
-  if (error) return <ErrorNote message={error} />;
-  if (!profiles) return <SkeletonList />;
+  if (error) return <LoadError message={error} onRetry={reload} />;
+  if (!profiles) {
+    return (
+      <div className="space-y-8" role="status" aria-label="Loading">
+        <div className="space-y-3">
+          <div className="skeleton h-8 w-40" />
+          <div className="skeleton h-4 w-96 max-w-full" />
+        </div>
+        <SkeletonList />
+      </div>
+    );
+  }
 
   async function remove(profile: Profile) {
     const reports = profile.report_count
@@ -42,19 +53,14 @@ export function FamilyManager() {
 
   return (
     <div className="space-y-8">
-      <header>
-        <Link href="/" className="back-link">
-          ← Reports
-        </Link>
-        <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">Family</h1>
-        <p className="mt-1 text-muted">
-          Add the people whose reports you look after. Each person gets their own reports and timeline.
-        </p>
-      </header>
+      <PageHeader
+        title="Family"
+        description="Add the people whose reports you look after. Each person gets their own reports and timeline."
+      />
 
-      <ul className="divide-y divide-line card">
+      <ul className="card divide-y divide-line">
         {profiles.map((p) => (
-          <li key={p.id} className="p-4">
+          <li key={p.id} className="px-4 py-4 sm:px-5">
             {editing === p.id ? (
               <ProfileForm
                 initial={p}
@@ -69,15 +75,26 @@ export function FamilyManager() {
               />
             ) : (
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p className="font-medium">
-                    {p.name} <span className="font-normal text-muted">· {p.is_sample ? "Sample" : RELATION_LABEL[p.relation]}</span>
+                <div className="flex min-w-0 items-center gap-3">
+                  <span
+                    aria-hidden
+                    className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-teal-50 text-sm font-semibold text-teal-800 dark:bg-teal-950 dark:text-teal-200"
+                  >
+                    {p.name.trim().charAt(0).toUpperCase()}
+                  </span>
+                  <div className="min-w-0">
+                  <p className="flex flex-wrap items-center gap-x-2 font-medium">
+                    {p.name}
+                    <span className="badge bg-slate-100 font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                      {p.is_sample ? "Sample" : RELATION_LABEL[p.relation]}
+                    </span>
                   </p>
-                  <p className="text-sm text-muted">
+                  <p className="mt-0.5 text-sm text-muted">
                     {[p.birth_year && `Born ${p.birth_year}`, `${p.report_count} report${p.report_count === 1 ? "" : "s"}`]
                       .filter(Boolean)
                       .join(" · ")}
                   </p>
+                  </div>
                 </div>
                 <div className="flex gap-2 text-sm">
                   <button
@@ -89,7 +106,7 @@ export function FamilyManager() {
                   {p.relation !== "self" && (
                     <button
                       onClick={() => remove(p)}
-                      className="btn btn-secondary btn-sm hover:border-rose-400 hover:text-rose-700 dark:hover:text-rose-300"
+                      className="btn btn-danger-quiet btn-sm"
                     >
                       Delete
                     </button>
@@ -101,9 +118,9 @@ export function FamilyManager() {
         ))}
       </ul>
 
-      <section className="card p-5">
-        <h2 className="text-lg font-semibold">Add a family member</h2>
-        <p className="mb-4 mt-1 text-sm text-muted">
+      <section className="card p-5 sm:p-6">
+        <h2 className="section-title">Add a family member</h2>
+        <p className="mt-1 mb-5 text-sm text-muted">
           Use the name as their lab reports print it. Then ReportSaathi can tell you if a report lands in the wrong
           person’s profile.
         </p>
@@ -161,13 +178,13 @@ function ProfileForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-3 sm:grid-cols-2">
-      <label className="block text-sm font-medium">
+    <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2">
+      <label className="label">
         Name
         <input name="name" required maxLength={100} defaultValue={initial?.name} className="input" />
       </label>
       {!isSelf && (
-        <label className="block text-sm font-medium">
+        <label className="label">
           Relation to you
           <select name="relation" defaultValue={initial?.relation ?? "parent"} className="input">
             {RELATIONS.map((r) => (
@@ -178,7 +195,7 @@ function ProfileForm({
           </select>
         </label>
       )}
-      <label className="block text-sm font-medium">
+      <label className="label">
         Year of birth <span className="font-normal text-muted">(optional)</span>
         <input
           name="birth_year"
@@ -190,7 +207,7 @@ function ProfileForm({
           className="input"
         />
       </label>
-      <label className="block text-sm font-medium">
+      <label className="label">
         Sex <span className="font-normal text-muted">(optional, some ranges depend on it)</span>
         <select name="sex" defaultValue={initial?.sex ?? ""} className="input">
           <option value="">Prefer not to say</option>
@@ -200,11 +217,11 @@ function ProfileForm({
         </select>
       </label>
       {error && (
-        <p role="alert" className="text-sm text-rose-700 sm:col-span-2 dark:text-rose-300">
-          {error}
-        </p>
+        <div className="sm:col-span-2">
+          <ErrorNote message={error} />
+        </div>
       )}
-      <div className="flex gap-2 sm:col-span-2">
+      <div className="flex gap-2 pt-1 sm:col-span-2">
         <button
           disabled={busy}
           className="btn btn-primary"
@@ -212,7 +229,7 @@ function ProfileForm({
           {busy ? "Saving…" : submitLabel}
         </button>
         {onCancel && (
-          <button type="button" onClick={onCancel} className="btn text-muted hover:text-foreground">
+          <button type="button" onClick={onCancel} className="btn btn-ghost">
             Cancel
           </button>
         )}

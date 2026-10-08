@@ -115,9 +115,9 @@ export function Landing() {
             Upload a photo or PDF. ReportSaathi reads every value, flags what&apos;s out of range, explains it in
             English, Hindi or Marathi, and tracks results across labs over time.
           </p>
-          <div className="mt-8 flex flex-wrap items-start gap-3">
-            <DemoButton className="btn btn-primary px-5 py-3 text-base" label="Try the demo, no sign-up" />
-            <Link href="/signup" className="btn btn-secondary px-5 py-3 text-base">
+          <div className="mt-8 grid gap-3 sm:flex sm:flex-wrap sm:items-start">
+            <DemoButton full className="btn btn-primary btn-lg w-full sm:w-auto" label="Try the demo, no sign-up" />
+            <Link href="/signup" className="btn btn-secondary btn-lg">
               Create a free account
             </Link>
           </div>
@@ -174,12 +174,12 @@ export function Landing() {
             </h2>
             <p className="mt-3 text-muted">
               A FastAPI service and a Next.js app, with background jobs, envelope-encrypted file storage, rate limits,
-              database migrations, error tracking, and 180+ automated tests running on every change.
+              database migrations, error tracking, and over 360 automated tests running on every change.
             </p>
             <a
               href="https://github.com/whatalshifa/report-saathi"
               className="btn btn-secondary mt-6"
-              rel="noopener"
+              rel="noopener noreferrer"
             >
               <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" aria-hidden>
                 <path d="M12 .5a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2.2c-3.3.7-4-1.4-4-1.4-.6-1.4-1.4-1.8-1.4-1.8-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.7-1.6-2.7-.3-5.5-1.3-5.5-6 0-1.2.5-2.3 1.2-3.1-.1-.4-.5-1.6.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.3 4.6 18.3 5 18.3 5c.6 1.6.2 2.8.1 3.2.8.8 1.2 1.9 1.2 3.1 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .5Z" />
@@ -225,7 +225,7 @@ export function Landing() {
           The demo has three reports from two labs, explanations in three languages and a doctor brief.
         </p>
         <div className="mt-8 flex justify-center">
-          <DemoButton className="btn bg-white px-5 py-3 text-base text-teal-900 hover:bg-teal-50" />
+          <DemoButton className="btn btn-lg bg-white text-teal-900 shadow-sm hover:bg-teal-50" />
         </div>
       </section>
     </div>
@@ -246,7 +246,7 @@ function Preview() {
             <p className="font-semibold">Sample Pathology Lab, Pune</p>
             <p className="text-sm text-muted">Meera Joshi · 12 Jan 2026</p>
           </div>
-          <span className="rounded-full bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-800 dark:bg-rose-950 dark:text-rose-200">
+          <span className="badge shrink-0 bg-rose-50 text-rose-800 ring-1 ring-rose-600/20 ring-inset dark:bg-rose-950/60 dark:text-rose-200 dark:ring-rose-400/25">
             10 outside range
           </span>
         </div>

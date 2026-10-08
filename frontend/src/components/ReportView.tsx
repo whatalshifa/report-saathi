@@ -6,9 +6,12 @@ import { useEffect, useRef, useState } from "react";
 
 import { ExplanationPanel } from "@/components/ExplanationPanel";
 import { FlagBadge } from "@/components/FlagBadge";
+import { BackLink, PageHeader } from "@/components/PageHeader";
 import { RangeBar } from "@/components/RangeBar";
 import { SkeletonPage } from "@/components/Skeleton";
 import { SourceButton, SourceDialog } from "@/components/SourceView";
+import { StatCard } from "@/components/StatCard";
+import { StatusPanel } from "@/components/StatusPanel";
 import { TypicalRangeNote } from "@/components/TypicalRangeNote";
 import { CorrectedChip, FixButton, ValueEditor } from "@/components/ValueFix";
 import {
@@ -77,19 +80,25 @@ export function ReportView({ id }: { id: string }) {
     router.push(`/?profile=${report?.profile_id ?? ""}`);
   }
 
-  if (error) return <Notice title="Something went wrong" body={error} />;
+  if (error) {
+    return /not found/i.test(error) ? (
+      <Notice tone="missing" title="We couldn’t find this report" body="It may have been deleted, or the link is from another account." />
+    ) : (
+      <Notice tone="error" title="This report didn’t load" body={error} />
+    );
+  }
   if (!report) return <SkeletonPage />;
   if (report.status === "queued" || report.status === "processing") {
     return (
       <Notice
+        tone="working"
         title="Reading your report…"
         body="The AI is going through every page and pulling out each value. This usually takes under a minute."
-        spinner
       />
     );
   }
   if (report.status === "failed") {
-    return <Notice title="We couldn't read this report" body={report.error ?? undefined} />;
+    return <Notice tone="error" title="We couldn’t read this report" body={report.error ?? undefined} />;
   }
 
   const flagged = report.results.filter((r) => isOutOfRange(r.flag));
@@ -114,54 +123,68 @@ export function ReportView({ id }: { id: string }) {
 
   return (
     <div className="space-y-8">
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <Link href={`/?profile=${report.profile.id}`} className="back-link">
-            ← {possessive(report.profile.name)} reports
-          </Link>
-          <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">{report.lab_name ?? report.filename}</h1>
-          <p className="mt-1 text-muted">
-            {[
-              report.patient_name,
-              [formatAge(report.patient_age), formatSex(report.patient_sex)].filter(Boolean).join(", "),
-              formatDate(report.report_date),
-            ]
-              .filter(Boolean)
-              .join(" · ")}
-          </p>
-          <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm">
-            <Link href={`/profiles/${report.profile.id}`} className="link">
-              See {possessive(report.profile.name)} results over time →
-            </Link>
+      <PageHeader
+        back={{ href: `/?profile=${report.profile.id}`, label: `${possessive(report.profile.name)} reports` }}
+        title={report.lab_name ?? report.filename}
+        description={
+          <>
+            <p className="flex flex-wrap gap-x-2">
+              {[
+                report.patient_name,
+                [formatAge(report.patient_age), formatSex(report.patient_sex)].filter(Boolean).join(", "),
+                formatDate(report.report_date),
+              ]
+                .filter(Boolean)
+                .map((part, i, parts) => (
+                  // The dot rides at the end of the part before it, so a wrapped line never starts with one.
+                  <span key={part} className="whitespace-nowrap">
+                    {part}
+                    {i < parts.length - 1 && (
+                      <span aria-hidden className="ml-2">
+                        ·
+                      </span>
+                    )}
+                  </span>
+                ))}
+            </p>
+            <p className="mt-2 text-sm">
+              <Link href={`/profiles/${report.profile.id}`} className="link">
+                See {possessive(report.profile.name)} results over time →
+              </Link>
+            </p>
+          </>
+        }
+        actions={
+          <>
             {canShowSource && (
               <a
                 href={reportFileUrl(report.id)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="link"
+                className="btn btn-secondary btn-sm"
                 title={downloadsPdf ? "This phone saves the PDF to its downloads to open it" : undefined}
               >
                 {downloadsPdf ? "Download original" : "View original"}
               </a>
             )}
-          </div>
-        </div>
-        <button onClick={handleDelete} className="btn btn-secondary btn-sm hover:border-rose-400 hover:text-rose-700 dark:hover:text-rose-300">
-          Delete
-        </button>
-      </header>
+            <button onClick={handleDelete} className="btn btn-danger-quiet btn-sm">
+              Delete
+            </button>
+          </>
+        }
+      />
 
       {report.name_matches_profile === false && <WrongPersonWarning report={report} onMoved={setReport} />}
 
       <section className="grid grid-cols-3 gap-3">
-        <Stat label="Values read" value={report.results.length} />
-        <Stat label="Outside normal range" value={flagged.length} highlight={flagged.length > 0} />
-        <Stat label="Within range" value={report.results.filter((r) => r.flag === "normal").length} />
+        <StatCard label="Values read" value={report.results.length} />
+        <StatCard label="Outside normal range" value={flagged.length} tone={flagged.length > 0 ? "warn" : undefined} />
+        <StatCard label="Within range" value={report.results.filter((r) => r.flag === "normal").length} />
       </section>
 
       {flagged.length > 0 && (
         <section aria-labelledby="needs-attention">
-          <h2 id="needs-attention" className="mb-3 text-lg font-semibold">
+          <h2 id="needs-attention" className="section-title mb-3">
             Needs attention
           </h2>
           <ul className="grid gap-3 sm:grid-cols-2">
@@ -174,12 +197,13 @@ export function ReportView({ id }: { id: string }) {
                   <p className="font-medium">{r.name}</p>
                   <FlagBadge flag={r.flag} />
                 </div>
-                <p className="mt-1 text-2xl font-semibold">
-                  {r.value_text} <span className="text-sm font-normal text-muted">{r.unit}</span>{" "}
+                <p className="mt-1 flex items-center gap-1.5">
+                  <span className="text-2xl font-semibold tracking-tight tabular-nums">{r.value_text}</span>
+                  <span className="text-sm text-muted">{r.unit}</span>
                   <SourceToggle name={r.name} onShow={showSource(r)} />
                 </p>
                 <p className="mb-3 text-sm text-muted">
-                  Normal: {formatRange(r.ref_low, r.ref_high, r.reference_text)}
+                  Normal <span className="tabular-nums">{formatRange(r.ref_low, r.ref_high, r.reference_text)}</span>
                   <TypicalRangeNote rangeSource={r.range_source} source={r.typical_range_source} />
                 </p>
                 <RangeBar result={r} />
@@ -198,7 +222,7 @@ export function ReportView({ id }: { id: string }) {
 
       <section aria-labelledby="all-results" className="space-y-6">
         <div>
-          <h2 id="all-results" className="text-lg font-semibold">
+          <h2 id="all-results" className="section-title">
             All results
           </h2>
           <p className="mt-1 text-sm text-muted">
@@ -209,7 +233,7 @@ export function ReportView({ id }: { id: string }) {
         </div>
         {sections.map(([section, results]) => (
           <div key={section}>
-            <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted">{section}</h3>
+            <h3 className="mb-2 text-xs font-semibold tracking-[0.08em] text-muted uppercase">{section}</h3>
             {/* Phones get a stacked list; wider screens get a table. */}
             <ul className="card divide-y divide-line sm:hidden">
               {results.map((r) => (
@@ -231,13 +255,13 @@ export function ReportView({ id }: { id: string }) {
                   <col className="w-[20%]" />
                   <col className="w-[14%]" />
                 </colgroup>
-                <thead className="bg-slate-50 text-left text-muted dark:bg-slate-800/60">
+                <thead className="border-b border-line bg-slate-50/80 text-left text-xs text-muted dark:bg-slate-800/40">
                   <tr>
-                    <th className="px-4 py-2 font-medium">Test</th>
-                    <th className="px-4 py-2 font-medium">Result</th>
-                    <th className="px-4 py-2 font-medium">Normal range</th>
-                    <th className="px-4 py-2 font-medium">Where it sits</th>
-                    <th className="px-4 py-2 font-medium">Status</th>
+                    <th className="px-4 py-2.5 font-medium">Test</th>
+                    <th className="px-4 py-2.5 font-medium">Result</th>
+                    <th className="px-4 py-2.5 font-medium">Normal range</th>
+                    <th className="px-4 py-2.5 font-medium">Where it sits</th>
+                    <th className="px-4 py-2.5 font-medium">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-line">
@@ -315,16 +339,23 @@ function useFixForm() {
 function ResultItem({ reportId, result: r, onSaved, onShowSource }: ResultProps) {
   const { editing, button, toggle, close } = useFixForm();
   return (
-    <li className="space-y-2 px-4 py-3">
+    <li className="space-y-2 px-4 py-3.5">
       <div className="flex items-start justify-between gap-3">
         <p className="font-medium">{r.name}</p>
         <FlagBadge flag={r.flag} />
       </div>
-      <p className="text-sm">
-        <span className="font-semibold">{r.value_text}</span> <span className="text-muted">{r.unit}</span>{" "}
-        <SourceToggle name={r.name} onShow={onShowSource} />
-        <FixButton ref={button} name={r.name} open={editing} onClick={toggle} />
-        <span className="text-muted"> · Normal: {formatRange(r.ref_low, r.ref_high, r.reference_text)}</span>
+      <div className="flex items-center justify-between gap-3 text-sm">
+        <p className="flex min-w-0 flex-wrap items-baseline gap-x-1">
+          <span className="text-base font-semibold tabular-nums">{r.value_text}</span>
+          <span className="text-muted">{r.unit}</span>
+        </p>
+        <span className="-mr-2 flex shrink-0">
+          <SourceToggle name={r.name} onShow={onShowSource} />
+          <FixButton ref={button} name={r.name} open={editing} onClick={toggle} />
+        </span>
+      </div>
+      <p className="text-sm text-muted">
+        Normal <span className="tabular-nums">{formatRange(r.ref_low, r.ref_high, r.reference_text)}</span>
         <TypicalRangeNote rangeSource={r.range_source} source={r.typical_range_source} />
       </p>
       <CorrectedChip result={r} showReading />
@@ -340,8 +371,8 @@ function ResultRow({ reportId, result: r, onSaved, onShowSource }: ResultProps) 
   return (
     <>
       <tr className={editing ? "border-b-0" : undefined}>
-        <td className="px-4 py-2.5">{r.name}</td>
-        <td className="px-4 py-2.5 font-medium">
+        <td className="px-4 py-2.5 font-medium">{r.name}</td>
+        <td className="px-4 py-2.5 font-semibold tabular-nums">
           {r.value_text} <span className="font-normal text-muted">{r.unit}</span>{" "}
           <span className="inline-flex align-middle">
             <SourceToggle name={r.name} onShow={onShowSource} />
@@ -353,7 +384,7 @@ function ResultRow({ reportId, result: r, onSaved, onShowSource }: ResultProps) 
             </div>
           )}
         </td>
-        <td className="px-4 py-2.5 text-muted">
+        <td className="px-4 py-2.5 text-muted tabular-nums">
           {formatRange(r.ref_low, r.ref_high, r.reference_text)}
           <TypicalRangeNote rangeSource={r.range_source} source={r.typical_range_source} />
         </td>
@@ -384,27 +415,19 @@ function groupBySection(results: TestResult[]): [string, TestResult[]][] {
   return [...groups.entries()];
 }
 
-function Stat({ label, value, highlight = false }: { label: string; value: number; highlight?: boolean }) {
+function Notice({
+  tone,
+  title,
+  body,
+}: {
+  tone: "missing" | "error" | "working";
+  title: string;
+  body?: string;
+}) {
   return (
-    <div className="card p-3 sm:p-4">
-      <p className={`text-2xl font-bold sm:text-3xl ${highlight ? "text-rose-700 dark:text-rose-300" : ""}`}>{value}</p>
-      <p className="text-sm text-muted">{label}</p>
-    </div>
-  );
-}
-
-function Notice({ title, body, spinner = false }: { title: string; body?: string; spinner?: boolean }) {
-  return (
-    <div className="card p-10 text-center">
-      {spinner && (
-        <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-4 border-teal-200 border-t-teal-600" />
-      )}
-      <h1 className="text-xl font-semibold">{title}</h1>
-      {body && <p className="mx-auto mt-2 max-w-md text-muted">{body}</p>}
-      <Link href="/" className="back-link mt-6">
-        ← Back to all reports
-      </Link>
-    </div>
+    <StatusPanel tone={tone} title={title} heading="h1" actions={<BackLink href="/">Back to all reports</BackLink>}>
+      {body}
+    </StatusPanel>
   );
 }
 
