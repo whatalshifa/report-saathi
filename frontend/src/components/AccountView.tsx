@@ -48,8 +48,10 @@ function YourData() {
       </h2>
       <p className="mt-1 text-sm text-muted">
         Download everything in this account as one ZIP file: the original reports, a spreadsheet of every value,
-        and all the explanations and doctor briefs. To fix a value that was read wrongly, tap the pencil beside it
-        on the report.
+        and all the explanations and doctor briefs.
+      </p>
+      <p className="mt-2 text-sm text-muted">
+        Something read wrongly? Tap the pencil beside the value on the report to fix it.
       </p>
       <button type="button" onClick={start} disabled={working} className="btn btn-secondary mt-4">
         {working ? "Preparing…" : "Download all my data"}

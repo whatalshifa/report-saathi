@@ -259,7 +259,11 @@ export function ReportView({ id }: { id: string }) {
           <p className="text-sm text-muted">
             Your lab printed no normal range for some values, so we compared them with a typical range for
             adults instead. Labs and doctors may use a slightly different one, so ask your doctor what is normal
-            for you. Typical ranges from: {typicalSources.join("; ")}.
+            for you.
+            {/* Citations are long and technical; keep them small and apart from the plain words above. */}
+            <span className="mt-1 block text-xs">
+              {typicalSources.length === 1 ? "Source" : "Sources"}: {typicalSources.join("; ")}.
+            </span>
           </p>
         )}
       </section>

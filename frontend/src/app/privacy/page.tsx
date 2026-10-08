@@ -140,9 +140,6 @@ export default function PrivacyPage() {
           </a>
           .
         </p>
-        <p className="text-sm text-muted">
-          ReportSaathi explains lab reports. It is not medical advice; always ask your doctor.
-        </p>
       </Section>
     </article>
   );

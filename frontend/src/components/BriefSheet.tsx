@@ -68,18 +68,29 @@ export function BriefSheet({
                 <th className="py-2 pr-3 font-medium">Latest</th>
                 <th className="py-2 pr-3 font-medium">Previous</th>
                 <th className="py-2 pr-3 font-medium">Normal</th>
-                <th className="py-2 font-medium">Status</th>
+                <th className="hidden py-2 font-medium sm:table-cell print:table-cell">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
               {series.map((s) => {
                 const latest = s.points[s.points.length - 1];
                 const previous = s.points.length > 1 ? s.points[s.points.length - 2] : null;
+                const status = (
+                  <>
+                    <FlagBadge flag={s.latest_flag} />
+                    {/* The latest report may have printed no range even when an earlier one did. */}
+                    {latest.range_source === "typical" && s.range_source !== "typical" && (
+                      <span className="block text-xs text-muted">Against a typical range</span>
+                    )}
+                  </>
+                );
                 return (
                   <tr key={s.key}>
                     <td className="py-2 pr-3">
                       {s.name}
                       {s.loinc && <span className="block text-xs text-muted">LOINC {s.loinc}</span>}
+                      {/* A phone has no room for a fifth column, so the status sits under the name. */}
+                      <span className="mt-1 block sm:hidden print:hidden">{status}</span>
                     </td>
                     <td className="py-2 pr-3 tabular-nums">
                       {formatNumber(latest.value)} {s.unit}
@@ -101,13 +112,7 @@ export function BriefSheet({
                         <span className="block text-xs">Typical range, not from the lab</span>
                       )}
                     </td>
-                    <td className="py-2">
-                      <FlagBadge flag={s.latest_flag} />
-                      {/* The latest report may have printed no range even when an earlier one did. */}
-                      {latest.range_source === "typical" && s.range_source !== "typical" && (
-                        <span className="block text-xs text-muted">Against a typical range</span>
-                      )}
-                    </td>
+                    <td className="hidden py-2 sm:table-cell print:table-cell">{status}</td>
                   </tr>
                 );
               })}

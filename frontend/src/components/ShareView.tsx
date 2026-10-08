@@ -85,6 +85,8 @@ export function ShareView({ error: shareError }: { error?: string }) {
 
       {shared && profiles && features && (
         <>
+          {/* A failed share leaves the earlier one in place; say so, or it looks like the file that failed. */}
+          {problem && <p className="font-semibold">A file you shared earlier is still waiting:</p>}
           <section aria-label="Shared file" className="card flex items-center gap-4 p-5">
             <span
               aria-hidden

@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { ErrorNote } from "@/components/Skeleton";
 import {
   createShareLink,
+  getMe,
   listShareLinks,
   revokeShareLink,
   shareUrl,
@@ -32,6 +33,8 @@ export function SharePanel({
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // A demo account's links end with the account, within a day, not after 7 days.
+  const [guest, setGuest] = useState(false);
   const canShare = useSyncExternalStore(noSubscribe, hasNativeShare, () => false);
 
   const reload = useCallback(
@@ -44,6 +47,9 @@ export function SharePanel({
 
   useEffect(() => {
     reload();
+    getMe()
+      .then((me) => setGuest(Boolean(me?.is_guest)))
+      .catch(() => {});
   }, [reload]);
 
   async function create() {
@@ -102,7 +108,8 @@ export function SharePanel({
       </h2>
       <p className="mt-1 text-sm text-muted">
         Make a private link to this summary. Your doctor can open it on their phone without an account, and can only
-        read it. The link stops working after 7 days, or as soon as you revoke it.
+        read it. The link stops working{" "}
+        {guest ? "when this demo account is deleted" : "after 7 days"}, or as soon as you revoke it.
       </p>
 
       {created && (

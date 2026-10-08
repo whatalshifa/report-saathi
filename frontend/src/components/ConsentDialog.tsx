@@ -18,13 +18,16 @@ export const CONSENT_VERSION = "2026-10-06";
 export function ConsentDialog({ onAgree, onCancel }: { onAgree: () => void; onCancel: () => void }) {
   const titleId = useId();
   const dialog = useRef<HTMLDialogElement>(null);
+  const heading = useRef<HTMLHeadingElement>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const agreed = useRef(false);
 
   // A native modal dialog keeps focus inside and closes on Escape, which counts as "Not now".
+  // Focus starts on the heading, so the notice is read first rather than the privacy link.
   useEffect(() => {
     if (!dialog.current?.open) dialog.current?.showModal();
+    heading.current?.focus();
   }, []);
 
   async function agree() {
@@ -48,7 +51,7 @@ export function ConsentDialog({ onAgree, onCancel }: { onAgree: () => void; onCa
       className="m-auto w-[calc(100%-2rem)] max-w-lg rounded-2xl border border-line bg-surface p-0 text-foreground shadow-xl backdrop:bg-slate-950/60"
     >
       <div className="max-h-[calc(100dvh-2rem)] overflow-y-auto p-5 sm:p-6">
-        <h2 id={titleId} className="text-lg font-semibold">
+        <h2 id={titleId} ref={heading} tabIndex={-1} className="text-lg font-semibold outline-none">
           Before your first upload
         </h2>
         <p className="mt-1 text-sm text-muted">Here is how we look after your family&apos;s reports.</p>

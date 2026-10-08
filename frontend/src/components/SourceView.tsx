@@ -61,14 +61,16 @@ export function SourceDialog({
     if (!dialog.current?.open) dialog.current?.showModal();
   }, []);
 
-  // Bring the highlighted value into view, at either zoom. It goes a little right of centre, so the
-  // test name printed to its left shows too.
+  // Bring the highlighted value into view, at either zoom. It goes a little right of centre, or
+  // further right on a narrow phone, so the test name printed to its left shows too.
   const centreOnBox = useCallback(() => {
     const view = scroller.current;
     const page = image.current;
     if (!view || !page?.complete || !page.naturalWidth) return;
+    const rightOfCentre = ((box.x0 + box.x1) / 2) * page.clientWidth - view.clientWidth * 0.65;
+    const atRightEdge = box.x1 * page.clientWidth + 16 - view.clientWidth;
     view.scrollTo({
-      left: ((box.x0 + box.x1) / 2) * page.clientWidth - view.clientWidth * 0.65,
+      left: Math.min(rightOfCentre, atRightEdge),
       top: ((box.y0 + box.y1) / 2) * page.clientHeight - view.clientHeight / 2,
     });
   }, [box]);
@@ -133,7 +135,7 @@ export function SourceDialog({
           <figure className="flex min-h-0 flex-col gap-2">
             <div ref={scroller} className="min-h-0 overflow-auto rounded-xl border border-line bg-white">
               {/* The highlight sits on the page in fractions of its size, so it stays put at any zoom. */}
-              <div className="relative" style={{ width: zoomed ? "max(160%, 900px)" : "100%" }}>
+              <div className="relative" style={{ width: zoomed ? "max(160%, 640px)" : "100%" }}>
                 {/* A private file behind the sign-in cookie, so not one for Next's image optimiser. */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
