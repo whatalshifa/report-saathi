@@ -7,9 +7,21 @@ import { DemoButton } from "@/components/DemoButton";
 import { LogoMark } from "@/components/Logo";
 import { login, signup } from "@/lib/api";
 
-/** Only go back to a page on this site, never to an address someone put in the link. */
+const HERE = "https://reportsaathi.invalid";
+
+/**
+ * Only go back to a page on this site, never to an address someone put in the link. Browsers read
+ * "/\evil.com" (and "/<tab>/evil.com") as "//evil.com", so the address is resolved the way a browser
+ * would, against a stand-in origin, and kept only if it stays there.
+ */
 function safeNext(next: string | undefined) {
-  return next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
+  if (!next?.startsWith("/")) return "/";
+  try {
+    const url = new URL(next, HERE);
+    return url.origin === HERE ? url.pathname + url.search + url.hash : "/";
+  } catch {
+    return "/";
+  }
 }
 
 export function AuthForm({ mode, next }: { mode: "login" | "signup"; next?: string }) {

@@ -123,6 +123,26 @@ def test_explanation_is_written_once_per_language(client, uploaded, writer):
     assert client.post(f"/api/reports/{report_id}/explanations", json={"language": "fr"}).status_code == 422
 
 
+def test_an_explanation_written_before_a_fix_can_be_written_again(client, uploaded, writer):
+    report_id = uploaded[0]
+    explanations = f"/api/reports/{report_id}/explanations"
+    client.post(explanations, json={"language": "en"})
+    first = client.get(f"{explanations}/en").json()
+
+    # The haemoglobin was misread; once fixed, the old explanation may describe the wrong value.
+    hb = client.get(f"/api/reports/{report_id}").json()["results"][0]
+    fixed = client.patch(f"/api/reports/{report_id}/results/{hb['id']}", json={"value_text": "16.1"}).json()
+    assert client.post(explanations, json={"language": "en"}).status_code == 202
+    again = client.get(f"{explanations}/en").json()
+    assert (again["id"], again["status"]) == (first["id"], "done")
+    assert again["created_at"] > fixed["corrected_at"]
+    assert writer.explained == [(report_id, "en")] * 2
+
+    # Now it is up to date, so asking again returns it.
+    client.post(explanations, json={"language": "en"})
+    assert len(writer.explained) == 2
+
+
 @pytest.mark.parametrize("writer", [FakeWriter(AIError("The AI service is busy"))])
 def test_failed_explanation_can_be_retried(client, uploaded, writer):
     report_id = uploaded[0]

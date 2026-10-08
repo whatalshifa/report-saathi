@@ -27,6 +27,7 @@ const LANGUAGES = [
     questions: "Questions to ask your doctor",
     note: "Written by AI from your report. It is not medical advice.",
     outdated: "This was written before you corrected a value, so it may still mention the old reading.",
+    rewrite: "Write it again",
   },
   {
     code: "hi",
@@ -39,6 +40,7 @@ const LANGUAGES = [
     questions: "डॉक्टर से पूछने के सवाल",
     note: "यह जानकारी AI ने आपकी रिपोर्ट से लिखी है। यह डॉक्टर की सलाह नहीं है।",
     outdated: "यह आपके एक मान को ठीक करने से पहले लिखा गया था, इसलिए इसमें पुरानी रीडिंग हो सकती है।",
+    rewrite: "फिर से लिखिए",
   },
   {
     code: "mr",
@@ -51,6 +53,7 @@ const LANGUAGES = [
     questions: "डॉक्टरांना विचारायचे प्रश्न",
     note: "हे स्पष्टीकरण AI ने तुमच्या रिपोर्टवरून लिहिले आहे. हा वैद्यकीय सल्ला नाही.",
     outdated: "हे तुम्ही एखादे मूल्य दुरुस्त करण्यापूर्वी लिहिले होते, त्यामुळे यात जुनी नोंद असू शकते.",
+    rewrite: "पुन्हा लिहा",
   },
 ] as const satisfies readonly { code: Language; [text: string]: string }[];
 
@@ -133,9 +136,14 @@ export function ExplanationPanel({ reportId, correctedAt = null }: { reportId: s
           </p>
         )}
         {outdated && (
-          <p className="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
-            {text.outdated}
-          </p>
+          <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+            <p>{text.outdated}</p>
+            {/* The server writes it again from the corrected values. */}
+            <button onClick={start} disabled={starting} className="btn btn-secondary btn-sm mt-2">
+              {text.rewrite}
+            </button>
+            {startError && <p className="mt-2 text-rose-700 dark:text-rose-300">{startError}</p>}
+          </div>
         )}
         {content && <ExplanationBody content={content} text={text} />}
       </div>
@@ -188,7 +196,10 @@ function ExplanationBody({ content, text }: { content: ReportExplanation; text: 
   );
 }
 
-/** What "Listen" reads, in order: the warning if any, the summary, each flagged test, then the questions. */
+/**
+ * What "Listen" reads, in order: the warning if any, the summary, each flagged test, the questions, and
+ * last the note that the AI wrote it and it is not medical advice, for listeners who never see the small print.
+ */
 function spokenParts(content: ReportExplanation, text: Text): string[] {
   return [
     content.see_doctor_soon ? (content.see_doctor_reason ?? "") : "",
@@ -201,6 +212,7 @@ function spokenParts(content: ReportExplanation, text: Text): string[] {
     ]),
     content.questions_for_doctor.length > 0 ? text.questions : "",
     ...content.questions_for_doctor,
+    text.note,
   ].filter(Boolean);
 }
 

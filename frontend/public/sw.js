@@ -18,6 +18,20 @@ function isShareTarget(request) {
   return request.method === "POST" && new URL(request.url).pathname === "/share-target";
 }
 
+/**
+ * False for a post another website sent: any page can submit a form to /share-target. A share from
+ * the phone's share sheet names no referrer, and the app's own pages are this site. A page can hide
+ * its referrer too, so /share also asks the person to add only a file they shared themselves.
+ */
+function fromThisSite(referrer) {
+  if (!referrer || referrer === "about:client") return true;
+  try {
+    return new URL(referrer).origin === self.location.origin;
+  } catch {
+    return false;
+  }
+}
+
 /** The file's type, or one guessed from its name: some apps share files with no type set. */
 function sharedType(file) {
   if (Object.values(SHARE_TYPES).includes(file.type)) return file.type;
@@ -48,13 +62,17 @@ async function storeSharedFile(file) {
 /** Stores the shared file, then sends the browser on to /share (303, so it arrives there as a GET). */
 async function handleShare(request) {
   let error = null;
-  try {
-    const file = pickSharedFile(await request.formData());
-    if (!file) error = "unsupported";
-    else if (file.size > SHARE_MAX_BYTES) error = "too-big";
-    else await storeSharedFile(file);
-  } catch {
-    error = "failed";
+  if (!fromThisSite(request.referrer)) {
+    error = "elsewhere";
+  } else {
+    try {
+      const file = pickSharedFile(await request.formData());
+      if (!file) error = "unsupported";
+      else if (file.size > SHARE_MAX_BYTES) error = "too-big";
+      else await storeSharedFile(file);
+    } catch {
+      error = "failed";
+    }
   }
   const target = new URL(error ? `/share?error=${error}` : "/share", self.location.origin);
   return Response.redirect(target.href, 303);

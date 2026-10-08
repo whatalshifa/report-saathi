@@ -108,3 +108,11 @@ def test_draft_then_score(stub, tmp_path):
     calls = stub.calls
     run.score(data, "first")
     assert stub.calls == calls
+
+
+def test_the_kit_scores_the_labs_flags_not_typical_ranges():
+    """Answer keys say "unknown" where no range is printed, so the app's typical-range fallback stays out."""
+    reading = sample_report(
+        tests=[make_test("TLC", "11500", "/cumm", None), make_test("Hb", "11", "g/dL", "12-15")]
+    )
+    assert [p.flag for p in run._predictions(reading)] == ["unknown", "low"]

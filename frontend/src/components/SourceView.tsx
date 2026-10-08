@@ -4,6 +4,7 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 import { CorrectedChip } from "@/components/ValueFix";
 import { reportFileUrl, type SourceBox, type TestResult } from "@/lib/api";
+import { usePdfViewer } from "@/lib/usePdfViewer";
 
 // "Where did this number come from?": a page icon beside a value opens the original report
 // with that value highlighted, so people can check the AI's reading with their own eyes.
@@ -52,6 +53,7 @@ export function SourceDialog({
   const [zoomed, setZoomed] = useState(true);
   const [failed, setFailed] = useState(false);
   const isPdf = contentType === "application/pdf";
+  const showsPdf = usePdfViewer();
   const value = [result.value_text, result.unit].filter(Boolean).join(" ");
 
   // A native modal dialog keeps focus inside and closes on Escape; the "close" event tells the page.
@@ -110,7 +112,9 @@ export function SourceDialog({
           <div className="rounded-xl border border-line bg-background p-6 text-center">
             <p className="font-semibold">Page {box.page} of the original PDF</p>
             <p className="mt-1 text-sm text-muted">
-              Look for {result.name} on that page. It opens in a new tab.
+              {showsPdf
+                ? `Look for ${result.name} on that page. It opens in a new tab.`
+                : `This phone saves the PDF to its downloads to open it. Then go to page ${box.page} and look for ${result.name}.`}
             </p>
             <a
               href={`${reportFileUrl(reportId)}#page=${box.page}`}
@@ -118,7 +122,7 @@ export function SourceDialog({
               rel="noopener noreferrer"
               className="btn btn-primary mt-4"
             >
-              Open page {box.page}
+              {showsPdf ? `Open page ${box.page}` : "Download the PDF"}
             </a>
           </div>
         ) : failed ? (

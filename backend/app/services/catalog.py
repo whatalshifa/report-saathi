@@ -21,6 +21,7 @@ from dataclasses import dataclass, field
 from typing import Literal
 
 Sex = Literal["any", "male", "female"]
+Direction = Literal["any", "high", "low"]
 
 
 @dataclass(frozen=True)
@@ -47,6 +48,9 @@ class TestDef:
     # How soon doctors often recheck an out-of-range result, for the "due for a recheck" reminder.
     recheck_months: float | None = None
     recheck_source: str | None = None
+    # Which out-of-range side the interval's source is about: a recheck nudge for a high HDL or a
+    # low ALP would cite a guideline that doesn't apply. "high" also covers a positive qualitative result.
+    recheck_direction: Direction = "any"
 
     __test__ = False
 
@@ -79,6 +83,7 @@ CATALOG: tuple[TestDef, ...] = (
             "WHO anaemia cut-offs 13/12 g/dL)"
         ),
         recheck_months=1,
+        recheck_direction="low",
         recheck_source=(
             "NICE CKS Anaemia - iron deficiency: check FBC and response 2-4 weeks after "
             "starting iron, then 3-monthly for a year once normal"
@@ -282,6 +287,7 @@ CATALOG: tuple[TestDef, ...] = (
         typical=(TypicalRange("any", 2000, 7000),),
         typical_source="Dacie and Lewis Practical Haematology, 12th ed. (2.0-7.0 x10^9/L)",
         recheck_months=1,
+        recheck_direction="low",
         recheck_source=(
             "Newcastle upon Tyne Hospitals NHS FT, GP Adult Haematology Guidelines v10 "
             "(2024): neutrophils 1.0-1.49 x10^9/L, rule out secondary causes and repeat in "
@@ -309,6 +315,7 @@ CATALOG: tuple[TestDef, ...] = (
         typical=(TypicalRange("any", 1000, 3000),),
         typical_source="Dacie and Lewis Practical Haematology, 12th ed. (1.0-3.0 x10^9/L)",
         recheck_months=1.5,
+        recheck_direction="high",
         recheck_source=(
             "Newcastle upon Tyne Hospitals NHS FT, GP Adult Haematology Guidelines v10 "
             "(2024): lymphocytosis, repeat the FBC in 4-6 weeks to look for resolution"
@@ -377,6 +384,7 @@ CATALOG: tuple[TestDef, ...] = (
         typical=(TypicalRange("any", 20, 100),),
         typical_source="Dacie and Lewis Practical Haematology, 12th ed. (0.02-0.1 x10^9/L)",
         recheck_months=1,
+        recheck_direction="high",
         recheck_source=(
             "Newcastle upon Tyne Hospitals NHS FT, GP Adult Haematology Guidelines v10 "
             "(2024): raised basophil count, repeat in 3-4 weeks to see if persistent"
@@ -654,6 +662,7 @@ CATALOG: tuple[TestDef, ...] = (
             "mg/dL hypoglycaemia threshold)"
         ),
         recheck_months=3,
+        recheck_direction="high",
         recheck_source=(
             "ADA Standards of Care, Section 2 (Diagnosis): results near the diagnostic margin "
             "should be repeated in 3-6 months"
@@ -728,6 +737,7 @@ CATALOG: tuple[TestDef, ...] = (
             "ADA Standards of Care, Section 2 (normal <5.7%; 5.7-6.4% prediabetes; >=6.5% diabetes)"
         ),
         recheck_months=3,
+        recheck_direction="high",
         recheck_source=(
             "ADA Standards of Care, Section 6 (Glycemic Goals): assess A1C quarterly when "
             "therapy has changed or goals are not met"
@@ -751,6 +761,7 @@ CATALOG: tuple[TestDef, ...] = (
             ">=48 mmol/mol diabetes)"
         ),
         recheck_months=3,
+        recheck_direction="high",
         recheck_source=(
             "ADA Standards of Care, Section 6 (Glycemic Goals): assess A1C quarterly when therapy has changed"
             " or goals are not met"
@@ -1026,6 +1037,7 @@ CATALOG: tuple[TestDef, ...] = (
             "moderately increased)"
         ),
         recheck_months=3,
+        recheck_direction="high",
         recheck_source=(
             "ADA Standards of Care, Section 11 (CKD) and KDIGO 2024: 2 of 3 specimens over 3-6 months must be"
             " abnormal to confirm albuminuria"
@@ -1084,6 +1096,7 @@ CATALOG: tuple[TestDef, ...] = (
         typical=(TypicalRange("any", None, 30),),
         typical_source="KDIGO 2024 CKD guideline and ADA Standards of Care (normal UACR <30 mg/g)",
         recheck_months=3,
+        recheck_direction="high",
         recheck_source=(
             "ADA Standards of Care, Section 11 (CKD) and KDIGO 2024: 2 of 3 UACR specimens "
             "over 3-6 months must be abnormal to confirm"
@@ -1100,6 +1113,7 @@ CATALOG: tuple[TestDef, ...] = (
         typical=(TypicalRange("any", None, 200),),
         typical_source="NCEP ATP III: desirable <200 mg/dL (interval printed by most Indian labs)",
         recheck_months=3,
+        recheck_direction="high",
         recheck_source=(
             "2018 AHA/ACC Cholesterol Guideline: repeat lipid profile 4-12 weeks after "
             "starting lifestyle change or statin, then every 3-12 months; Lipid Association "
@@ -1119,6 +1133,7 @@ CATALOG: tuple[TestDef, ...] = (
         ),
         typical_source="NCEP ATP III (metabolic syndrome criteria): low HDL <40 mg/dL men, <50 mg/dL women",
         recheck_months=3,
+        recheck_direction="low",
         recheck_source=(
             "2018 AHA/ACC Cholesterol Guideline: repeat lipid profile 4-12 weeks after "
             "starting lifestyle change or statin"
@@ -1142,6 +1157,7 @@ CATALOG: tuple[TestDef, ...] = (
         typical=(TypicalRange("any", None, 100),),
         typical_source="NCEP ATP III: optimal <100 mg/dL",
         recheck_months=3,
+        recheck_direction="high",
         recheck_source=(
             "2018 AHA/ACC Cholesterol Guideline: repeat lipid profile 4-12 weeks after "
             "starting lifestyle change or statin; ESC/EAS 2019: 8 (+/-4) weeks after starting "
@@ -1156,6 +1172,7 @@ CATALOG: tuple[TestDef, ...] = (
         {"mg/dl": 1, "mmol/l": 38.67},
         loinc="2091-7",
         recheck_months=3,
+        recheck_direction="high",
         recheck_source=(
             "2018 AHA/ACC Cholesterol Guideline: repeat lipid profile 4-12 weeks after starting lifestyle "
             "change or statin"
@@ -1171,6 +1188,7 @@ CATALOG: tuple[TestDef, ...] = (
         typical=(TypicalRange("any", None, 150),),
         typical_source="NCEP ATP III: normal <150 mg/dL",
         recheck_months=3,
+        recheck_direction="high",
         recheck_source=(
             "2018 AHA/ACC Cholesterol Guideline: repeat lipid profile 4-12 weeks after "
             "starting lifestyle change or statin"
@@ -1194,6 +1212,7 @@ CATALOG: tuple[TestDef, ...] = (
         typical=(TypicalRange("any", None, 130),),
         typical_source="NCEP ATP III: non-HDL goal <130 mg/dL (LDL goal + 30)",
         recheck_months=3,
+        recheck_direction="high",
         recheck_source=(
             "2018 AHA/ACC Cholesterol Guideline: repeat lipid profile 4-12 weeks after "
             "starting therapy; Lipid Association of India uses non-HDL as a co-primary target"
@@ -1223,6 +1242,7 @@ CATALOG: tuple[TestDef, ...] = (
             "indicates higher risk)"
         ),
         recheck_months=3,
+        recheck_direction="high",
         recheck_source=(
             "Computed from the lipid profile; 2018 AHA/ACC Cholesterol Guideline repeat interval of 4-12 "
             "weeks after starting therapy"
@@ -1243,6 +1263,7 @@ CATALOG: tuple[TestDef, ...] = (
         {"ratio": 1},
         loinc="11054-4",
         recheck_months=3,
+        recheck_direction="high",
         recheck_source=(
             "Computed from the lipid profile; 2018 AHA/ACC Cholesterol Guideline repeat "
             "interval of 4-12 weeks after starting therapy"
@@ -1263,6 +1284,7 @@ CATALOG: tuple[TestDef, ...] = (
         {"ratio": 1},
         loinc="16616-5",
         recheck_months=3,
+        recheck_direction="low",
         recheck_source=(
             "Computed from the lipid profile; 2018 AHA/ACC Cholesterol Guideline repeat interval of 4-12 "
             "weeks after starting therapy"
@@ -1288,6 +1310,7 @@ CATALOG: tuple[TestDef, ...] = (
         {"ratio": 1},
         loinc="44733-4",
         recheck_months=3,
+        recheck_direction="high",
         recheck_source=(
             "Computed from the lipid profile; 2018 AHA/ACC Cholesterol Guideline repeat interval of 4-12 "
             "weeks after starting therapy"
@@ -1353,6 +1376,7 @@ CATALOG: tuple[TestDef, ...] = (
         {"mg/dl": 1, "mg%": 1, "g/l": 100, "mg/l": 0.1},
         loinc="1884-6",
         recheck_months=3,
+        recheck_direction="high",
         recheck_source=(
             "ESC/EAS 2019 Dyslipidaemia Guidelines: re-evaluate lipids (ApoB is a secondary "
             "target) 8 (+/-4) weeks after starting or adjusting therapy"
@@ -1462,6 +1486,7 @@ CATALOG: tuple[TestDef, ...] = (
         ),
         typical_source="Roche cobas ASTL method sheet (IFCC, 37 C), the interval most Indian labs print",
         recheck_months=3,
+        recheck_direction="high",
         recheck_source=(
             "ACG Clinical Guideline: Evaluation of Abnormal Liver Chemistries (Kwo et al., Am J Gastroenterol"
             " 2017), Figure 1: borderline/mild AST/ALT elevation, consider observation for 3 (to 6) months "
@@ -1484,6 +1509,7 @@ CATALOG: tuple[TestDef, ...] = (
             "healthy ULN is lower: 29-33 men, 19-25 women)"
         ),
         recheck_months=3,
+        recheck_direction="high",
         recheck_source=(
             "ACG Clinical Guideline: Evaluation of Abnormal Liver Chemistries (Kwo et al., Am J Gastroenterol"
             " 2017), Figure 1: borderline/mild AST/ALT elevation, consider observation for 3 (to 6) months "
@@ -1513,6 +1539,7 @@ CATALOG: tuple[TestDef, ...] = (
             "Roche cobas ALP2 method sheet (IFCC, 37 C), adult interval widely printed by Indian labs"
         ),
         recheck_months=6,
+        recheck_direction="high",
         recheck_source=(
             "ACG Clinical Guideline: Evaluation of Abnormal Liver Chemistries (Kwo et al., Am J Gastroenterol"
             " 2017), Figure 4: ALP 1-2x ULN with negative AMA, consider observation; if still raised after 6 "
@@ -1688,6 +1715,7 @@ CATALOG: tuple[TestDef, ...] = (
             "0.74-1.35; females >=16 y 0.59-1.04 mg/dL)"
         ),
         recheck_months=3,
+        recheck_direction="high",
         recheck_source=(
             "KDIGO 2024 CKD guideline: kidney abnormality must persist >3 months, so a raised "
             "creatinine/low eGFR is repeated to confirm chronicity at about 3 months (NICE "
@@ -1701,6 +1729,7 @@ CATALOG: tuple[TestDef, ...] = (
         ("egfr", "estimated gfr", "estimated glomerular filtration rate"),
         {"ml/min/1.73m2": 1, "ml/min/1.73 m2": 1, "ml/min/1.73m²": 1, "ml/min": 1},
         recheck_months=3,
+        recheck_direction="low",
         recheck_source=(
             "KDIGO 2024 CKD guideline: GFR <60 must persist >3 months to define CKD; repeat at about 3 months"
             " (NICE NG203: repeat within 2 weeks first if a new drop, to exclude AKI)"
@@ -2053,6 +2082,7 @@ CATALOG: tuple[TestDef, ...] = (
             "MedlinePlus Medical Encyclopedia, Protein urine test (24-hour collection 30-150 mg per 24 hours)"
         ),
         recheck_months=3,
+        recheck_direction="high",
         recheck_source=(
             "KDIGO 2024 CKD guideline: proteinuria must persist >3 months to define CKD, so an abnormal "
             "result is confirmed on repeat over about 3 months"
@@ -2089,6 +2119,7 @@ CATALOG: tuple[TestDef, ...] = (
         typical=(TypicalRange("any", None, 0.15),),
         typical_source="KDIGO 2024 CKD guideline proteinuria categories (normal PCR <150 mg/g = <0.15 mg/mg)",
         recheck_months=3,
+        recheck_direction="high",
         recheck_source=(
             "KDIGO 2024 CKD guideline: raised PCR (>=150 mg/g) must persist >3 months to define CKD; repeat "
             "to confirm over about 3 months"
@@ -3002,6 +3033,7 @@ CATALOG: tuple[TestDef, ...] = (
             "Chemistry)"
         ),
         recheck_months=1.5,
+        recheck_direction="high",
         recheck_source=(
             "EAU Guidelines on Prostate Cancer: a raised PSA should be repeated after a few weeks under "
             "standardised conditions before further work-up; UK Prostate Cancer Risk Management Programme: "
@@ -3181,6 +3213,7 @@ CATALOG: tuple[TestDef, ...] = (
         {"mg/dl": 1, "mg%": 1, "g/l": 100, "gm/l": 100, "mg/l": 0.1},
         loinc="5804-0",
         recheck_months=3,
+        recheck_direction="high",
         recheck_source=(
             "KDIGO 2024 CKD Guideline: confirm persistent proteinuria/albuminuria on repeat "
             "testing over 3 months (quantify with urine ACR/PCR)"
@@ -3259,6 +3292,7 @@ CATALOG: tuple[TestDef, ...] = (
             "defines microhematuria as >=3 RBC/hpf"
         ),
         recheck_months=6,
+        recheck_direction="high",
         recheck_source=(
             "AUA/SUFU Microhematuria Guideline 2020 (low-risk patients with >=3 RBC/hpf may "
             "repeat urinalysis within 6 months)"
@@ -3562,11 +3596,6 @@ CATALOG: tuple[TestDef, ...] = (
             "MedlinePlus Medical Encyclopedia, Prothrombin time (INR 1.1 or below in people not on warfarin);"
             " therapeutic target on warfarin usually 2.0-3.0"
         ),
-        recheck_months=0.5,
-        recheck_source=(
-            "ACCP/CHEST 2012 Antithrombotic Therapy guideline (Holbrook et al., Chest 2012;141:e152S): on "
-            "warfarin with a single out-of-range INR, retest within 1-2 weeks"
-        ),
     ),
     TestDef(
         "aptt",
@@ -3690,18 +3719,62 @@ def typical_range(test: TestDef, sex: str | None) -> TypicalRange | None:
     return None
 
 
-def match_test(printed_name: str, suggested_key: str | None = None) -> TestDef | None:
-    """Find the catalog test for a printed name, e.g. 'Haemoglobin (Hb)' -> hemoglobin."""
+# Words for the sample or the method, which say nothing about which test it is.
+_QUALIFIERS = set(
+    "serum plasma blood whole venous capillary edta fluoride citrate heparin sample specimen method by "
+    "clia eclia cmia cia elfa elisa hplc ise enzymatic jaffe jaffes kinetic calculated calc photometry "
+    "photometric colorimetric immunoassay turbidimetric immunoturbidimetric spectrophotometry automated "
+    "direct modified s p".split()
+)
+
+
+def _lookup(printed_name: str) -> tuple[TestDef | None, bool]:
+    """The catalog test for a printed name, and whether the whole name matched (not just its start)."""
     inside = re.findall(r"\(([^)]*)\)", printed_name)
     outside = re.sub(r"\([^)]*\)", " ", printed_name)
-    candidates = [printed_name, outside, *inside]
-    # Labs often add a method or sample: "Glucose Fasting, Plasma" or "TSH - CLIA".
-    candidates += [re.split(r"[,\-:]", outside)[0]]
-    for candidate in candidates:
+    for candidate in (printed_name, outside, *inside):
         key = _ALIASES.get(_normalize_name(candidate))
         if key:
-            return _BY_KEY[key]
-    return get_test(suggested_key)
+            return _BY_KEY[key], True
+    # Labs often add a method or sample: "Glucose Fasting, Plasma" or "TSH - CLIA". Only those
+    # count as a whole match; "Cholesterol, VLDL" also gets here, but isn't total cholesterol.
+    start, *rest = re.split(r"[,\-:]", outside, maxsplit=1)
+    key = _ALIASES.get(_normalize_name(start))
+    if key is None:
+        return None, False
+    return _BY_KEY[key], set(_normalize_name("".join(rest)).split()) <= _QUALIFIERS
+
+
+_URINE = re.compile(r"\burin")  # urine, urinary
+
+
+def _is_urine_test(test: TestDef) -> bool:
+    return "urin" in test.key or "urin" in test.name.lower()
+
+
+def match_test(
+    printed_name: str, suggested_key: str | None = None, section: str | None = None
+) -> TestDef | None:
+    """Find the catalog test for a printed name, e.g. 'Haemoglobin (Hb)' -> hemoglobin.
+
+    A urine value ("Calcium, Urine", or "Glucose" under "Urine Routine") never lands on a blood
+    test: its chart and typical range would be wrong. It gets a urine test or nothing.
+    """
+    urine = bool(_URINE.search(f"{printed_name} {section or ''}".lower()))
+    for test in (_lookup(printed_name)[0], get_test(suggested_key)):
+        if test is not None and (not urine or _is_urine_test(test)):
+            return test
+    return None
+
+
+def loose_match(printed_name: str) -> bool:
+    """True when the name matched only by the text before its first comma or dash.
+
+    Good enough to put the value on a chart, but "Cholesterol, VLDL" also matches total
+    cholesterol this way, so a typical range is never judged on such a match.
+    """
+    test, whole = _lookup(printed_name)
+    return test is not None and not whole
 
 
 def normalize_unit(unit: str) -> str:
@@ -3712,11 +3785,21 @@ def normalize_unit(unit: str) -> str:
     return text.replace("x10", "10").replace("10e", "10^")
 
 
+# Standard units that labs rarely print because the value has none ("1.020", "6.0", "1.1").
+_UNITLESS = {"", "ratio", "ph"}
+
+
+def needs_unit(test: TestDef) -> bool:
+    """False for a test whose value has no real unit, like urine specific gravity or INR."""
+    return normalize_unit(test.unit) not in _UNITLESS
+
+
 def conversion_factor(test: TestDef, unit: str | None) -> float | None:
     """Factor that turns a value in `unit` into the test's standard unit, or None if unknown.
 
     A missing unit is taken to be the standard one: labs often leave it out for
-    common tests, and the reference range on the same line keeps it honest.
+    common tests, and the reference range on the same line keeps it honest. With no
+    printed range nothing does, so a typical range needs a unit (see needs_unit).
     """
     if not unit:
         return 1.0

@@ -113,7 +113,8 @@ export function ValueEditor({
             onChange={(e) => setValue(e.target.value)}
             autoFocus
             autoComplete="off"
-            inputMode={result.value === null ? "text" : "decimal"}
+            // A full keyboard: values like "<0.5", ">1000" or "1+" are the ones most often misread.
+            inputMode="text"
             maxLength={255}
             aria-invalid={error ? true : undefined}
             aria-describedby={error ? `${id}-error` : undefined}

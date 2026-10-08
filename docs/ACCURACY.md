@@ -43,6 +43,9 @@ every value from scratch. **Then check every draft against the paper**, value by
   `unknown` (no range printed),
 - set `"reviewed": true` when the file is done.
 
+The app falls back to a typical adult range when a report prints none; drafts and scores leave that
+out, so they match these answer keys and measure only what was read from the paper.
+
 Checking against the paper matters: a draft accepted without checking would only measure itself.
 
 ```bash

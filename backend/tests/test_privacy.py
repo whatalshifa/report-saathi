@@ -1,6 +1,7 @@
 """Data rights under the DPDP Act 2023: download everything, and consent before the first upload."""
 
 import csv
+import hashlib
 import io
 import json
 import os
@@ -111,6 +112,25 @@ def test_export_holds_the_files_the_data_and_a_csv_of_every_value(client):
         "5792-7",
     ] in rows
     assert all(row[0] == "Meera Joshi" for row in rows[5:])
+
+
+def test_export_lists_doctor_links_but_never_their_tokens(client, stranger):
+    meera = client.post("/api/samples").json()["id"]
+    brief_id = client.post(f"/api/profiles/{meera}/briefs").json()["id"]
+    link = client.post(f"/api/briefs/{brief_id}/shares").json()
+    assert stranger.post("/api/shared", json={"token": link["token"]}).status_code == 200
+
+    archive = export(client)
+    meera_data = next(
+        p for p in json.loads(archive.read("reportsaathi-data.json"))["people"] if p["is_sample"]
+    )
+    (exported,) = meera_data["doctor_links"]
+    assert set(exported) == {"made_at", "expires_at", "turned_off_at", "opened_at"}
+    assert len(exported["opened_at"]) == 1 and exported["turned_off_at"] is None
+    for name in archive.namelist():
+        content = archive.read(name)
+        assert link["token"].encode() not in content
+        assert hashlib.sha256(link["token"].encode()).hexdigest().encode() not in content
 
 
 def test_export_includes_every_fix(client):

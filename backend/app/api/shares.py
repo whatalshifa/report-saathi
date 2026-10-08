@@ -11,7 +11,7 @@ from app.api.auth import LimitersDep
 from app.api.deps import SessionDep, owned_brief, owned_profile
 from app.config import Settings, get_settings
 from app.models import Brief, JobStatus, Profile, ShareLink, ShareView
-from app.schemas import ShareCreated, SharedBrief, ShareOut
+from app.schemas import OpenShared, ShareCreated, SharedBrief, ShareOut
 from app.services.auth import CurrentUser, as_utc
 from app.services.ratelimit import client_ip
 from app.services.sharing import create_share, open_share, share_state
@@ -104,16 +104,20 @@ def _for_doctor(brief: Brief) -> dict:
     return content
 
 
-@router.get("/shared/{token}", response_model=SharedBrief)
+@router.post("/shared", response_model=SharedBrief)
 def open_shared(
-    token: str, request: Request, response: Response, session: SessionDep, limiters: LimitersDep
+    body: OpenShared, request: Request, response: Response, session: SessionDep, limiters: LimitersDep
 ) -> SharedBrief:
-    """Public: the read-only brief behind a working link. No sign-in needed."""
+    """Public: the read-only brief behind a working link. No sign-in needed.
+
+    The token travels in the body (and in the page address after "#", which browsers never send),
+    so it never appears in the server's, the host's or Sentry's request logs.
+    """
     if not limiters.shared.hit(client_ip(request)):
         raise HTTPException(
             status.HTTP_429_TOO_MANY_REQUESTS, "Too many tries. Please wait a few minutes.", PRIVATE_HEADERS
         )
-    link = open_share(session, token)
+    link = open_share(session, body.token)
     if link is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, GONE, PRIVATE_HEADERS)
     response.headers.update(PRIVATE_HEADERS)

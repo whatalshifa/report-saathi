@@ -19,6 +19,7 @@ const SHARE_ERRORS: Record<string, string> = {
   "too-big": "That file is larger than 20 MB. Try sharing a photo of each page instead.",
   failed: "That share didn't come through. Please share it again, or upload it from your reports page.",
   missed: "That share didn't come through. Please share it again, or upload it from your reports page.",
+  elsewhere: "That file was sent by a website, not shared from an app on your phone, so it wasn't kept.",
 };
 
 /** Real family members only: a shared report never belongs to the made-up sample person. */
@@ -29,7 +30,9 @@ function defaultProfile(profiles: Profile[]): Profile | undefined {
 export function ShareView({ error: shareError }: { error?: string }) {
   const router = useRouter();
   const { data: profiles, error } = usePoll(listProfiles, noRepeat);
-  const { data: features } = usePoll(getFeatures, noRepeat);
+  const { data: loadedFeatures, error: featuresError } = usePoll(getFeatures, noRepeat);
+  // If the check fails, offer the upload anyway: the server says so itself if reading is off.
+  const features = loadedFeatures ?? (featuresError ? { reading: true } : undefined);
   // undefined while reading it from this device, null when nothing is waiting.
   const [shared, setShared] = useState<SharedFile | null | undefined>(undefined);
   const [chosenId, setChosenId] = useState<string | null>(null);
@@ -99,6 +102,9 @@ export function ShareView({ error: shareError }: { error?: string }) {
               </p>
             </div>
           </section>
+          <p className="text-sm text-muted">
+            Only add this file if you shared it yourself, from WhatsApp or another app on this phone.
+          </p>
 
           {!features.reading ? (
             <ReadingPaused />

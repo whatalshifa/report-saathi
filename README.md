@@ -58,8 +58,8 @@ keeps the whole family's reports, privately and encrypted.
   check digit, and a test makes sure no spelling can match two tests.
 - **Typical ranges, clearly labelled.** When a report prints no normal range, a catalogued value is
   compared with a typical adult range for the person's sex, marked "Typical range, not from your lab"
-  with its source. A range the lab printed is never replaced, and with the sex unknown only a range for
-  anyone is used. Meera's April report shows one (her lab left the creatinine range off).
+  with its source. A range the lab printed is never replaced, with the sex unknown only a range for
+  anyone is used, and children get none (every range is an adult one). Meera's April report shows one (her lab left the creatinine range off).
 - **Due for a recheck.** The timeline lists tests whose latest reading was out of range longer ago than
   doctors often wait to recheck them: "Your HbA1c was high on 12 Jan 2026. Doctors often recheck it
   after about 3 months. Ask your doctor whether it's time." Each interval names its guideline (ADA,
@@ -196,9 +196,9 @@ written in advance. Add `ANTHROPIC_API_KEY` and uploads switch on.
 ## Tests
 
 ```bash
-cd backend && pytest        # 233 tests: flags, units, trends, sign-in, privacy, encryption, demo accounts, limits, fixes, share links, data export, consent
+cd backend && pytest        # 318 tests: flags, units, trends, sign-in, privacy, encryption, demo accounts, limits, fixes, share links, data export, consent
 cd frontend && npm run lint && npm run build
-cd frontend && npx playwright test   # 15 browser tests on a computer and a phone; starts the API and the site itself
+cd frontend && npx playwright test   # 27 browser tests, 53 runs on a computer and a phone (one is phone-only); starts the API and the site itself
 ```
 
 The tests never call the real Claude API; they use a stand-in for Claude, so they are free and fast.

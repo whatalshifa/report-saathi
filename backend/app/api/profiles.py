@@ -58,13 +58,17 @@ def update_profile(profile_id: str, body: ProfileIn, user: CurrentUser, session:
         p.relation == Relation.self and p.id != profile.id for p in user.profiles
     ):
         raise HTTPException(status.HTTP_409_CONFLICT, "You already have a profile for yourself")
-    sex_changed = body.sex != profile.sex
+    # Typical ranges depend on sex and on being an adult; ranges the lab printed never change.
+    ranges_changed = (body.sex, body.birth_year, body.relation) != (
+        profile.sex,
+        profile.birth_year,
+        profile.relation,
+    )
     for field, value in body.model_dump().items():
         setattr(profile, field, value)
-    if sex_changed:
-        # Typical ranges depend on sex; ranges the lab printed never change.
+    if ranges_changed:
         for report in profile.reports:
-            refresh_typical_ranges(report, profile.sex)
+            refresh_typical_ranges(report)
     session.commit()
     return _out(profile)
 

@@ -11,9 +11,9 @@ from datetime import UTC, datetime
 from sqlalchemy.orm import Session
 
 from app.models import Correction, TestResult, User
-from app.services.catalog import conversion_factor, get_test, normalize_unit
+from app.services.catalog import conversion_factor, get_test, needs_unit, normalize_unit
 from app.services.flagging import parse_value
-from app.services.processing import convert_to_standard, reflag, use_typical_range
+from app.services.processing import adult_ranges_fit, convert_to_standard, reflag, use_typical_range
 
 
 class CorrectionError(ValueError):
@@ -40,6 +40,9 @@ def _check(result: TestResult, value_text: str, unit: str | None) -> float | Non
         raise CorrectionError(
             f"We don't recognise “{unit}” as a unit for {catalog_test.name}. Check it against the report."
         )
+    # With no unit the value would be taken as the standard one, which "2.5" lakh platelets is not.
+    if catalog_test and unit_changed and not unit and needs_unit(catalog_test):
+        raise CorrectionError(f"Enter the unit for {catalog_test.name} as printed, like {catalog_test.unit}.")
     return value
 
 
@@ -73,7 +76,8 @@ def correct_result(
     if catalog_test is not None:
         convert_to_standard(result, catalog_test)
     # A typical range is kept in the printed unit, so a new unit (or a number for a word) picks it again.
-    use_typical_range(result, result.report.profile.sex)
+    report = result.report
+    use_typical_range(result, report.profile.sex, adult_ranges_fit(report.profile, report))
     reflag(result)
 
     # Putting back exactly what was read undoes the fix, so the "corrected" marker goes too.

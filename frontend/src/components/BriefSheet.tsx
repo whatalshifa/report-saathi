@@ -103,6 +103,10 @@ export function BriefSheet({
                     </td>
                     <td className="py-2">
                       <FlagBadge flag={s.latest_flag} />
+                      {/* The latest report may have printed no range even when an earlier one did. */}
+                      {latest.range_source === "typical" && s.range_source !== "typical" && (
+                        <span className="block text-xs text-muted">Against a typical range</span>
+                      )}
                     </td>
                   </tr>
                 );

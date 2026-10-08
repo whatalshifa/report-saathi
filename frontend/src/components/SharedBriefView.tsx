@@ -7,16 +7,24 @@ import { ErrorNote, SkeletonLines } from "@/components/Skeleton";
 import { ApiError, getSharedBrief, type SharedBrief } from "@/lib/api";
 import { formatDate } from "@/lib/format";
 
+// The same words the API uses for every link that doesn't work (backend/app/api/shares.py).
+const GONE = "This link has expired or was turned off. Ask the person who sent it for a new one.";
+
+/** The link's token, after the "#" (see shareUrl). */
+const tokenInAddress = () => decodeURIComponent(window.location.hash.slice(1));
+
 /** The read-only brief a doctor opens from a link, with no way into the account that sent it. */
-export function SharedBriefView({ token }: { token: string }) {
+export function SharedBriefView() {
   const [shared, setShared] = useState<SharedBrief | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
 
   useEffect(() => {
-    getSharedBrief(token)
+    const token = tokenInAddress();
+    // No token is answered like a dead link, without asking the server.
+    (token ? getSharedBrief(token) : Promise.reject(new ApiError(GONE, 404)))
       .then(setShared)
       .catch((err) => setError(err instanceof ApiError ? err : new ApiError("Could not open this summary", 0)));
-  }, [token]);
+  }, []);
 
   if (error?.status === 404) {
     return (

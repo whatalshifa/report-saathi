@@ -84,12 +84,16 @@ export class ApiError extends Error {
 
 // While the free server wakes up, the website's forwarder may give up and answer 502/504,
 // or the connection may drop. Reads are safe to try again, so they are, for about a minute.
+// `retry` overrides that for a read that is costly or counted (the export), or a post that only reads.
 const RETRY_DELAYS_MS = [2000, 4000, 8000, 15000, 30000];
 const WAKING_STATUSES = new Set([502, 504]);
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-async function fetchWithWake(path: string, init?: RequestInit): Promise<Response> {
-  const retry = (init?.method ?? "GET") === "GET";
+async function fetchWithWake(
+  path: string,
+  init?: RequestInit,
+  retry = (init?.method ?? "GET") === "GET",
+): Promise<Response> {
   const done = serverStatus.track();
   try {
     for (let attempt = 0; ; attempt++) {
@@ -108,8 +112,8 @@ async function fetchWithWake(path: string, init?: RequestInit): Promise<Response
   }
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetchWithWake(path, init);
+async function request<T>(path: string, init?: RequestInit, retry?: boolean): Promise<T> {
+  const response = await fetchWithWake(path, init, retry);
   if (response.status === 401 && !path.startsWith("/api/auth/") && typeof window !== "undefined") {
     // Signed out (or the session expired): go to sign-in, then come back here.
     // A full page load on purpose, so no signed-in state survives in memory.
@@ -172,7 +176,9 @@ export const giveConsent = (version: string) => request<User>("/api/auth/me/cons
 export async function downloadExport(
   onProgress: (received: number, total: number | null) => void,
 ): Promise<{ blob: Blob; filename: string }> {
-  const response = await fetchWithWake("/api/auth/me/export");
+  // No retries: a 504 here usually means a big ZIP took long to build, not a sleeping server, and each
+  // try counts against the hourly limit and decrypts everything again.
+  const response = await fetchWithWake("/api/auth/me/export", undefined, false);
   if (!response.ok || !response.body) {
     const body = await response.json().catch(() => null);
     throw new ApiError(typeof body?.detail === "string" ? body.detail : friendlyStatus(response.status), response.status);
@@ -289,6 +295,8 @@ export interface TrendPoint {
   date: string;
   value: number;
   flag: Flag;
+  /** "typical" when that report printed no range and the flag was judged against a typical one. Missing in older briefs. */
+  range_source?: RangeSource | null;
   report_id: string;
   lab_name: string | null;
   printed: string;
@@ -315,7 +323,11 @@ export interface RecheckDue {
   key: string;
   name: string;
   flag: Flag;
+  /** "typical" when that reading's lab printed no range, so the flag came from a typical adult range. */
+  range_source: RangeSource | null;
   last_date: string;
+  /** last_date plus the usual interval; the list is sorted by it, longest overdue first. */
+  due_date: string;
   /** The usual recheck interval, e.g. 3 or 1.5. */
   months: number;
   /** The guideline the interval comes from. */
@@ -420,7 +432,12 @@ export const createShareLink = (briefId: string) =>
   request<CreatedShareLink>(`/api/briefs/${briefId}/shares`, { method: "POST" });
 export const listShareLinks = (profileId: string) => request<ShareLink[]>(`/api/profiles/${profileId}/shares`);
 export const revokeShareLink = (id: string) => request<void>(`/api/shares/${id}`, { method: "DELETE" });
-/** Public: anyone with the token can read the brief. Expired, revoked and unknown links all answer 404. */
-export const getSharedBrief = (token: string) => request<SharedBrief>(`/api/shared/${encodeURIComponent(token)}`);
-/** The address to send the doctor: on this website, so it opens without the API's address. */
-export const shareUrl = (token: string) => `${window.location.origin}/shared/${token}`;
+/**
+ * Public: anyone with the token can read the brief. Expired, revoked and unknown links all answer 404.
+ * The token goes in the body: in the address it would be written to request logs. A POST, but it only
+ * reads, so it waits for a sleeping server like a GET.
+ */
+export const getSharedBrief = (token: string) =>
+  request<SharedBrief>("/api/shared", json("POST", { token }), true);
+/** The address to send the doctor: on this website, with the token after "#", which browsers never send. */
+export const shareUrl = (token: string) => `${window.location.origin}/shared#${token}`;

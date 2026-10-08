@@ -117,10 +117,12 @@ def test_a_unit_fix_converts_the_value_for_the_timeline(client, session_factory)
     series = client.get(f"/api/profiles/{client.profile_id}/trends").json()["series"][0]
     assert (series["points"][0]["value"], series["ref_low"], series["ref_high"]) == (12.8, 12, 16)
 
-    # Leaving the unit out keeps it; sending null (or nothing typed) clears it.
+    # Leaving the unit out keeps it. Clearing it is refused: with no unit, "130" would be taken as g/dL.
     assert fix(client, report, hb, value_text="130").json()["unit"] == "g/L"
-    assert fix(client, report, hb, value_text="130", unit=None).json()["unit"] is None
-    assert len(log_rows(session_factory)) == 3
+    cleared = fix(client, report, hb, value_text="130", unit=None)
+    assert cleared.status_code == 422
+    assert cleared.json()["detail"] == "Enter the unit for Haemoglobin as printed, like g/dL."
+    assert len(log_rows(session_factory)) == 2
 
 
 def test_word_results_can_be_fixed(client):

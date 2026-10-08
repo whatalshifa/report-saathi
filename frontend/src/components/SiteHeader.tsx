@@ -23,7 +23,7 @@ export function SiteHeader({ signedIn }: { signedIn: boolean }) {
 
   const onAuthPage = AUTH_PAGES.includes(pathname);
   // A doctor opening a shared brief gets the brief alone: no way into the app or the sender's account.
-  if (pathname.startsWith("/shared/")) {
+  if (pathname === "/shared") {
     return (
       <header className="border-b border-line bg-background print:hidden">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">

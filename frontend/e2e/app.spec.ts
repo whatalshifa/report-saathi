@@ -20,6 +20,14 @@ test("private pages send signed-out visitors to sign in", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
 });
 
+test("the sign-in page never sends anyone to another site", async ({ page }) => {
+  // Browsers read "/\evil.example" as "//evil.example".
+  await page.goto("/login?next=/%5Cevil.example");
+  await page.getByRole("button", { name: "Open the demo account" }).click();
+  await expect(page.getByRole("heading", { name: "Whose reports?" })).toBeVisible();
+  expect(new URL(page.url()).host).toBe("localhost:3000");
+});
+
 test("the demo opens an account with the sample reports", async ({ page }) => {
   await startDemo(page);
   await expect(page.getByText("You're exploring a demo account")).toBeVisible();
@@ -69,6 +77,9 @@ test("a misread value can be fixed, and its flag follows the fix", async ({ page
   await expect(row.getByTitle("You corrected this; it was read as 10.6 g/dL")).toBeVisible();
   await expect(attention.getByText("Haemoglobin (Hb)")).toHaveCount(0);
   await expect(page.getByText(/written before you corrected a value/)).toBeVisible();
+  // It can be written again from the fixed value; this demo server has no AI key, so it says so.
+  await page.getByRole("button", { name: "Write it again" }).click();
+  await expect(page.getByText(/The AI is switched off/)).toBeVisible();
 
   // The fix is saved, not just shown.
   await page.reload();
@@ -145,9 +156,21 @@ test("the timeline lists tests due for a recheck, carefully worded", async ({ pa
         key: "ldl",
         name: "LDL cholesterol",
         flag: "high",
+        range_source: "lab",
         last_date: "2026-09-08",
+        due_date: "2026-12-08",
         months: 3,
         source: "2018 AHA/ACC Cholesterol Guideline",
+      },
+      {
+        key: "creatinine",
+        name: "Creatinine",
+        flag: "high",
+        range_source: "typical",
+        last_date: "2026-09-08",
+        due_date: "2026-12-08",
+        months: 3,
+        source: "KDIGO 2024 CKD guideline",
       },
     ];
     await route.fulfill({ response, json: trends });
@@ -161,6 +184,8 @@ test("the timeline lists tests due for a recheck, carefully worded", async ({ pa
     ),
   ).toBeVisible();
   await expect(card.getByText("Source: 2018 AHA/ACC Cholesterol Guideline")).toBeVisible();
+  // Only the reading judged against a typical range says so.
+  await expect(card.getByText(/compares it with a typical adult range, not your lab's/)).toHaveCount(1);
 });
 
 test("a doctor can open a shared brief until the link is revoked", async ({ page, browser }) => {
@@ -172,7 +197,8 @@ test("a doctor can open a shared brief until the link is revoked", async ({ page
   const panel = page.getByRole("region", { name: "Share with your doctor" });
   await panel.getByRole("button", { name: "Create a link" }).click();
   const url = await panel.getByLabel(/Your link, works until/).inputValue();
-  expect(url).toMatch(/\/shared\/[\w-]{40,}$/);
+  // The token is after "#", which browsers never send to a server.
+  expect(url).toMatch(/\/shared#[\w-]{40,}$/);
   await expect(panel.getByText("Not opened yet")).toBeVisible();
 
   // The doctor's phone: a separate browser that has never signed in.
@@ -336,6 +362,7 @@ test("the service worker keeps only readable shared files", async ({ page }) => 
     const sw = window as unknown as {
       handleShare(request: Request): Promise<Response>;
       isShareTarget(request: Request): boolean;
+      fromThisSite(referrer: string): boolean;
     };
     const share = async (file: File) => {
       const form = new FormData();
@@ -356,6 +383,12 @@ test("the service worker keeps only readable shared files", async ({ page }) => 
       keptType: kept?.headers.get("Content-Type"),
       keptName: decodeURIComponent(kept?.headers.get("X-File-Name") ?? ""),
       stillKept: decodeURIComponent(stillKept?.headers.get("X-File-Name") ?? ""),
+      sites: [
+        sw.fromThisSite(""),
+        sw.fromThisSite("about:client"),
+        sw.fromThisSite(`${location.origin}/share`),
+        sw.fromThisSite("http://evil.example/"),
+      ],
       caught: [
         sw.isShareTarget(new Request("/share-target", { method: "POST" })),
         sw.isShareTarget(new Request("/share-target")),
@@ -370,8 +403,32 @@ test("the service worker keeps only readable shared files", async ({ page }) => 
     keptType: "application/pdf",
     keptName: "रिपोर्ट.pdf",
     stillKept: "रिपोर्ट.pdf",
+    sites: [true, true, true, false],
     caught: [true, false, false],
   });
+});
+
+test("a website can't slip a file into the shared-report box", async ({ page }) => {
+  await startDemo(page);
+  await page.evaluate(() => navigator.serviceWorker.ready.then(() => undefined));
+  // Another site that quietly posts a file to the app's share address.
+  await page.route("http://evil.example/**", (route) =>
+    route.fulfill({
+      contentType: "text/html",
+      body: `<form method="post" enctype="multipart/form-data" action="http://localhost:3000/share-target">
+        <input type="file" name="file"></form>
+        <script>
+          const files = new DataTransfer();
+          files.items.add(new File(["%PDF-1.4"], "Thyrocare report.pdf", { type: "application/pdf" }));
+          document.querySelector("input").files = files.files;
+          document.querySelector("form").submit();
+        </script>`,
+    }),
+  );
+  await page.goto("http://evil.example/");
+  await expect(page).toHaveURL(/\/share\?error=elsewhere$/);
+  await expect(page.getByText("That file was sent by a website")).toBeVisible();
+  await expect(page.getByText("Thyrocare report.pdf")).toHaveCount(0);
 });
 
 test("a report shared from WhatsApp waits through sign-in", async ({ page }) => {
@@ -384,6 +441,7 @@ test("a report shared from WhatsApp waits through sign-in", async ({ page }) => 
   await expect(page.getByRole("heading", { name: "Add a shared report" })).toBeVisible();
   const file = page.getByRole("region", { name: "Shared file" });
   await expect(file.getByText("blood-test.pdf")).toBeVisible();
+  await expect(page.getByText("Only add this file if you shared it yourself")).toBeVisible();
   await expect(file.getByText("PDF · 2 KB")).toBeVisible();
   // This server has no AI key: the same note as the home page, and no upload button.
   await expect(page.getByText("Reading new reports is paused on this demo")).toBeVisible();
@@ -393,6 +451,14 @@ test("a report shared from WhatsApp waits through sign-in", async ({ page }) => 
   await expect(page.getByText("Nothing is waiting to be added")).toBeVisible();
   await page.reload();
   await expect(page.getByText("Nothing is waiting to be added")).toBeVisible();
+});
+
+test("a shared report can still be added or discarded if a check fails", async ({ page }) => {
+  await startDemo(page);
+  await page.route("**/api/features", (route) => route.fulfill({ status: 500, json: { detail: "Oops" } }));
+  await shareFile(page, "lipids.pdf", "application/pdf", 1200);
+  await expect(page.getByRole("region", { name: "Shared file" }).getByText("lipids.pdf")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Discard" })).toBeVisible();
 });
 
 test("a shared report is added to the person picked", async ({ page }) => {
@@ -463,6 +529,8 @@ test("an explanation can be read aloud when the device has a voice", async ({ pa
   const { spoken } = await speechLog(page);
   expect(spoken).toContain("Questions to ask your doctor");
   expect(spoken.length).toBeGreaterThan(5);
+  // Listeners never see the small print, so it is read out too.
+  expect(spoken.slice(-2)).toEqual(["Written by AI from your report.", "It is not medical advice."]);
 
   await panel.getByRole("button", { name: "Stop" }).click();
   await expect(panel.getByRole("button", { name: "Listen" })).toBeVisible();

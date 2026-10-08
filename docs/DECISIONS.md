@@ -166,20 +166,26 @@ sample person still counts against the limits.
 to its owner only (404 for anyone else, as everywhere), inline, with `Cache-Control: private, no-store`
 and `nosniff`. The page shows it in a native `<dialog>` (focus stays inside, Escape and a tap outside
 close it, focus returns to the icon), with no new libraries. PDFs open in the browser's own viewer at
-`#page=N` rather than being rendered in the page, which would need a PDF library.
+`#page=N` rather than being rendered in the page, which would need a PDF library. Android phones
+have no built-in PDF viewer (`navigator.pdfViewerEnabled` is false) and save the file to downloads
+instead, losing `#page=N`, so there the button says "Download the PDF" and names the page to look at.
 
 **Share links are bearer tokens, stored like sessions.** A link to a brief carries a random 32-byte
 token; the database keeps only its SHA-256 hash, so a leaked database opens nothing and the owner sees
 the link only once (making another is one tap). Links last 7 days, and a demo account's links end when
 the account is due to be deleted, so a link never outlives its data. Revoking sets `revoked_at` instead
 of deleting the row, so "opened N times" survives; deleting the profile or account deletes the links
-and their log with it (database cascades). The log keeps only the time of each opening, no address or
+and their log with it (database cascades). A brief keeps the values it was written from, so deleting a
+report, or moving it to someone else, turns off every working link for that person: an old link could
+still show the report's values. The log keeps only the time of each opening, no address or
 browser, because the owner only needs to know whether the doctor looked.
 
 **One answer for every dead link.** Unknown, expired and revoked tokens all get the same 404 body and
 headers, and opening is rate-limited per address, so tokens can't be probed or guessed. The public
 response is `Cache-Control: no-store` and `Referrer-Policy: no-referrer` (the page sets no-referrer and
-`noindex` too), since the address itself is the key. The shared brief leaves out the account's profile
+`noindex` too), since the address itself is the key. The token sits after `#` in the address
+(`/shared#<token>`), which browsers never send, and the page posts it to `POST /api/shared` in the
+body, so it never lands in the API's access log, the host's request logs or Sentry's request URLs. The shared brief leaves out the account's profile
 and report ids. The page fetches the brief in the browser rather than on the Next server, so the rate
 limit sees the doctor's address, and it reuses the same `BriefSheet` component as the owner's page
 without the app's navigation. A QR code was left out: it would need a new library, and the phone's own
@@ -196,8 +202,9 @@ invented address would be worse than none). The privacy page says how to use eac
 without recompression (PDFs and images are already compressed), named `reports/<person>/<date>.<ext>`
 rather than by upload name. The JSON leaves out every secret (password hash, token hashes) and a demo
 account's made-up email; the CSV has a byte-order mark so Excel shows Hindi and Marathi names, and
-cells starting with `=`, `+`, `-` or `@` get a leading apostrophe so text read off a report can never
-run as a spreadsheet formula. A file missing from storage is noted in the JSON instead of failing the
+cells starting with `=`, `+`, `@`, a tab, a carriage return, or a `-` that isn't a plain number (so
+"-1.5" stays a number) get a leading apostrophe so text read off a report can never run as a
+spreadsheet formula. A file missing from storage is noted in the JSON instead of failing the
 whole download. Decrypting everything is costly, so it is limited to 5 an hour per account.
 
 **Consent is versioned, asked at the first upload, and checked by the server.** The notice's text has
@@ -215,7 +222,10 @@ API answers to the next person on a shared phone, or an old version after a fix.
 keeps the shared file in Cache Storage under one key (the `/share` page reads it from there), replaced
 by the next share, and removed on upload, "Discard", sign-out, or after a day. The file is not
 encrypted on the phone; it is the same file WhatsApp already keeps there. The worker registers only in
-production builds over https or localhost. If a share arrives before the worker is running, a small
+production builds over https or localhost. Any website can post a form to `/share-target`, so the
+worker refuses a post that names another site as its referrer (a real share names none), and `/share`
+asks the person to add the file only if they shared it themselves, since a page can hide its referrer.
+If a share arrives before the worker is running, a small
 `/share-target` route redirects to a kind "please share it again" note instead of an error page.
 
 **Signed-out shares go through sign-in, not around it.** `/share` stays a private page, so the proxy
@@ -232,8 +242,9 @@ works offline, but which voices exist depends on the device (many have no Marath
 shows only when a voice for the language exists (exact `hi-IN` first, then any `hi`), re-checked when
 the browser's voice list arrives (`voiceschanged`). Text is spoken sentence by sentence because some
 browsers stop one long utterance part-way, and speech stops when the language changes or the page
-closes. It reads the warning (if any), the summary, each flagged test and the questions, and skips
-the long lists of common reasons to keep it listenable.
+closes. It reads the warning (if any), the summary, each flagged test, the questions and the note that the
+AI wrote it and it is not medical advice, and skips the long lists of common reasons to keep it
+listenable.
 
 **Typical ranges are a labelled fallback, never a replacement.** A value with no range can't be
 flagged, and families then miss a low haemoglobin. But a typical range is not the lab's: methods and
@@ -242,7 +253,14 @@ couldn't parse is still the lab's), it is stored with `range_source = "typical"`
 shows it says "Typical range, not from your lab" with its source, and the doctor brief marks it too.
 A sex-specific range is used only when the profile's sex is male or female; with it unknown, only a
 range for anyone applies, because the wrong sex's range can call a normal value abnormal. Age-banded
-tests (AMH, IGF-1, DHEA-S) and cycle-dependent hormones get no typical range at all.
+tests (AMH, IGF-1, DHEA-S) and cycle-dependent hormones get no typical range at all. Every range is an
+adult one, so none is used under 18: by the profile's birth year, else the age printed on the report,
+else not at all for a profile marked as a child. With no printed range nothing checks the unit, so a
+value with no unit gets no typical range ("2.5" platelets is in lakhs), except tests that have no unit
+(ratios, pH, specific gravity). None is used when the lab printed its own H or L beside the value (its
+range was somewhere we didn't read, and ours could contradict the paper), or when the name matched only
+by its start ("Cholesterol, VLDL"). A urine value never matches a blood test. The explanation and the
+brief are told which flags came from a typical range, so they don't say the lab marked it.
 
 **Only codes, ranges and intervals two reviewers verified.** A wrong LOINC code sends a doctor's system
 the wrong test, and a wrong range or recheck interval reads as medical guidance. Every entry was checked
@@ -256,7 +274,10 @@ any other spelling of the same unit.
 **Recheck reminders live in the app, worded as a question for the doctor.** The reminder says what
 guidelines say doctors often do ("Doctors often recheck it after about 3 months. Ask your doctor
 whether it's time.") and shows the guideline, rather than telling anyone to get tested. It counts from
-the report's own date and only looks at each test's latest reading, so a newer report clears it. It is
+the report's own date and only looks at each test's latest reading, so a newer report clears it. Each
+interval's source is about one side (a raised ALP, a low haemoglobin), so the reminder fires only for
+that side: a high HDL gets none. INR has no reminder, because a lab range can't tell whether someone
+is on warfarin, which is what its guideline is about. The longest overdue (earliest due date) is first. It is
 computed in the trends service (with `today` passed in for tests), not stored, and is left out of the
 doctor brief's saved snapshot because it is meant for the family.
 

@@ -83,6 +83,10 @@ export default function PrivacyPage() {
             Your own account is kept until you delete it. Deleting a report, a family member or the whole account
             removes it, and its files, straight away.
           </li>
+          <li>
+            A doctor link shows the values it was made with. So deleting a report, or moving it to someone else,
+            also turns off every doctor link for that person. You can make a new one.
+          </li>
         </ul>
       </Section>
 

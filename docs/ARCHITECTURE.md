@@ -124,8 +124,9 @@ The catalog lists 229 tests. Each has:
   with the guideline it comes from.
 
 A typical range is used only when a report prints no range at all (`range_source = "typical"` on the
-value, see `use_typical_range` in `processing.py`), and is picked again when the profile's sex changes
-or the report moves to someone else. The trends API adds `rechecks`: tests whose latest reading is out
+value, see `use_typical_range` in `processing.py`), never for a child, a value with no unit or a value
+the lab marked H or L, and is picked again when the profile's sex, birth year or relation changes or the
+report moves to someone else. The trends API adds `rechecks`: tests whose latest reading is out
 of range and older than their recheck interval, counted from the report dates.
 
 Matching is done by code first. We tidy the printed name (lowercase, drop punctuation, try the part

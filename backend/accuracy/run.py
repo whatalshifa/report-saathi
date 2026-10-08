@@ -58,9 +58,11 @@ def _read(extractor: ClaudeExtractor, report: Path) -> ExtractedReport:
 
 
 def _predictions(extracted: ExtractedReport) -> list[Predicted]:
+    # Answer keys say "unknown" where no range is printed (docs/ACCURACY.md), so typical ranges are
+    # left out: the kit scores what was read from the paper, not the app's fallback.
     return [
         Predicted(name=r.name, value=r.value_text, unit=r.unit, flag=r.flag.value, catalog_key=r.catalog_key)
-        for r in build_results(extracted)
+        for r in build_results(extracted, typical=False)
     ]
 
 

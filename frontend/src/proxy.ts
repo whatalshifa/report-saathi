@@ -7,6 +7,8 @@ const PUBLIC = new Set([
   "/signup",
   "/accuracy",
   "/privacy",
+  // A brief shared with a doctor: the token after "#" is the permission, and the API checks it.
+  "/shared",
   "/robots.txt",
   "/sitemap.xml",
   // What a phone fetches to install the app, signed in or not. /share-target is only reached when
@@ -15,9 +17,8 @@ const PUBLIC = new Set([
   "/sw.js",
   "/share-target",
 ]);
-// Generated images (the share preview, the favicon and the app icons under /icons/) are public too,
-// and so are briefs shared with a doctor: the link's token is the permission, and the API checks it.
-const PUBLIC_PREFIXES = ["/opengraph-image", "/twitter-image", "/icon", "/apple-icon", "/shared/"];
+// Generated images (the share preview, the favicon and the app icons under /icons/) are public too.
+const PUBLIC_PREFIXES = ["/opengraph-image", "/twitter-image", "/icon", "/apple-icon"];
 
 /**
  * Sends signed-out visitors to the sign-in page before any private page loads.

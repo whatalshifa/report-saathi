@@ -226,6 +226,12 @@ function RecheckCard({ person, due }: { person: TimelineSummary; due: RecheckDue
               {whose} {d.name} was {FLAG_WORD[d.flag] ?? "outside the normal range"} on {formatDate(d.last_date)}.
               Doctors often recheck it after {interval(d.months)}. Ask your doctor whether it&apos;s time.
             </p>
+            {d.range_source === "typical" && (
+              <p className="mt-0.5 text-sm text-amber-900 dark:text-amber-200">
+                That report printed no normal range, so this compares it with a typical adult range, not your
+                lab&apos;s.
+              </p>
+            )}
             <p className="mt-0.5 text-xs text-amber-900/75 dark:text-amber-200/70">Source: {d.source}</p>
           </li>
         ))}

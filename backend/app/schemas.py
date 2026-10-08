@@ -212,7 +212,10 @@ class TimelineSummary(BaseModel):
 class TrendPoint(BaseModel):
     date: date
     value: float  # in the series' standard unit
-    flag: Flag  # judged against the range printed on that report
+    flag: Flag  # judged against the range printed on that report, or a typical one
+    # "typical" when that report printed no range and the flag was judged against a typical adult
+    # range. Missing in briefs written before it was kept.
+    range_source: Literal["lab", "typical"] | None = None
     report_id: str
     lab_name: str | None
     printed: str  # the value and unit exactly as that lab printed them
@@ -239,7 +242,10 @@ class RecheckDue(BaseModel):
     key: str
     name: str
     flag: Flag  # of the latest reading: low, high or abnormal
+    # "typical" when that reading's lab printed no range, so the flag came from a typical adult range.
+    range_source: Literal["lab", "typical"] | None = None
     last_date: date
+    due_date: date  # last_date plus the usual interval
     months: float  # the usual recheck interval
     source: str  # the guideline the interval comes from
 
@@ -298,6 +304,12 @@ class ShareOut(BaseModel):
 
 class ShareCreated(ShareOut):
     token: str  # shown once; only its hash is kept
+
+
+class OpenShared(BaseModel):
+    """The link's token, sent in the body: in the URL it would land in access logs and error reports."""
+
+    token: str = Field(max_length=200)
 
 
 class SharedBrief(BaseModel):

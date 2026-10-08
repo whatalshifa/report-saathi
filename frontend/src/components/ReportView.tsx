@@ -24,6 +24,7 @@ import {
   type TestResult,
 } from "@/lib/api";
 import { formatAge, formatDate, formatRange, formatSex, possessive, serverTime } from "@/lib/format";
+import { usePdfViewer } from "@/lib/usePdfViewer";
 
 const POLL_MS = 2000;
 
@@ -34,6 +35,7 @@ export function ReportView({ id }: { id: string }) {
   const [announcement, setAnnouncement] = useState("");
   // The value whose source is showing, and the button that opened it (focus goes back there).
   const [source, setSource] = useState<{ result: TestResult; trigger: HTMLElement } | null>(null);
+  const showsPdf = usePdfViewer();
 
   // Reading a report takes a little while, so ask the server again until it is done.
   useEffect(() => {
@@ -70,7 +72,7 @@ export function ReportView({ id }: { id: string }) {
   }
 
   async function handleDelete() {
-    if (!confirm("Delete this report and its file?")) return;
+    if (!confirm("Delete this report and its file? Any doctor links for this person will stop working.")) return;
     await deleteReport(id);
     router.push(`/?profile=${report?.profile_id ?? ""}`);
   }
@@ -93,6 +95,8 @@ export function ReportView({ id }: { id: string }) {
   const flagged = report.results.filter((r) => isOutOfRange(r.flag));
   // Only values with a known spot on a file we can show get a source button.
   const canShowSource = hasOriginal(report);
+  // Phones without a PDF viewer download the file, so the link says so.
+  const downloadsPdf = !showsPdf && report.content_type === "application/pdf";
   const showSource = (r: TestResult) =>
     canShowSource && r.box ? (trigger: HTMLElement) => setSource({ result: r, trigger }) : undefined;
   const sections = groupBySection(report.results);
@@ -130,8 +134,14 @@ export function ReportView({ id }: { id: string }) {
               See {possessive(report.profile.name)} results over time →
             </Link>
             {canShowSource && (
-              <a href={reportFileUrl(report.id)} target="_blank" rel="noopener noreferrer" className="link">
-                View original
+              <a
+                href={reportFileUrl(report.id)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="link"
+                title={downloadsPdf ? "This phone saves the PDF to its downloads to open it" : undefined}
+              >
+                {downloadsPdf ? "Download original" : "View original"}
               </a>
             )}
           </div>

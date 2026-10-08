@@ -26,13 +26,14 @@ from app.schemas import (
     ResultCorrection,
     TestResultOut,
 )
-from app.services.auth import CurrentUser, SettingsDep
+from app.services.auth import CurrentUser, SettingsDep, as_utc
 from app.services.claude import AI_OFF
 from app.services.consent import NEEDS_CONSENT, has_consented
 from app.services.corrections import CorrectionError, correct_result
 from app.services.extraction import Extractor, get_extractor
 from app.services.jobs import run_explanation
 from app.services.processing import process_report, refresh_typical_ranges
+from app.services.sharing import turn_off_links
 from app.services.uploads import UploadError, prepare_upload
 
 router = APIRouter(prefix="/api/reports", tags=["reports"])
@@ -142,8 +143,11 @@ def get_report_file(report_id: str, user: CurrentUser, session: SessionDep, stor
 def move_report(report_id: str, body: MoveReport, user: CurrentUser, session: SessionDep) -> Report:
     """File a report under a different profile, e.g. when it was uploaded to the wrong person."""
     report = owned_report(session, user, report_id)
-    report.profile = owned_profile(session, user, body.profile_id)
-    refresh_typical_ranges(report, report.profile.sex)
+    profile = owned_profile(session, user, body.profile_id)
+    if profile.id != report.profile_id:
+        turn_off_links(session, report.profile_id)
+    report.profile = profile
+    refresh_typical_ranges(report)
     session.commit()
     return report
 
@@ -167,9 +171,18 @@ def correct_value(
 @router.delete("/{report_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_report(report_id: str, user: CurrentUser, session: SessionDep, storage: StorageDep) -> None:
     report = owned_report(session, user, report_id)
+    turn_off_links(session, report.profile_id)
     storage.delete(report.storage_key)
     session.delete(report)
     session.commit()
+
+
+def _outdated(explanation: Explanation, report: Report) -> bool:
+    """A finished explanation written before a value on the report was fixed by hand."""
+    fixed = [as_utc(r.corrected_at) for r in report.results if r.corrected_at is not None]
+    return (
+        explanation.status == JobStatus.done and bool(fixed) and as_utc(explanation.created_at) < max(fixed)
+    )
 
 
 @router.post("/{report_id}/explanations", status_code=status.HTTP_202_ACCEPTED, response_model=ExplanationOut)
@@ -191,14 +204,20 @@ def request_explanation(
     explanation = session.scalar(
         select(Explanation).where(Explanation.report_id == report_id, Explanation.language == body.language)
     )
-    if explanation is not None and explanation.status != JobStatus.failed:
+    if (
+        explanation is not None
+        and explanation.status != JobStatus.failed
+        and not _outdated(explanation, report)
+    ):
         return explanation
     if not settings.ai_enabled:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, AI_OFF)
     if explanation is None:
         explanation = Explanation(report_id=report_id, language=body.language)
         session.add(explanation)
-    explanation.status, explanation.error = JobStatus.queued, None
+    # A rewrite counts as new, so the page stops saying it predates the fix.
+    explanation.status, explanation.error, explanation.content = JobStatus.queued, None, None
+    explanation.created_at = datetime.now(UTC)
     session.commit()
 
     background.add_task(run_explanation, explanation.id, factory, writer)

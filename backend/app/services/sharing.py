@@ -55,6 +55,18 @@ def share_state(link: ShareLink, now: datetime | None = None) -> ShareState:
     return "active"
 
 
+def turn_off_links(session: Session, profile_id: str) -> None:
+    """Turns off every working link to this person's briefs.
+
+    A brief keeps the values it was written from, so after a report is deleted or moved to
+    someone else, an old link would still show them. Called before the change is committed.
+    """
+    now = _now()
+    for link in session.scalars(select(ShareLink).where(ShareLink.profile_id == profile_id)):
+        if share_state(link, now) == "active":
+            link.revoked_at = now
+
+
 def open_share(session: Session, token: str) -> ShareLink | None:
     """The link for a working token, with the visit logged; None for anything else.
 

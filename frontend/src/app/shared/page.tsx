@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   referrer: "no-referrer",
 };
 
-export default async function SharedBriefPage({ params }: PageProps<"/shared/[token]">) {
-  const { token } = await params;
-  return <SharedBriefView token={token} />;
+/** A doctor's link is /shared#<token>: the part after "#" never leaves the browser, so no server logs it. */
+export default function SharedBriefPage() {
+  return <SharedBriefView />;
 }

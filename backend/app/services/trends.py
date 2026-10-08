@@ -57,6 +57,15 @@ def add_months(day: date, months: float) -> date:
     return moved + timedelta(days=round((months - whole) * 30))
 
 
+def _recheck_applies(flag: Flag, direction: str) -> bool:
+    """A recheck interval's source is about one side: a high HDL is good news, not a lipid recheck."""
+    if direction == "high":
+        return flag in (Flag.high, Flag.abnormal)
+    if direction == "low":
+        return flag == Flag.low
+    return flag in _OUT_OF_RANGE
+
+
 def due_rechecks(series: list[TrendSeries], today: date) -> list[RecheckDue]:
     """Tests whose latest reading is out of range and older than the catalog's usual recheck interval.
 
@@ -67,21 +76,24 @@ def due_rechecks(series: list[TrendSeries], today: date) -> list[RecheckDue]:
     for s in series:
         test = get_test(s.key)
         latest = s.points[-1]
-        if test.recheck_months is None or latest.flag not in _OUT_OF_RANGE:
+        if test.recheck_months is None or not _recheck_applies(latest.flag, test.recheck_direction):
             continue
-        if add_months(latest.date, test.recheck_months) <= today:
+        due_date = add_months(latest.date, test.recheck_months)
+        if due_date <= today:
             due.append(
                 RecheckDue(
                     key=s.key,
                     name=s.name,
                     flag=latest.flag,
+                    range_source=latest.range_source,
                     last_date=latest.date,
+                    due_date=due_date,
                     months=test.recheck_months,
                     source=test.recheck_source,
                 )
             )
-    # The longest overdue first.
-    return sorted(due, key=lambda d: (d.last_date, _ORDER[d.key]))
+    # The longest overdue first: each test has its own interval, so that's the earliest due date.
+    return sorted(due, key=lambda d: (d.due_date, _ORDER[d.key]))
 
 
 def build_trends(session: Session, profile: Profile, today: date | None = None) -> Trends | None:
@@ -101,6 +113,7 @@ def build_trends(session: Session, profile: Profile, today: date | None = None) 
                     date=_report_day(report),
                     value=result.std_value,
                     flag=result.flag,
+                    range_source=result.range_source,
                     report_id=report.id,
                     lab_name=report.lab_name,
                     printed=f"{result.value_text} {result.unit or ''}".strip(),

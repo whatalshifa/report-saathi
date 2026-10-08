@@ -18,7 +18,7 @@ from sqlalchemy.orm import Session
 from app.models import Brief, Explanation, JobStatus, Profile, Relation, Report, ReportStatus, User
 from app.schemas import SNAPSHOT_EXCLUDE
 from app.services.extraction import ExtractedReport
-from app.services.processing import _parse_date, build_results
+from app.services.processing import _parse_date, adult_ranges_fit, build_results
 from app.services.storage import Storage
 from app.services.trends import build_trends
 
@@ -67,8 +67,8 @@ def add_sample_profile(session: Session, user: User, storage: Storage) -> Profil
             patient_age=reading.patient_age,
             patient_sex=reading.patient_sex,
             report_date=_parse_date(reading.report_date),
-            results=build_results(reading, profile.sex),
         )
+        report.results = build_results(reading, profile.sex, adult_ranges_fit(profile, report))
         session.add(report)
         session.flush()  # gives the report its id
         # Stored (and encrypted) like an upload, so viewing and deleting a sample work the same way.

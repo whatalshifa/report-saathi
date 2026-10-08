@@ -5,8 +5,10 @@ from datetime import date
 import pytest
 
 from app.models import Flag, Profile, User
+from app.schemas import TrendPoint, TrendSeries
+from app.services.catalog import get_test
 from app.services.samples import add_sample_profile
-from app.services.trends import add_months, build_trends
+from app.services.trends import add_months, build_trends, due_rechecks
 from tests.conftest import FakeExtractor, make_test, sample_report, upload
 
 
@@ -82,3 +84,54 @@ def test_meera_is_due_an_ldl_recheck_three_months_after_her_last_report(session_
         snapshot = profile.briefs[0].content["snapshot"]
         assert "rechecks" not in snapshot
         assert {s["key"]: s["loinc"] for s in snapshot["series"]}["ldl"] == "2089-1"
+
+
+def series(key, day, flag, range_source="lab"):
+    point = TrendPoint(
+        date=day, value=1, flag=flag, range_source=range_source, report_id="r", lab_name=None, printed="1"
+    )
+    test = get_test(key)
+    return TrendSeries(
+        key=key,
+        name=test.name,
+        unit=test.unit,
+        ref_low=None,
+        ref_high=None,
+        points=[point],
+        latest_flag=flag,
+        change=None,
+        change_pct=None,
+    )
+
+
+def test_the_longest_overdue_comes_first():
+    # ALP (6 months) was due 1 Sep; haemoglobin (1 month) was due 1 Jun, so it is more overdue.
+    due = due_rechecks(
+        [series("alp", date(2026, 3, 1), Flag.high), series("hemoglobin", date(2026, 5, 1), Flag.low)],
+        today=date(2026, 10, 8),
+    )
+    assert [(d.key, d.due_date) for d in due] == [("hemoglobin", date(2026, 6, 1)), ("alp", date(2026, 9, 1))]
+
+
+@pytest.mark.parametrize(
+    ("key", "flag", "due"),
+    [
+        ("hdl", Flag.high, False),  # high HDL is good news, not a lipid recheck
+        ("hdl", Flag.low, True),
+        ("alp", Flag.low, False),  # the source is about a raised ALP
+        ("basophils_abs", Flag.low, False),
+        ("hemoglobin", Flag.high, False),  # the source is about anaemia
+        ("urine_protein", Flag.abnormal, True),  # a positive dipstick counts as high
+        ("tsh", Flag.low, True),
+        ("tsh", Flag.high, True),
+        ("inr", Flag.high, False),  # a lab range can't tell whether someone is on warfarin
+    ],
+)
+def test_a_reminder_only_for_the_side_its_source_is_about(key, flag, due):
+    found = due_rechecks([series(key, date(2025, 1, 1), flag)], today=date(2026, 10, 8))
+    assert bool(found) is due
+
+
+def test_a_reminder_says_when_the_flag_came_from_a_typical_range():
+    (due,) = due_rechecks([series("ldl", date(2026, 1, 1), Flag.high, "typical")], today=date(2026, 10, 8))
+    assert due.range_source == "typical"
