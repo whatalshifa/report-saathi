@@ -2,23 +2,29 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { ExplanationPanel } from "@/components/ExplanationPanel";
 import { FlagBadge } from "@/components/FlagBadge";
 import { RangeBar } from "@/components/RangeBar";
 import { SkeletonPage } from "@/components/Skeleton";
+import { SourceButton, SourceDialog } from "@/components/SourceView";
+import { TypicalRangeNote } from "@/components/TypicalRangeNote";
+import { CorrectedChip, FixButton, ValueEditor } from "@/components/ValueFix";
 import {
   deleteReport,
   getReport,
+  hasOriginal,
   isOutOfRange,
   listProfiles,
   moveReport,
+  reportFileUrl,
   type Profile,
   type ReportDetail,
   type TestResult,
 } from "@/lib/api";
-import { formatAge, formatDate, formatRange, formatSex, possessive } from "@/lib/format";
+import { formatAge, formatDate, formatRange, formatSex, possessive, serverTime } from "@/lib/format";
+import { usePdfViewer } from "@/lib/usePdfViewer";
 
 const POLL_MS = 2000;
 
@@ -26,6 +32,10 @@ export function ReportView({ id }: { id: string }) {
   const router = useRouter();
   const [report, setReport] = useState<ReportDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [announcement, setAnnouncement] = useState("");
+  // The value whose source is showing, and the button that opened it (focus goes back there).
+  const [source, setSource] = useState<{ result: TestResult; trigger: HTMLElement } | null>(null);
+  const showsPdf = usePdfViewer();
 
   // Reading a report takes a little while, so ask the server again until it is done.
   useEffect(() => {
@@ -48,8 +58,21 @@ export function ReportView({ id }: { id: string }) {
     };
   }, [id]);
 
+  // A fixed value comes back re-flagged; the stats, "needs attention" and the table all follow it.
+  function handleCorrected(updated: TestResult) {
+    setReport((current) =>
+      current && { ...current, results: current.results.map((r) => (r.id === updated.id ? updated : r)) },
+    );
+    setAnnouncement(`Saved. ${updated.name} is now ${[updated.value_text, updated.unit].filter(Boolean).join(" ")}.`);
+  }
+
+  function closeSource() {
+    source?.trigger.focus();
+    setSource(null);
+  }
+
   async function handleDelete() {
-    if (!confirm("Delete this report and its file?")) return;
+    if (!confirm("Delete this report and its file? Any doctor links for this person will stop working.")) return;
     await deleteReport(id);
     router.push(`/?profile=${report?.profile_id ?? ""}`);
   }
@@ -70,7 +93,24 @@ export function ReportView({ id }: { id: string }) {
   }
 
   const flagged = report.results.filter((r) => isOutOfRange(r.flag));
+  // Only values with a known spot on a file we can show get a source button.
+  const canShowSource = hasOriginal(report);
+  // Phones without a PDF viewer download the file, so the link says so.
+  const downloadsPdf = !showsPdf && report.content_type === "application/pdf";
+  const showSource = (r: TestResult) =>
+    canShowSource && r.box ? (trigger: HTMLElement) => setSource({ result: r, trigger }) : undefined;
   const sections = groupBySection(report.results);
+  // Every typical range used on this report, and where each comes from, for the note under the table.
+  const typicalSources = [
+    ...new Set(
+      report.results.filter((r) => r.range_source === "typical").map((r) => r.typical_range_source ?? ""),
+    ),
+  ].filter(Boolean);
+  const lastCorrection = report.results
+    .map((r) => r.corrected_at)
+    .filter((t): t is string => t !== null)
+    .sort((a, b) => serverTime(a) - serverTime(b))
+    .at(-1);
 
   return (
     <div className="space-y-8">
@@ -89,12 +129,22 @@ export function ReportView({ id }: { id: string }) {
               .filter(Boolean)
               .join(" · ")}
           </p>
-          <Link
-            href={`/profiles/${report.profile.id}`}
-            className="link mt-2 inline-block text-sm"
-          >
-            See {possessive(report.profile.name)} results over time →
-          </Link>
+          <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm">
+            <Link href={`/profiles/${report.profile.id}`} className="link">
+              See {possessive(report.profile.name)} results over time →
+            </Link>
+            {canShowSource && (
+              <a
+                href={reportFileUrl(report.id)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="link"
+                title={downloadsPdf ? "This phone saves the PDF to its downloads to open it" : undefined}
+              >
+                {downloadsPdf ? "Download original" : "View original"}
+              </a>
+            )}
+          </div>
         </div>
         <button onClick={handleDelete} className="btn btn-secondary btn-sm hover:border-rose-400 hover:text-rose-700 dark:hover:text-rose-300">
           Delete
@@ -105,13 +155,15 @@ export function ReportView({ id }: { id: string }) {
 
       <section className="grid grid-cols-3 gap-3">
         <Stat label="Values read" value={report.results.length} />
-        <Stat label="Outside normal range" value={report.out_of_range} highlight={report.out_of_range > 0} />
+        <Stat label="Outside normal range" value={flagged.length} highlight={flagged.length > 0} />
         <Stat label="Within range" value={report.results.filter((r) => r.flag === "normal").length} />
       </section>
 
       {flagged.length > 0 && (
-        <section>
-          <h2 className="mb-3 text-lg font-semibold">Needs attention</h2>
+        <section aria-labelledby="needs-attention">
+          <h2 id="needs-attention" className="mb-3 text-lg font-semibold">
+            Needs attention
+          </h2>
           <ul className="grid gap-3 sm:grid-cols-2">
             {flagged.map((r) => (
               <li
@@ -123,51 +175,59 @@ export function ReportView({ id }: { id: string }) {
                   <FlagBadge flag={r.flag} />
                 </div>
                 <p className="mt-1 text-2xl font-semibold">
-                  {r.value_text} <span className="text-sm font-normal text-muted">{r.unit}</span>
+                  {r.value_text} <span className="text-sm font-normal text-muted">{r.unit}</span>{" "}
+                  <SourceToggle name={r.name} onShow={showSource(r)} />
                 </p>
                 <p className="mb-3 text-sm text-muted">
                   Normal: {formatRange(r.ref_low, r.ref_high, r.reference_text)}
+                  <TypicalRangeNote rangeSource={r.range_source} source={r.typical_range_source} />
                 </p>
                 <RangeBar result={r} />
+                {r.corrected && (
+                  <div className="mt-3">
+                    <CorrectedChip result={r} showReading />
+                  </div>
+                )}
               </li>
             ))}
           </ul>
         </section>
       )}
 
-      <ExplanationPanel reportId={report.id} />
+      <ExplanationPanel reportId={report.id} correctedAt={lastCorrection ?? null} />
 
-      <section className="space-y-6">
-        <h2 className="text-lg font-semibold">All results</h2>
+      <section aria-labelledby="all-results" className="space-y-6">
+        <div>
+          <h2 id="all-results" className="text-lg font-semibold">
+            All results
+          </h2>
+          <p className="mt-1 text-sm text-muted">
+            {canShowSource && report.results.some((r) => r.box)
+              ? "Tap the page icon beside a value to see it on the original report. Read wrongly? Use the pencil to fix it."
+              : "Something read wrongly? Use the pencil beside a value to fix it."}
+          </p>
+        </div>
         {sections.map(([section, results]) => (
           <div key={section}>
             <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted">{section}</h3>
             {/* Phones get a stacked list; wider screens get a table. */}
             <ul className="card divide-y divide-line sm:hidden">
               {results.map((r) => (
-                <li key={r.id} className="space-y-2 px-4 py-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <p className="font-medium">{r.name}</p>
-                    <FlagBadge flag={r.flag} />
-                  </div>
-                  <p className="text-sm">
-                    <span className="font-semibold">{r.value_text}</span>{" "}
-                    <span className="text-muted">{r.unit}</span>
-                    <span className="text-muted">
-                      {" "}
-                      · Normal: {formatRange(r.ref_low, r.ref_high, r.reference_text)}
-                    </span>
-                  </p>
-                  <RangeBar result={r} />
-                </li>
+                <ResultItem
+                  key={r.id}
+                  reportId={report.id}
+                  result={r}
+                  onSaved={handleCorrected}
+                  onShowSource={showSource(r)}
+                />
               ))}
             </ul>
             <div className="card hidden overflow-hidden sm:block">
               <table className="w-full table-fixed text-sm">
                 <colgroup>
-                  <col className="w-[26%]" />
-                  <col className="w-[18%]" />
+                  <col className="w-[24%]" />
                   <col className="w-[22%]" />
+                  <col className="w-[20%]" />
                   <col className="w-[20%]" />
                   <col className="w-[14%]" />
                 </colgroup>
@@ -182,34 +242,136 @@ export function ReportView({ id }: { id: string }) {
                 </thead>
                 <tbody className="divide-y divide-line">
                   {results.map((r) => (
-                    <tr key={r.id}>
-                      <td className="px-4 py-2.5">{r.name}</td>
-                      <td className="px-4 py-2.5 font-medium">
-                        {r.value_text} <span className="font-normal text-muted">{r.unit}</span>
-                      </td>
-                      <td className="px-4 py-2.5 text-muted">
-                        {formatRange(r.ref_low, r.ref_high, r.reference_text)}
-                      </td>
-                      <td className="px-4 py-2.5">
-                        <RangeBar result={r} />
-                      </td>
-                      <td className="px-4 py-2.5">
-                        <FlagBadge flag={r.flag} />
-                      </td>
-                    </tr>
+                    <ResultRow
+                      key={r.id}
+                      reportId={report.id}
+                      result={r}
+                      onSaved={handleCorrected}
+                      onShowSource={showSource(r)}
+                    />
                   ))}
                 </tbody>
               </table>
             </div>
           </div>
         ))}
+        {typicalSources.length > 0 && (
+          <p className="text-sm text-muted">
+            Your lab printed no normal range for some values, so we compared them with a typical range for
+            adults instead. Labs and doctors may use a slightly different one, so ask your doctor what is normal
+            for you.
+            {/* Citations are long and technical; keep them small and apart from the plain words above. */}
+            <span className="mt-1 block text-xs">
+              {typicalSources.length === 1 ? "Source" : "Sources"}: {typicalSources.join("; ")}.
+            </span>
+          </p>
+        )}
       </section>
 
       <p className="text-xs text-muted">
         ReportSaathi reads your report with AI and can make mistakes. Check values against the original
         report, and talk to your doctor before acting on anything here.
       </p>
+      <p aria-live="polite" className="sr-only">
+        {announcement}
+      </p>
+      {source?.result.box && (
+        <SourceDialog
+          reportId={report.id}
+          contentType={report.content_type}
+          result={source.result}
+          box={source.result.box}
+          onClose={closeSource}
+        />
+      )}
     </div>
+  );
+}
+
+interface ResultProps {
+  reportId: string;
+  result: TestResult;
+  onSaved: (updated: TestResult) => void;
+  /** Opens the original with this value highlighted; missing when its place on the page isn't known. */
+  onShowSource?: (trigger: HTMLElement) => void;
+}
+
+function SourceToggle({ name, onShow }: { name: string; onShow?: (trigger: HTMLElement) => void }) {
+  return onShow ? <SourceButton name={name} onClick={onShow} /> : null;
+}
+
+/** Opening and closing the fix form, with focus going back to the pencil when it closes. */
+function useFixForm() {
+  const [editing, setEditing] = useState(false);
+  const button = useRef<HTMLButtonElement>(null);
+  const close = () => {
+    button.current?.focus();
+    setEditing(false);
+  };
+  return { editing, button, toggle: () => setEditing((open) => !open), close };
+}
+
+// Phones get a stacked list.
+function ResultItem({ reportId, result: r, onSaved, onShowSource }: ResultProps) {
+  const { editing, button, toggle, close } = useFixForm();
+  return (
+    <li className="space-y-2 px-4 py-3">
+      <div className="flex items-start justify-between gap-3">
+        <p className="font-medium">{r.name}</p>
+        <FlagBadge flag={r.flag} />
+      </div>
+      <p className="text-sm">
+        <span className="font-semibold">{r.value_text}</span> <span className="text-muted">{r.unit}</span>{" "}
+        <SourceToggle name={r.name} onShow={onShowSource} />
+        <FixButton ref={button} name={r.name} open={editing} onClick={toggle} />
+        <span className="text-muted"> · Normal: {formatRange(r.ref_low, r.ref_high, r.reference_text)}</span>
+        <TypicalRangeNote rangeSource={r.range_source} source={r.typical_range_source} />
+      </p>
+      <CorrectedChip result={r} showReading />
+      {editing && <ValueEditor reportId={reportId} result={r} onSaved={onSaved} onClose={close} />}
+      <RangeBar result={r} />
+    </li>
+  );
+}
+
+// Wider screens get a table; the fix form opens in a full-width row under the value.
+function ResultRow({ reportId, result: r, onSaved, onShowSource }: ResultProps) {
+  const { editing, button, toggle, close } = useFixForm();
+  return (
+    <>
+      <tr className={editing ? "border-b-0" : undefined}>
+        <td className="px-4 py-2.5">{r.name}</td>
+        <td className="px-4 py-2.5 font-medium">
+          {r.value_text} <span className="font-normal text-muted">{r.unit}</span>{" "}
+          <span className="inline-flex align-middle">
+            <SourceToggle name={r.name} onShow={onShowSource} />
+            <FixButton ref={button} name={r.name} open={editing} onClick={toggle} />
+          </span>
+          {r.corrected && (
+            <div className="mt-1">
+              <CorrectedChip result={r} />
+            </div>
+          )}
+        </td>
+        <td className="px-4 py-2.5 text-muted">
+          {formatRange(r.ref_low, r.ref_high, r.reference_text)}
+          <TypicalRangeNote rangeSource={r.range_source} source={r.typical_range_source} />
+        </td>
+        <td className="px-4 py-2.5">
+          <RangeBar result={r} />
+        </td>
+        <td className="px-4 py-2.5">
+          <FlagBadge flag={r.flag} />
+        </td>
+      </tr>
+      {editing && (
+        <tr>
+          <td colSpan={5} className="px-4 pb-3">
+            <ValueEditor reportId={reportId} result={r} onSaved={onSaved} onClose={close} />
+          </td>
+        </tr>
+      )}
+    </>
   );
 }
 

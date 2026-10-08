@@ -1,8 +1,23 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 // Pages anyone can open. Everything else needs a sign-in cookie.
-const PUBLIC = new Set(["/", "/login", "/signup", "/accuracy", "/robots.txt", "/sitemap.xml"]);
-// Generated images (the share preview and icons) are public too.
+const PUBLIC = new Set([
+  "/",
+  "/login",
+  "/signup",
+  "/accuracy",
+  "/privacy",
+  // A brief shared with a doctor: the token after "#" is the permission, and the API checks it.
+  "/shared",
+  "/robots.txt",
+  "/sitemap.xml",
+  // What a phone fetches to install the app, signed in or not. /share-target is only reached when
+  // the service worker isn't running; /share itself stays private, so a signed-out share goes via sign-in.
+  "/manifest.webmanifest",
+  "/sw.js",
+  "/share-target",
+]);
+// Generated images (the share preview, the favicon and the app icons under /icons/) are public too.
 const PUBLIC_PREFIXES = ["/opengraph-image", "/twitter-image", "/icon", "/apple-icon"];
 
 /**

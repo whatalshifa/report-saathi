@@ -5,7 +5,17 @@
 import { serverStatus } from "@/lib/serverStatus";
 
 export type Flag = "low" | "high" | "normal" | "abnormal" | "unknown";
+export type RangeSource = "lab" | "typical";
 export type ReportStatus = "queued" | "processing" | "done" | "failed";
+
+/** Where a value is printed in the original file: a page (from 1), and edges as fractions 0-1 of it. */
+export interface SourceBox {
+  page: number;
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+}
 
 export interface TestResult {
   id: number;
@@ -17,8 +27,26 @@ export interface TestResult {
   reference_text: string | null;
   ref_low: number | null;
   ref_high: number | null;
+  /**
+   * "lab" when the report printed the range; "typical" when it printed none and a typical adult range
+   * was used instead (always say so next to it); null when there is no range.
+   */
+  range_source: RangeSource | null;
+  /** Where that typical range comes from; null for the lab's own range. */
+  typical_range_source: string | null;
   lab_flag: string | null;
   flag: Flag;
+  /** The test's catalog key and its LOINC code (the international test ID), when known. */
+  catalog_key: string | null;
+  loinc: string | null;
+  /** True when the person fixed a value the AI misread. */
+  corrected: boolean;
+  corrected_at: string | null;
+  /** What the AI first read, kept after a fix so the page can show it. */
+  original_value_text: string | null;
+  original_unit: string | null;
+  /** Where the value is printed in the original; null when not known (older reports, or the AI couldn't say). */
+  box: SourceBox | null;
 }
 
 export interface ReportSummary {
@@ -34,6 +62,8 @@ export interface ReportSummary {
 }
 
 export interface ReportDetail extends ReportSummary {
+  /** The original file's type: a PDF or an image (older sample reports: text/plain, no file to show). */
+  content_type: string;
   patient_age: string | null;
   patient_sex: string | null;
   profile: { id: string; name: string };
@@ -54,12 +84,16 @@ export class ApiError extends Error {
 
 // While the free server wakes up, the website's forwarder may give up and answer 502/504,
 // or the connection may drop. Reads are safe to try again, so they are, for about a minute.
+// `retry` overrides that for a read that is costly or counted (the export), or a post that only reads.
 const RETRY_DELAYS_MS = [2000, 4000, 8000, 15000, 30000];
 const WAKING_STATUSES = new Set([502, 504]);
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-async function fetchWithWake(path: string, init?: RequestInit): Promise<Response> {
-  const retry = (init?.method ?? "GET") === "GET";
+async function fetchWithWake(
+  path: string,
+  init?: RequestInit,
+  retry = (init?.method ?? "GET") === "GET",
+): Promise<Response> {
   const done = serverStatus.track();
   try {
     for (let attempt = 0; ; attempt++) {
@@ -78,8 +112,8 @@ async function fetchWithWake(path: string, init?: RequestInit): Promise<Response
   }
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetchWithWake(path, init);
+async function request<T>(path: string, init?: RequestInit, retry?: boolean): Promise<T> {
+  const response = await fetchWithWake(path, init, retry);
   if (response.status === 401 && !path.startsWith("/api/auth/") && typeof window !== "undefined") {
     // Signed out (or the session expired): go to sign-in, then come back here.
     // A full page load on purpose, so no signed-in state survives in memory.
@@ -114,6 +148,11 @@ export interface User {
   email: string;
   /** A one-click demo account, deleted after a day. */
   is_guest: boolean;
+  /** Which data notice the person agreed to before uploading, and when; null until they do. */
+  consent_version: string | null;
+  consented_at: string | null;
+  /** True until they agree to the current notice; asked before an upload. */
+  needs_consent: boolean;
 }
 
 export const signup = (name: string, email: string, password: string) =>
@@ -127,6 +166,40 @@ export const checkHealth = () => request<{ status: string }>("/api/health");
 export const startDemo = () => request<User>("/api/auth/demo", { method: "POST" });
 export const logout = () => request<void>("/api/auth/logout", { method: "POST" });
 export const deleteAccount = () => request<void>("/api/auth/me", { method: "DELETE" });
+/** Records that the person agreed to this version of the data notice (see ConsentDialog). */
+export const giveConsent = (version: string) => request<User>("/api/auth/me/consent", json("POST", { version }));
+
+/**
+ * Downloads everything in the account as one ZIP, reporting progress as it arrives.
+ * `total` is null if the size isn't known. Resolves with the file and the name the server gave it.
+ */
+export async function downloadExport(
+  onProgress: (received: number, total: number | null) => void,
+): Promise<{ blob: Blob; filename: string }> {
+  // No retries: a 504 here usually means a big ZIP took long to build, not a sleeping server, and each
+  // try counts against the hourly limit and decrypts everything again.
+  const response = await fetchWithWake("/api/auth/me/export", undefined, false);
+  if (!response.ok || !response.body) {
+    const body = await response.json().catch(() => null);
+    throw new ApiError(typeof body?.detail === "string" ? body.detail : friendlyStatus(response.status), response.status);
+  }
+  const length = Number(response.headers.get("Content-Length"));
+  const total = length > 0 ? length : null;
+  const reader = response.body.getReader();
+  const chunks: Uint8Array<ArrayBuffer>[] = [];
+  let received = 0;
+  onProgress(0, total);
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    received += value.length;
+    onProgress(received, total);
+  }
+  const match = /filename="([^"]+)"/.exec(response.headers.get("Content-Disposition") ?? "");
+  const filename = match?.[1] ?? "reportsaathi-export.zip";
+  return { blob: new Blob(chunks, { type: "application/zip" }), filename };
+}
 
 /** The signed-in user, or null when nobody is signed in. */
 export async function getMe(): Promise<User | null> {
@@ -190,6 +263,17 @@ export const moveReport = (id: string, profileId: string) =>
   request<ReportDetail>(`/api/reports/${id}`, json("PATCH", { profile_id: profileId }));
 export const getReport = (id: string) => request<ReportDetail>(`/api/reports/${id}`);
 export const deleteReport = (id: string) => request<void>(`/api/reports/${id}`, { method: "DELETE" });
+/** The original uploaded file, for an <img> or a new tab; the browser sends the sign-in cookie itself. */
+export const reportFileUrl = (id: string) => `/api/reports/${id}/file`;
+/** Whether there is an original file to show; the oldest sample reports have only a text placeholder. */
+export const hasOriginal = (report: ReportDetail) =>
+  report.content_type === "application/pdf" || report.content_type.startsWith("image/");
+/** Fixes a misread value. The server re-flags it; an empty unit clears the unit. */
+export const correctResult = (reportId: string, resultId: number, valueText: string, unit: string) =>
+  request<TestResult>(
+    `/api/reports/${reportId}/results/${resultId}`,
+    json("PATCH", { value_text: valueText, unit }),
+  );
 
 export const isOutOfRange = (flag: Flag) => flag === "low" || flag === "high" || flag === "abnormal";
 
@@ -211,6 +295,8 @@ export interface TrendPoint {
   date: string;
   value: number;
   flag: Flag;
+  /** "typical" when that report printed no range and the flag was judged against a typical one. Missing in older briefs. */
+  range_source?: RangeSource | null;
   report_id: string;
   lab_name: string | null;
   printed: string;
@@ -220,17 +306,39 @@ export interface TrendSeries {
   key: string;
   name: string;
   unit: string;
+  /** Missing in briefs written before LOINC codes were added. */
+  loinc?: string | null;
   ref_low: number | null;
   ref_high: number | null;
+  /** "typical" only when no report printed a range for this test. Missing in older briefs. */
+  range_source?: RangeSource | null;
   points: TrendPoint[];
   latest_flag: Flag;
   change: number | null;
   change_pct: number | null;
 }
 
+/** A test whose latest reading was out of range longer ago than doctors often wait to recheck it. */
+export interface RecheckDue {
+  key: string;
+  name: string;
+  flag: Flag;
+  /** "typical" when that reading's lab printed no range, so the flag came from a typical adult range. */
+  range_source: RangeSource | null;
+  last_date: string;
+  /** last_date plus the usual interval; the list is sorted by it, longest overdue first. */
+  due_date: string;
+  /** The usual recheck interval, e.g. 3 or 1.5. */
+  months: number;
+  /** The guideline the interval comes from. */
+  source: string;
+}
+
 export interface Trends {
   profile: TimelineSummary;
   series: TrendSeries[];
+  /** Reminders for the family; a brief's snapshot doesn't keep them. */
+  rechecks?: RecheckDue[];
 }
 
 export type Language = "en" | "hi" | "mr";
@@ -291,3 +399,45 @@ export async function getExplanation(reportId: string, language: Language) {
 }
 
 export const isPending = (status: ReportStatus) => status === "queued" || status === "processing";
+
+// ---------- Phase 5: doctor share links ----------
+
+export type ShareState = "active" | "expired" | "revoked";
+
+/** A link to a brief, as its owner sees it. The token is never sent again after it is made. */
+export interface ShareLink {
+  id: string;
+  brief_id: string;
+  created_at: string;
+  expires_at: string;
+  revoked_at: string | null;
+  state: ShareState;
+  view_count: number;
+  last_viewed_at: string | null;
+}
+
+export interface CreatedShareLink extends ShareLink {
+  /** Shown once: only its hash is kept on the server. */
+  token: string;
+}
+
+/** What the doctor sees. The snapshot comes without the account's profile and report ids. */
+export interface SharedBrief {
+  content: BriefContent;
+  created_at: string;
+  expires_at: string;
+}
+
+export const createShareLink = (briefId: string) =>
+  request<CreatedShareLink>(`/api/briefs/${briefId}/shares`, { method: "POST" });
+export const listShareLinks = (profileId: string) => request<ShareLink[]>(`/api/profiles/${profileId}/shares`);
+export const revokeShareLink = (id: string) => request<void>(`/api/shares/${id}`, { method: "DELETE" });
+/**
+ * Public: anyone with the token can read the brief. Expired, revoked and unknown links all answer 404.
+ * The token goes in the body: in the address it would be written to request logs. A POST, but it only
+ * reads, so it waits for a sleeping server like a GET.
+ */
+export const getSharedBrief = (token: string) =>
+  request<SharedBrief>("/api/shared", json("POST", { token }), true);
+/** The address to send the doctor: on this website, with the token after "#", which browsers never send. */
+export const shareUrl = (token: string) => `${window.location.origin}/shared#${token}`;

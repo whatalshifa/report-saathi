@@ -21,6 +21,22 @@ const nextConfig: NextConfig = {
           { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
         ],
       },
+      {
+        // A shared brief's address holds its key: never pass it on as a referrer, never index it.
+        source: "/shared/:path*",
+        headers: [
+          { key: "Referrer-Policy", value: "no-referrer" },
+          { key: "X-Robots-Tag", value: "noindex, nofollow" },
+        ],
+      },
+      {
+        // Browsers must always fetch the newest service worker, so a fix reaches everyone at once.
+        source: "/sw.js",
+        headers: [
+          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
+          { key: "Content-Security-Policy", value: "default-src 'self'; script-src 'self'" },
+        ],
+      },
     ];
   },
   // The browser calls /api/* on the website's own address and Next forwards it to FastAPI.

@@ -4,9 +4,11 @@ A User signs in and owns Profiles: themselves and family members they look after
 Every Report belongs to one Profile. A Session is one signed-in browser.
 
 A Report is one uploaded file. Each Report has many TestResults, one per value
-printed on it (Haemoglobin, TSH, Vitamin D, ...). An Explanation is the
+printed on it (Haemoglobin, TSH, Vitamin D, ...). A Correction logs a value
+the person fixed because it was misread. An Explanation is the
 plain-language reading of one report in one language, and a Brief is the
-summary of one profile's reports written for their doctor.
+summary of one profile's reports written for their doctor. A ShareLink lets a
+doctor open one brief without an account, and a ShareView logs each opening.
 """
 
 import enum
@@ -76,6 +78,10 @@ class User(Base):
     locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     # A one-click demo account: no real email or password, deleted after a day.
     is_guest: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
+    # Which version of the "how we look after your reports" notice the person agreed to, and when.
+    # Asked before the first upload; empty for accounts that haven't uploaded since it was added.
+    consent_version: Mapped[str | None] = mapped_column(String(20))
+    consented_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
     profiles: Mapped[list["Profile"]] = relationship(
@@ -114,6 +120,8 @@ class Profile(Base):
     user: Mapped[User] = relationship(back_populates="profiles")
     reports: Mapped[list["Report"]] = relationship(back_populates="profile", cascade="all, delete-orphan")
     briefs: Mapped[list["Brief"]] = relationship(cascade="all, delete-orphan")
+    # The database deletes these with the profile (or the brief); no need to load them first.
+    shares: Mapped[list["ShareLink"]] = relationship(cascade="all, delete-orphan", passive_deletes=True)
 
 
 class Report(Base):
@@ -124,6 +132,8 @@ class Report(Base):
     filename: Mapped[str] = mapped_column(String(255))
     content_type: Mapped[str] = mapped_column(String(100))
     storage_key: Mapped[str] = mapped_column(String(255))
+    # One of the ready-made example reports: not read by the AI, so not counted against upload limits.
+    is_sample: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
     status: Mapped[ReportStatus] = mapped_column(
         Enum(ReportStatus, native_enum=False, length=20), default=ReportStatus.queued
     )
@@ -164,6 +174,9 @@ class TestResult(Base):
     ref_high: Mapped[float | None] = mapped_column(Float)
     lab_flag: Mapped[str | None] = mapped_column(String(20))
     flag: Mapped[Flag] = mapped_column(Enum(Flag, native_enum=False, length=20))
+    # Where ref_low/ref_high came from: "lab" (printed on the report) or "typical" (a typical adult
+    # range from the catalog, used only when the report printed none). None when there is no range.
+    range_source: Mapped[str | None] = mapped_column(String(10))
 
     # The same value in the catalog's standard unit, so different labs line up.
     catalog_key: Mapped[str | None] = mapped_column(String(50), index=True)
@@ -171,7 +184,37 @@ class TestResult(Base):
     std_low: Mapped[float | None] = mapped_column(Float)
     std_high: Mapped[float | None] = mapped_column(Float)
 
+    # Where the value is printed in the original file: {"page": 1, "x0": .., "y0": .., "x1": .., "y1": ..},
+    # each edge a fraction of the page. None when the AI couldn't say, and for reports read before Phase 5.
+    box: Mapped[dict | None] = mapped_column(JSON)
+
+    # Set when the person fixed a misread value. The first reading is kept so the page can say
+    # what it was read as; every fix is also logged in Correction.
+    corrected_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    original_value_text: Mapped[str | None] = mapped_column(String(255))
+    original_unit: Mapped[str | None] = mapped_column(String(50))
+
     report: Mapped[Report] = relationship(back_populates="results")
+
+
+class Correction(Base):
+    """One fix a person made to a value the AI misread, kept so it can become an accuracy test case.
+
+    Deleted with the value (and so with the report, profile or account), like everything else.
+    """
+
+    __tablename__ = "corrections"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    result_id: Mapped[int] = mapped_column(ForeignKey("test_results.id", ondelete="CASCADE"), index=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    old_value_text: Mapped[str] = mapped_column(String(255))
+    old_value: Mapped[float | None] = mapped_column(Float)
+    old_unit: Mapped[str | None] = mapped_column(String(50))
+    new_value_text: Mapped[str] = mapped_column(String(255))
+    new_value: Mapped[float | None] = mapped_column(Float)
+    new_unit: Mapped[str | None] = mapped_column(String(50))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
 
 class Explanation(Base):
@@ -202,3 +245,33 @@ class Brief(Base):
     error: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, onupdate=_now)
+
+
+class ShareLink(Base):
+    """A link that lets a doctor read one brief without signing in.
+
+    Like a sign-in session, only a hash of the link's token is stored, so a leaked database
+    can't be used to open anyone's brief. Revoking keeps the row, so the opening log survives.
+    """
+
+    __tablename__ = "share_links"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    profile_id: Mapped[str] = mapped_column(ForeignKey("profiles.id", ondelete="CASCADE"), index=True)
+    brief_id: Mapped[str] = mapped_column(ForeignKey("briefs.id", ondelete="CASCADE"), index=True)
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    brief: Mapped[Brief] = relationship()
+
+
+class ShareView(Base):
+    """One time a share link was opened. No address or browser details are kept."""
+
+    __tablename__ = "share_views"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    share_id: Mapped[str] = mapped_column(ForeignKey("share_links.id", ondelete="CASCADE"), index=True)
+    viewed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)

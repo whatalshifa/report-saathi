@@ -4,7 +4,87 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 
 import { SkeletonLines } from "@/components/Skeleton";
-import { deleteAccount, getFeatures, getMe, logout, type User } from "@/lib/api";
+import { deleteAccount, downloadExport, getFeatures, getMe, logout, type User } from "@/lib/api";
+import { clearSharedFile } from "@/lib/sharedFile";
+
+type Download =
+  | { state: "idle" }
+  | { state: "working"; received: number; total: number | null }
+  | { state: "done" }
+  | { state: "failed"; message: string };
+
+const megabytes = (bytes: number) => `${(bytes / 1_000_000).toFixed(1)} MB`;
+
+/** "Download all my data": the right of access under the DPDP Act 2023, in one tap. */
+function YourData() {
+  const [download, setDownload] = useState<Download>({ state: "idle" });
+
+  async function start() {
+    setDownload({ state: "working", received: 0, total: null });
+    try {
+      const { blob, filename } = await downloadExport((received, total) =>
+        setDownload({ state: "working", received, total }),
+      );
+      // Hand the finished file to the browser as an ordinary download.
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      setDownload({ state: "done" });
+    } catch (err) {
+      setDownload({ state: "failed", message: err instanceof Error ? err.message : "The download didn't work." });
+    }
+  }
+
+  const working = download.state === "working";
+  return (
+    <section className="card p-5" aria-labelledby="your-data">
+      <h2 id="your-data" className="font-semibold">
+        Your data
+      </h2>
+      <p className="mt-1 text-sm text-muted">
+        Download everything in this account as one ZIP file: the original reports, a spreadsheet of every value,
+        and all the explanations and doctor briefs.
+      </p>
+      <p className="mt-2 text-sm text-muted">
+        Something read wrongly? Tap the pencil beside the value on the report to fix it.
+      </p>
+      <button type="button" onClick={start} disabled={working} className="btn btn-secondary mt-4">
+        {working ? "Preparing…" : "Download all my data"}
+      </button>
+      <div aria-live="polite" className="mt-3 text-sm">
+        {working &&
+          (download.received === 0 ? (
+            <p className="text-muted">Gathering your reports. This can take a little while.</p>
+          ) : (
+            <div className="space-y-1">
+              <progress
+                value={download.total ? download.received : undefined}
+                max={download.total ?? undefined}
+                aria-label="Download progress"
+                className="h-2 w-full overflow-hidden rounded-full accent-teal-600"
+              />
+              <p className="text-muted">
+                {download.total
+                  ? `${Math.round((download.received / download.total) * 100)}% of ${megabytes(download.total)}`
+                  : `${megabytes(download.received)} downloaded`}
+              </p>
+            </div>
+          ))}
+        {download.state === "done" && <p>Done. Look for the file in your Downloads folder.</p>}
+        {download.state === "failed" && (
+          <p role="alert" className="text-rose-700 dark:text-rose-300">
+            {download.message}
+          </p>
+        )}
+      </div>
+    </section>
+  );
+}
 
 export function AccountView() {
   const [user, setUser] = useState<User | null>(null);
@@ -21,6 +101,8 @@ export function AccountView() {
 
   async function signOut() {
     await logout();
+    // A report shared from WhatsApp but not yet added shouldn't wait for the next person on this device.
+    await clearSharedFile().catch(() => {});
     // Full page loads after signing out, so nothing from the old session stays in memory.
     // eslint-disable-next-line @next/next/no-location-assign-relative-destination
     window.location.assign("/");
@@ -29,6 +111,7 @@ export function AccountView() {
   async function removeAccount() {
     try {
       await deleteAccount();
+      await clearSharedFile().catch(() => {});
       // eslint-disable-next-line @next/next/no-location-assign-relative-destination
       window.location.assign("/signup");
     } catch (err) {
@@ -62,7 +145,15 @@ export function AccountView() {
             <li>On this demo the AI is switched off, so no report leaves this server.</li>
           )}
         </ul>
+        <p className="mt-3">
+          <Link href="/privacy" className="link">
+            Read the privacy page
+          </Link>{" "}
+          for what we keep, why, and your rights.
+        </p>
       </section>
+
+      <YourData />
 
       {user.is_guest ? (
         <section className="card p-5">

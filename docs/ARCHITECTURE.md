@@ -113,12 +113,21 @@ Every lab writes things its own way. Lab A prints `Haemoglobin (Hb) 13.4 g/dL`, 
 `HGB 128 g/L`, lab C prints `Hemoglobin 12.4 gm%`. To draw one chart we need to know these are the
 same test, and put them in the same unit.
 
-The catalog lists 51 common tests. Each has:
+The catalog lists 229 tests. Each has:
 
 - a **key** (`hemoglobin`) and a display name,
 - a **standard unit** (`g/dL`),
 - **aliases**: every spelling we've seen (`hb`, `hgb`, `haemoglobin`, ...),
-- **unit conversions**: what to multiply by to reach the standard unit (`g/L` × 0.1).
+- **unit conversions**: what to multiply by to reach the standard unit (`g/L` × 0.1),
+- where verified: its **LOINC code** (`718-7`), **typical adult ranges** (by sex, or for anyone) with
+  their source, and how many months doctors often wait before **rechecking** an out-of-range result,
+  with the guideline it comes from.
+
+A typical range is used only when a report prints no range at all (`range_source = "typical"` on the
+value, see `use_typical_range` in `processing.py`), never for a child, a value with no unit or a value
+the lab marked H or L, and is picked again when the profile's sex, birth year or relation changes or the
+report moves to someone else. The trends API adds `rechecks`: tests whose latest reading is out
+of range and older than their recheck interval, counted from the report dates.
 
 Matching is done by code first. We tidy the printed name (lowercase, drop punctuation, try the part
 inside brackets and the part before a comma) and look it up in the aliases. Only if that finds nothing

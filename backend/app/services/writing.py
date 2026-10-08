@@ -51,6 +51,9 @@ word you must use.
 Rules:
 - The low/high/abnormal flags are already decided. Use them exactly as given; never call a \
 flagged value normal or a normal value abnormal.
+- Where range_source is "typical", the lab printed no range for that test. Say the value was \
+compared with a typical adult range, not the lab's own, and that the reader should ask their \
+doctor what is normal for them. Never say the lab marked it high or low.
 - Use only the values given. Do not invent results, dates or history.
 - Do not diagnose. Say a value "can be linked to" something, never "you have" it.
 - Do not name medicines or doses. General food, activity and follow-up advice is fine.
@@ -78,6 +81,8 @@ def _report_payload(report: Report) -> str:
                     "value": r.value_text,
                     "unit": r.unit,
                     "normal_range": r.reference_text,
+                    "range": [r.ref_low, r.ref_high],
+                    "range_source": r.range_source,
                     "flag": r.flag.value,
                 }
                 for r in report.results
@@ -109,7 +114,9 @@ of range.
 
 Rules:
 - Use only the numbers, dates and flags given. Every value is already converted to the unit \
-shown for its test, and flags were judged against each lab's own printed range.
+shown for its test, and flags were judged against each lab's own printed range. Where \
+range_source (of a test or of one reading) is "typical", the lab printed no range and a typical \
+adult range was used; say so if you mention it.
 - Describe trends (rising, falling, stable) only from the values given.
 - Do not diagnose or suggest treatment. Point out patterns worth the doctor's attention.
 - Questions are from the patient's point of view, in plain words."""
@@ -128,8 +135,15 @@ def _trends_payload(trends: Trends) -> str:
                     "test": s.name,
                     "unit": s.unit,
                     "latest_normal_range": [s.ref_low, s.ref_high],
+                    "range_source": s.range_source,
                     "readings": [
-                        {"date": str(p.date), "value": p.value, "flag": p.flag.value} for p in s.points
+                        {
+                            "date": str(p.date),
+                            "value": p.value,
+                            "flag": p.flag.value,
+                            "range_source": p.range_source,
+                        }
+                        for p in s.points
                     ],
                 }
                 for s in trends.series

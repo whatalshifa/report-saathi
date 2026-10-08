@@ -2,19 +2,38 @@ import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
-from fastapi import APIRouter, BackgroundTasks, Depends, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Form, HTTPException, Response, UploadFile, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.api.deps import FactoryDep, SessionDep, StorageDep, WriterDep, owned_profile, owned_report
+from app.api.deps import (
+    FactoryDep,
+    SessionDep,
+    StorageDep,
+    WriterDep,
+    owned_profile,
+    owned_report,
+    owned_result,
+)
 from app.config import Settings, get_settings
-from app.models import Explanation, JobStatus, Profile, Report, User
-from app.schemas import ExplanationOut, ExplanationRequest, MoveReport, ReportDetail, ReportSummary
-from app.services.auth import CurrentUser, SettingsDep
+from app.models import Explanation, JobStatus, Profile, Report, TestResult, User
+from app.schemas import (
+    ExplanationOut,
+    ExplanationRequest,
+    MoveReport,
+    ReportDetail,
+    ReportSummary,
+    ResultCorrection,
+    TestResultOut,
+)
+from app.services.auth import CurrentUser, SettingsDep, as_utc
 from app.services.claude import AI_OFF
+from app.services.consent import NEEDS_CONSENT, has_consented
+from app.services.corrections import CorrectionError, correct_result
 from app.services.extraction import Extractor, get_extractor
 from app.services.jobs import run_explanation
-from app.services.processing import process_report
+from app.services.processing import process_report, refresh_typical_ranges
+from app.services.sharing import turn_off_links
 from app.services.uploads import UploadError, prepare_upload
 
 router = APIRouter(prefix="/api/reports", tags=["reports"])
@@ -22,11 +41,11 @@ router = APIRouter(prefix="/api/reports", tags=["reports"])
 
 def _check_upload_allowance(session: Session, user: User, settings: Settings) -> None:
     """Caps how many new reports an account can have read, which caps what the AI can cost."""
-    # Uploads are PDFs or images; the ready-made sample reports are the only text/plain ones.
+    # The ready-made sample reports were never read by the AI, so they don't count.
     own_reports = (
         select(func.count(Report.id))
         .join(Profile)
-        .where(Profile.user_id == user.id, Report.content_type != "text/plain")
+        .where(Profile.user_id == user.id, Report.is_sample.is_(False))
     )
     if user.is_guest and session.scalar(own_reports) >= settings.guest_upload_limit:
         raise HTTPException(
@@ -60,6 +79,9 @@ def upload_report(
     profile = owned_profile(session, user, profile_id)
     if not settings.ai_enabled:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, AI_OFF)
+    # 428 Precondition Required: the web app shows the consent notice and then sends the file again.
+    if not has_consented(user):
+        raise HTTPException(status.HTTP_428_PRECONDITION_REQUIRED, NEEDS_CONSENT)
     _check_upload_allowance(session, user, settings)
     max_bytes = settings.max_upload_mb * 1_000_000
     try:
@@ -99,21 +121,68 @@ def get_report(report_id: str, user: CurrentUser, session: SessionDep) -> Report
     return owned_report(session, user, report_id)
 
 
+@router.get("/{report_id}/file")
+def get_report_file(report_id: str, user: CurrentUser, session: SessionDep, storage: StorageDep) -> Response:
+    """The original file, decrypted, so a value can be checked against the page it was read from."""
+    report = owned_report(session, user, report_id)
+    extension = report.storage_key.rpartition(".")[2]
+    return Response(
+        storage.read(report.storage_key),
+        media_type=report.content_type,
+        headers={
+            # Shown in the browser, never saved under a name taken from the upload.
+            "Content-Disposition": f'inline; filename="report.{extension}"',
+            # A medical file: no shared or on-disk caches.
+            "Cache-Control": "private, no-store",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
+
+
 @router.patch("/{report_id}", response_model=ReportDetail)
 def move_report(report_id: str, body: MoveReport, user: CurrentUser, session: SessionDep) -> Report:
     """File a report under a different profile, e.g. when it was uploaded to the wrong person."""
     report = owned_report(session, user, report_id)
-    report.profile = owned_profile(session, user, body.profile_id)
+    profile = owned_profile(session, user, body.profile_id)
+    if profile.id != report.profile_id:
+        turn_off_links(session, report.profile_id)
+    report.profile = profile
+    refresh_typical_ranges(report)
     session.commit()
     return report
+
+
+@router.patch("/{report_id}/results/{result_id}", response_model=TestResultOut)
+def correct_value(
+    report_id: str, result_id: int, body: ResultCorrection, user: CurrentUser, session: SessionDep
+) -> TestResult:
+    """Fix a value the AI misread. Its flag and the timeline follow the new value; the fix is logged."""
+    result = owned_result(session, user, report_id, result_id)
+    unit = body.unit if "unit" in body.model_fields_set else result.unit
+    try:
+        correct_result(session, result, user, body.value_text, unit)
+    except CorrectionError as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
+    session.commit()
+    session.refresh(result)  # answer with what was stored, exactly as a later GET will
+    return result
 
 
 @router.delete("/{report_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_report(report_id: str, user: CurrentUser, session: SessionDep, storage: StorageDep) -> None:
     report = owned_report(session, user, report_id)
+    turn_off_links(session, report.profile_id)
     storage.delete(report.storage_key)
     session.delete(report)
     session.commit()
+
+
+def _outdated(explanation: Explanation, report: Report) -> bool:
+    """A finished explanation written before a value on the report was fixed by hand."""
+    fixed = [as_utc(r.corrected_at) for r in report.results if r.corrected_at is not None]
+    return (
+        explanation.status == JobStatus.done and bool(fixed) and as_utc(explanation.created_at) < max(fixed)
+    )
 
 
 @router.post("/{report_id}/explanations", status_code=status.HTTP_202_ACCEPTED, response_model=ExplanationOut)
@@ -135,14 +204,20 @@ def request_explanation(
     explanation = session.scalar(
         select(Explanation).where(Explanation.report_id == report_id, Explanation.language == body.language)
     )
-    if explanation is not None and explanation.status != JobStatus.failed:
+    if (
+        explanation is not None
+        and explanation.status != JobStatus.failed
+        and not _outdated(explanation, report)
+    ):
         return explanation
     if not settings.ai_enabled:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, AI_OFF)
     if explanation is None:
         explanation = Explanation(report_id=report_id, language=body.language)
         session.add(explanation)
-    explanation.status, explanation.error = JobStatus.queued, None
+    # A rewrite counts as new, so the page stops saying it predates the fix.
+    explanation.status, explanation.error, explanation.content = JobStatus.queued, None, None
+    explanation.created_at = datetime.now(UTC)
     session.commit()
 
     background.add_task(run_explanation, explanation.id, factory, writer)

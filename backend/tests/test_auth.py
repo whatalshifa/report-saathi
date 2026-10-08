@@ -9,7 +9,7 @@ from sqlalchemy import select
 from app.main import app
 from app.models import AuthSession, Report, User
 from app.services.auth import COOKIE_NAME
-from tests.conftest import PASSWORD, signup, upload
+from tests.conftest import PASSWORD, agree, signup, upload
 
 
 @pytest.fixture
@@ -22,6 +22,7 @@ def anon(client):
 @pytest.fixture
 def other_user(anon):
     assert signup(anon, email="ravi@example.com", name="Ravi").status_code == 201
+    agree(anon)
     return anon
 
 

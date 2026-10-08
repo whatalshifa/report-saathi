@@ -7,9 +7,21 @@ import { DemoButton } from "@/components/DemoButton";
 import { LogoMark } from "@/components/Logo";
 import { login, signup } from "@/lib/api";
 
-/** Only go back to a page on this site, never to an address someone put in the link. */
+const HERE = "https://reportsaathi.invalid";
+
+/**
+ * Only go back to a page on this site, never to an address someone put in the link. Browsers read
+ * "/\evil.com" (and "/<tab>/evil.com") as "//evil.com", so the address is resolved the way a browser
+ * would, against a stand-in origin, and kept only if it stays there.
+ */
 function safeNext(next: string | undefined) {
-  return next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
+  if (!next?.startsWith("/")) return "/";
+  try {
+    const url = new URL(next, HERE);
+    return url.origin === HERE ? url.pathname + url.search + url.hash : "/";
+  } catch {
+    return "/";
+  }
 }
 
 export function AuthForm({ mode, next }: { mode: "login" | "signup"; next?: string }) {
@@ -90,6 +102,15 @@ export function AuthForm({ mode, next }: { mode: "login" | "signup"; next?: stri
             {error}
           </p>
         )}
+        {isSignup && (
+          <p className="text-sm text-muted">
+            Your reports are encrypted and only you can see them. Read how we look after them on our{" "}
+            <Link href="/privacy" className="link">
+              privacy page
+            </Link>
+            .
+          </p>
+        )}
         <button disabled={busy} className="btn btn-primary w-full py-3">
           {busy ? "Please wait…" : isSignup ? "Create account" : "Sign in"}
         </button>
@@ -103,7 +124,7 @@ export function AuthForm({ mode, next }: { mode: "login" | "signup"; next?: stri
       <div className="mt-8 border-t border-line pt-6">
         <p className="text-sm text-muted">Just looking around?</p>
         <div className="mt-3">
-          <DemoButton className="btn btn-secondary" label="Open the demo account" />
+          <DemoButton className="btn btn-secondary" label="Open the demo account" next={safeNext(next)} />
         </div>
       </div>
       </div>

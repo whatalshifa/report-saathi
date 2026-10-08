@@ -122,3 +122,162 @@ visitor picks one, and printing always uses the light theme.
 the range band fell off the chart. The y-axis now always includes both ends of the range, and each
 card says in words whether the latest reading moved towards or away from it.
 
+## Phase 5
+
+**A fix is re-flagged by code, and the first reading is kept.** When someone corrects a value, the app
+parses, flags and converts it with exactly the code a fresh reading uses, against the range printed on
+the report. The result keeps what the AI first read, so the page can say "it was read as 10.6", and
+every fix goes into a `corrections` log. Putting the original value back removes the "Corrected" chip;
+the log keeps both steps.
+
+**Refuse fixes that would quietly break the timeline.** A word where the lab printed a number range,
+or a unit the catalog can't convert for that test, is refused with a plain message instead of being
+saved and silently dropping the value off the chart.
+
+**Explanations are not rewritten after a fix.** Rewriting needs the AI, which the demo doesn't have,
+and the sample explanations would be lost. Instead the explanation says it was written before a value
+was corrected.
+
+**Corrections feed the accuracy kit as test cases, without personal data.** The export keeps only the
+test name, the value and unit read, and the value and unit corrected. It leaves out the sample
+reports (typed by hand, so a change there is someone trying the button) and fixes the scoring treats
+as no change ("2,50,000" to "250000"). It goes to the git-ignored `accuracy/data/` folder by default.
+
+**Show the source with a box from the reading itself, not OCR.** Claude already sees the page, so it
+returns a box (page, and edges as fractions of the page) around each printed result in the same
+structured reply. Fractions keep it independent of image size and zoom. Structured outputs can't
+enforce number limits, so the server clamps edges to the page and drops a box with no area or no page;
+a value with no box simply has no source button, because a wrong highlight is worse than none. Old
+reports have no boxes and keep working.
+
+**Draw the sample pages, and take the boxes from the drawing.** The demo has no AI key, so the sample
+person's reports are drawn once by a script (Pillow, DejaVu Sans) as obviously made-up pages with a
+"SAMPLE - made-up data" watermark, and the script writes each value's box into `meera.json` from where
+it drew the value. The highlight is therefore exact, and the committed PNGs (about 50 KB each) mean the
+server needs no font. They are stored encrypted per account like an upload, so viewing and deleting a
+sample work the same way.
+
+**Mark sample reports with a flag, not by their file type.** Upload limits and the corrections export
+used to spot sample reports by their text placeholder. Now that samples are images, `reports.is_sample`
+says so directly (migration 0007 sets it for existing text placeholders). A real report filed under the
+sample person still counts against the limits.
+
+**Serve the original from the API, privately.** `GET /api/reports/{id}/file` returns the decrypted file
+to its owner only (404 for anyone else, as everywhere), inline, with `Cache-Control: private, no-store`
+and `nosniff`. The page shows it in a native `<dialog>` (focus stays inside, Escape and a tap outside
+close it, focus returns to the icon), with no new libraries. PDFs open in the browser's own viewer at
+`#page=N` rather than being rendered in the page, which would need a PDF library. Android phones
+have no built-in PDF viewer (`navigator.pdfViewerEnabled` is false) and save the file to downloads
+instead, losing `#page=N`, so there the button says "Download the PDF" and names the page to look at.
+
+**Share links are bearer tokens, stored like sessions.** A link to a brief carries a random 32-byte
+token; the database keeps only its SHA-256 hash, so a leaked database opens nothing and the owner sees
+the link only once (making another is one tap). Links last 7 days, and a demo account's links end when
+the account is due to be deleted, so a link never outlives its data. Revoking sets `revoked_at` instead
+of deleting the row, so "opened N times" survives; deleting the profile or account deletes the links
+and their log with it (database cascades). A brief keeps the values it was written from, so deleting a
+report, or moving it to someone else, turns off every working link for that person: an old link could
+still show the report's values. The log keeps only the time of each opening, no address or
+browser, because the owner only needs to know whether the doctor looked.
+
+**One answer for every dead link.** Unknown, expired and revoked tokens all get the same 404 body and
+headers, and opening is rate-limited per address, so tokens can't be probed or guessed. The public
+response is `Cache-Control: no-store` and `Referrer-Policy: no-referrer` (the page sets no-referrer and
+`noindex` too), since the address itself is the key. The token sits after `#` in the address
+(`/shared#<token>`), which browsers never send, and the page posts it to `POST /api/shared` in the
+body, so it never lands in the API's access log, the host's request logs or Sentry's request URLs. The shared brief leaves out the account's profile
+and report ids. The page fetches the brief in the browser rather than on the Next server, so the rate
+limit sees the doctor's address, and it reuses the same `BriefSheet` component as the owner's page
+without the app's navigation. A QR code was left out: it would need a new library, and the phone's own
+share sheet already sends the link to WhatsApp.
+
+**Data rights are buttons, not emails.** India's DPDP Act 2023 gives access, correction, erasure and
+grievance rights. Access is "Download all my data", correction is the fix-it pencil, erasure is the
+existing delete buttons, and grievances go to a GitHub issue (the project has no support inbox, and an
+invented address would be worse than none). The privacy page says how to use each one in the app.
+
+**The export is one ZIP built on the server with the standard library.** `zipfile` writes into a
+`SpooledTemporaryFile` (memory up to 16 MB, then disk), which is streamed back with its
+`Content-Length`, so the page can show a real percentage. Original files are decrypted and stored
+without recompression (PDFs and images are already compressed), named `reports/<person>/<date>.<ext>`
+rather than by upload name. The JSON leaves out every secret (password hash, token hashes) and a demo
+account's made-up email; the CSV has a byte-order mark so Excel shows Hindi and Marathi names, and
+cells starting with `=`, `+`, `@`, a tab, a carriage return, or a `-` that isn't a plain number (so
+"-1.5" stays a number) get a leading apostrophe so text read off a report can never run as a
+spreadsheet formula. A file missing from storage is noted in the JSON instead of failing the
+whole download. Decrypting everything is costly, so it is limited to 5 an hour per account.
+
+**Consent is versioned, asked at the first upload, and checked by the server.** The notice's text has
+a version (`CONSENT_VERSION`, the same in the dialog and the API); the user row keeps the version
+agreed to and when (migration 0009). Uploads answer 428 until the current version is agreed, so a
+changed notice asks everyone again, and the API refuses agreement to an out-of-date version. It is
+asked when someone chooses a file, not at sign-up, so demo visitors and people trying the sample
+person are never interrupted; the chosen file waits in the page and is sent only after "I agree".
+The AI-off check comes first, since asking for consent to something that can't happen is pointless.
+
+**A hand-written service worker that caches nothing.** Share-to needs a service worker to catch the
+POST WhatsApp sends to `/share-target`, but a caching worker could serve one family's report pages or
+API answers to the next person on a shared phone, or an old version after a fix. So `public/sw.js`
+(no library) answers only that POST and lets every other request go to the network untouched. It
+keeps the shared file in Cache Storage under one key (the `/share` page reads it from there), replaced
+by the next share, and removed on upload, "Discard", sign-out, or after a day. The file is not
+encrypted on the phone; it is the same file WhatsApp already keeps there. The worker registers only in
+production builds over https or localhost. Any website can post a form to `/share-target`, so the
+worker refuses a post that names another site as its referrer (a real share names none), and `/share`
+asks the person to add the file only if they shared it themselves, since a page can hide its referrer.
+If a share arrives before the worker is running, a small
+`/share-target` route redirects to a kind "please share it again" note instead of an error page.
+
+**Signed-out shares go through sign-in, not around it.** `/share` stays a private page, so the proxy
+sends a signed-out person to sign in with `next=/share`, and the file waits in Cache Storage until they
+come back (the demo button on the sign-in page now honours `next` too). A shared report is never filed
+under the made-up sample person; the picker lists real family members only.
+
+**App icons are drawn at build time from the favicon's shapes.** `src/app/icons/[name]/route.tsx`
+renders the 192 and 512 icons and a full-bleed maskable one with `next/og`, prerendered by
+`generateStaticParams`, so there are no binary files to keep in step with `icon.svg`.
+
+**Read aloud uses the browser's voices, and hides when there is none.** The Web Speech API is free and
+works offline, but which voices exist depends on the device (many have no Marathi voice). The button
+shows only when a voice for the language exists (exact `hi-IN` first, then any `hi`), re-checked when
+the browser's voice list arrives (`voiceschanged`). Text is spoken sentence by sentence because some
+browsers stop one long utterance part-way, and speech stops when the language changes or the page
+closes. It reads the warning (if any), the summary, each flagged test, the questions and the note that the
+AI wrote it and it is not medical advice, and skips the long lists of common reasons to keep it
+listenable.
+
+**Typical ranges are a labelled fallback, never a replacement.** A value with no range can't be
+flagged, and families then miss a low haemoglobin. But a typical range is not the lab's: methods and
+populations differ. So it is used only when the report printed no range text at all (a range we
+couldn't parse is still the lab's), it is stored with `range_source = "typical"` and every place that
+shows it says "Typical range, not from your lab" with its source, and the doctor brief marks it too.
+A sex-specific range is used only when the profile's sex is male or female; with it unknown, only a
+range for anyone applies, because the wrong sex's range can call a normal value abnormal. Age-banded
+tests (AMH, IGF-1, DHEA-S) and cycle-dependent hormones get no typical range at all. Every range is an
+adult one, so none is used under 18: by the profile's birth year, else the age printed on the report,
+else not at all for a profile marked as a child. With no printed range nothing checks the unit, so a
+value with no unit gets no typical range ("2.5" platelets is in lakhs), except tests that have no unit
+(ratios, pH, specific gravity). None is used when the lab printed its own H or L beside the value (its
+range was somewhere we didn't read, and ours could contradict the paper), or when the name matched only
+by its start ("Cholesterol, VLDL"). A urine value never matches a blood test. The explanation and the
+brief are told which flags came from a typical range, so they don't say the lab marked it.
+
+**Only codes, ranges and intervals two reviewers verified.** A wrong LOINC code sends a doctor's system
+the wrong test, and a wrong range or recheck interval reads as medical guidance. Every entry was checked
+against its named source by two independent reviewers; anything they couldn't confirm is left empty
+rather than filled from memory: 13 tests have no code, LDH lost its code because no one re-reviewed
+it, eGFR lost its typical range, and three proposed tests (anti-TPO, anti-thyroglobulin and TRAb) were
+dropped because the reviewers disagreed on their unit factors. Tests guard the rest: each code must pass LOINC's mod-10 check digit, no code
+is used twice, no spelling may match two tests, and every unit factor must be positive and agree with
+any other spelling of the same unit.
+
+**Recheck reminders live in the app, worded as a question for the doctor.** The reminder says what
+guidelines say doctors often do ("Doctors often recheck it after about 3 months. Ask your doctor
+whether it's time.") and shows the guideline, rather than telling anyone to get tested. It counts from
+the report's own date and only looks at each test's latest reading, so a newer report clears it. Each
+interval's source is about one side (a raised ALP, a low haemoglobin), so the reminder fires only for
+that side: a high HDL gets none. INR has no reminder, because a lab range can't tell whether someone
+is on warfarin, which is what its guideline is about. The longest overdue (earliest due date) is first. It is
+computed in the trends service (with `today` passed in for tests), not stored, and is left out of the
+doctor brief's saved snapshot because it is meant for the family.
+

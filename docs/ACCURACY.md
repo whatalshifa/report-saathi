@@ -43,6 +43,9 @@ every value from scratch. **Then check every draft against the paper**, value by
   `unknown` (no range printed),
 - set `"reviewed": true` when the file is done.
 
+The app falls back to a typical adult range when a report prints none; drafts and scores leave that
+out, so they match these answer keys and measure only what was read from the paper.
+
 Checking against the paper matters: a draft accepted without checking would only measure itself.
 
 ```bash
@@ -57,6 +60,27 @@ python -m accuracy.run score accuracy/data
 These contain only totals and test names (like "TSH missed 2 times"), never a name, a value or a
 report. The fresh readings are saved under `accuracy/data/runs/`, and
 `python -m accuracy.run score accuracy/data --reuse <run folder>` re-scores one without calling Claude.
+
+## Corrections from the app
+
+When someone fixes a value the app misread, the fix is logged. Export them as test cases:
+
+```bash
+cd backend
+python -m accuracy.run corrections            # or: --out some/file.json
+```
+
+This reads the database in `RS_DATABASE_URL` and writes `accuracy/data/corrections.json` (git-ignored),
+one case per corrected value, from the first reading to the last fix:
+
+```json
+{"test": "Haemoglobin (Hb)", "printed_value": "10.6", "printed_unit": "g/dL",
+ "corrected_value": "13.6", "corrected_unit": "g/dL"}
+```
+
+Only the test name, values and units are exported: no names, dates, labs or ids. Sample reports are
+left out, and so are fixes the scoring above would count as the same value ("2,50,000" and "250000").
+They show which tests are misread most in real use, and which values to check first in the answer keys.
 
 ## Privacy
 

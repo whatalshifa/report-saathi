@@ -40,7 +40,7 @@ def hash_password(password: str) -> str:
     return _hasher.hash(password)
 
 
-def _hash_token(token: str) -> str:
+def hash_token(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
 
 
@@ -48,7 +48,7 @@ def _now() -> datetime:
     return datetime.now(UTC)
 
 
-def _aware(moment: datetime) -> datetime:
+def as_utc(moment: datetime) -> datetime:
     # SQLite hands datetimes back without a timezone; they were stored as UTC.
     return moment if moment.tzinfo else moment.replace(tzinfo=UTC)
 
@@ -61,7 +61,7 @@ def authenticate(session: Session, user: User | None, password: str, settings: S
             pass
         raise AuthError("Wrong email or password")
 
-    if user.locked_until and _aware(user.locked_until) > _now():
+    if user.locked_until and as_utc(user.locked_until) > _now():
         raise AuthError("Too many wrong passwords. Try again in a few minutes.")
 
     try:
@@ -91,7 +91,7 @@ def start_session(
     lifetime = lifetime or timedelta(days=settings.session_days)
     token = secrets.token_urlsafe(32)
     expires = _now() + lifetime
-    session.add(AuthSession(token_hash=_hash_token(token), user_id=user.id, expires_at=expires))
+    session.add(AuthSession(token_hash=hash_token(token), user_id=user.id, expires_at=expires))
     # Tidy up this user's expired sessions while we're here.
     session.execute(
         delete(AuthSession).where(AuthSession.user_id == user.id, AuthSession.expires_at < _now())
@@ -110,7 +110,7 @@ def start_session(
 
 def end_session(session: Session, token: str | None, response: Response) -> None:
     if token:
-        session.execute(delete(AuthSession).where(AuthSession.token_hash == _hash_token(token)))
+        session.execute(delete(AuthSession).where(AuthSession.token_hash == hash_token(token)))
         session.commit()
     response.delete_cookie(COOKIE_NAME, path="/")
 
@@ -121,8 +121,8 @@ def current_user(
 ) -> User:
     """FastAPI dependency: the signed-in user, or a 401."""
     if rs_session:
-        auth = session.get(AuthSession, _hash_token(rs_session))
-        if auth is not None and _aware(auth.expires_at) > _now():
+        auth = session.get(AuthSession, hash_token(rs_session))
+        if auth is not None and as_utc(auth.expires_at) > _now():
             return auth.user
     raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Please sign in")
 

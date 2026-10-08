@@ -7,6 +7,7 @@ from sqlalchemy import select, update
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.models import Brief, Explanation, JobStatus, Profile, Report
+from app.schemas import SNAPSHOT_EXCLUDE
 from app.services.claude import AIError
 from app.services.extraction import Extractor
 from app.services.processing import process_report
@@ -54,7 +55,8 @@ def run_brief(brief_id: str, session_factory: sessionmaker[Session], writer: Wri
             if trends is None:
                 raise AIError("There are no finished reports for this profile yet.")
             # Keep the numbers the brief was written from, so the page always matches its text.
-            return {"brief": writer.brief(trends).model_dump(), "snapshot": trends.model_dump(mode="json")}
+            snapshot = trends.model_dump(mode="json", exclude=SNAPSHOT_EXCLUDE)
+            return {"brief": writer.brief(trends).model_dump(), "snapshot": snapshot}
 
         _run(brief, session, work)
 

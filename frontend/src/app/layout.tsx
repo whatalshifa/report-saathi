@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import Link from "next/link";
 
 import { ServerWaking } from "@/components/ServerWaking";
+import { ServiceWorker } from "@/components/ServiceWorker";
 import { SiteHeader } from "@/components/SiteHeader";
 import { THEME_SCRIPT } from "@/components/ThemeToggle";
 import "./globals.css";
@@ -63,6 +64,9 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
               <Link href="/accuracy" className="hover:text-foreground">
                 How accurate is it?
               </Link>
+              <Link href="/privacy" className="hover:text-foreground">
+                Privacy
+              </Link>
               <a href="https://github.com/whatalshifa/report-saathi" className="hover:text-foreground">
                 Source code
               </a>
@@ -70,6 +74,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           </div>
         </footer>
         <ServerWaking />
+        <ServiceWorker />
       </body>
     </html>
   );
