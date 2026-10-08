@@ -92,22 +92,22 @@ export function ExplanationPanel({ reportId, correctedAt = null }: { reportId: s
     <section
       aria-labelledby={headingId}
       lang={language}
-      className="rounded-2xl border border-teal-200 bg-teal-50/60 p-5 dark:border-teal-900 dark:bg-teal-950/30"
+      className="rounded-2xl border border-teal-200 bg-teal-50/60 p-5 sm:p-6 dark:border-teal-900 dark:bg-teal-950/30"
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 id={headingId} className="text-lg font-semibold">
+        <h2 id={headingId} className="section-title">
           What does this mean?
         </h2>
-        <div role="tablist" aria-label="Language" className="flex rounded-lg bg-surface p-1">
+        <div role="tablist" aria-label="Language" className="flex rounded-lg border border-line bg-surface p-1">
           {LANGUAGES.map((l) => (
             <button
               key={l.code}
               role="tab"
               aria-selected={language === l.code}
               onClick={() => setLanguage(l.code)}
-              className={`rounded-md px-3 py-1 text-sm ${
+              className={`min-h-8 rounded-md px-3 py-1 text-sm transition-colors ${
                 language === l.code
-                  ? "bg-teal-700 font-semibold text-white dark:bg-teal-600"
+                  ? "bg-teal-700 font-semibold text-white shadow-sm"
                   : "text-muted hover:text-foreground"
               }`}
             >
@@ -164,27 +164,34 @@ function ExplanationBody({ content, text }: { content: ReportExplanation; text: 
         </p>
       )}
       <ListenButton content={content} text={text} />
-      <p>{content.summary}</p>
-      {content.flagged.map((item) => (
-        <div key={item.test_name} className="rounded-xl border border-line bg-surface p-4">
-          <h3 className="font-semibold">{item.test_name}</h3>
-          <p className="mt-1 text-slate-700 dark:text-slate-300">{item.what_it_measures}</p>
-          <p className="mt-2">{item.what_your_result_means}</p>
-          {item.common_reasons.length > 0 && (
-            <ul className="mt-2 list-disc pl-5 text-slate-700 dark:text-slate-300">
-              {item.common_reasons.map((reason) => (
-                <li key={reason}>{reason}</li>
-              ))}
-            </ul>
-          )}
-          <p className="mt-2 font-medium">{item.what_you_can_do}</p>
-        </div>
-      ))}
+      <p className="max-w-3xl text-[1.0625rem] text-pretty">{content.summary}</p>
+      {/* Two columns on wide screens, so a long explanation is quick to scan. */}
+      <div className="grid gap-3 lg:grid-cols-2">
+        {content.flagged.map((item) => (
+          <div key={item.test_name} className="flex flex-col rounded-xl border border-line bg-surface p-4 sm:p-5">
+            <h3 className="font-semibold">{item.test_name}</h3>
+            <p className="mt-1 text-sm text-muted">{item.what_it_measures}</p>
+            <p className="mt-3">{item.what_your_result_means}</p>
+            {item.common_reasons.length > 0 && (
+              <ul className="mt-2 list-disc space-y-0.5 pl-5 text-slate-700 marker:text-slate-400 dark:text-slate-300">
+                {item.common_reasons.map((reason) => (
+                  <li key={reason}>{reason}</li>
+                ))}
+              </ul>
+            )}
+            <p className="mt-auto pt-3">
+              <span className="block rounded-lg border-l-2 border-teal-600 bg-teal-50/70 px-3 py-2 text-teal-950 dark:border-teal-500 dark:bg-teal-950/40 dark:text-teal-50">
+                {item.what_you_can_do}
+              </span>
+            </p>
+          </div>
+        ))}
+      </div>
       <p className="text-slate-700 dark:text-slate-300">{content.normal_summary}</p>
       {content.questions_for_doctor.length > 0 && (
-        <div>
+        <div className="rounded-xl border border-line bg-surface p-4 sm:p-5">
           <h3 className="font-semibold">{text.questions}</h3>
-          <ul className="mt-1 list-disc pl-5">
+          <ul className="mt-2 list-disc space-y-1 pl-5 marker:text-teal-600">
             {content.questions_for_doctor.map((q) => (
               <li key={q}>{q}</li>
             ))}

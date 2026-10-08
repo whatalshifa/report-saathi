@@ -8,7 +8,8 @@ export function formatShortDate(value: string): string {
 }
 
 export function formatRange(low: number | null, high: number | null, printed: string | null): string {
-  if (printed) return printed;
+  // "12.0-15.5" and "12.0 - 15.5" as labs print them read as "12.0 – 15.5", like every other range here.
+  if (printed) return printed.trim().replace(/^([\d.,]+)\s*-\s*([\d.,]+)$/, "$1 – $2");
   if (low !== null && high !== null) return `${formatNumber(low)} – ${formatNumber(high)}`;
   if (high !== null) return `up to ${formatNumber(high)}`;
   if (low !== null) return `above ${formatNumber(low)}`;

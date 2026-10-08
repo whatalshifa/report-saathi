@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 
 import { BriefSheet, PrintButton } from "@/components/BriefSheet";
-import { ErrorNote, SkeletonLines } from "@/components/Skeleton";
+import { SkeletonLines } from "@/components/Skeleton";
+import { StatusPanel } from "@/components/StatusPanel";
 import { ApiError, getSharedBrief, type SharedBrief } from "@/lib/api";
 import { formatDate } from "@/lib/format";
 
@@ -28,14 +29,28 @@ export function SharedBriefView() {
 
   if (error?.status === 404) {
     return (
-      <div className="mx-auto max-w-md py-16 text-center">
-        <p className="eyebrow">Shared lab summary</p>
-        <h1 className="mt-3 text-3xl font-bold tracking-tight">This link isn&apos;t working</h1>
-        <p className="mt-3 text-muted">{error.message}</p>
-      </div>
+      <StatusPanel tone="link" title="This link isn't working" heading="h1" bare>
+        {error.message}
+      </StatusPanel>
     );
   }
-  if (error) return <ErrorNote message={error.message} />;
+  if (error) {
+    return (
+      <StatusPanel
+        tone="error"
+        title="This summary didn’t open"
+        heading="h1"
+        bare
+        actions={
+          <button type="button" onClick={() => window.location.reload()} className="btn btn-primary">
+            Try again
+          </button>
+        }
+      >
+        {error.message}
+      </StatusPanel>
+    );
+  }
   if (!shared) {
     return (
       <div className="card space-y-6 p-6 sm:p-8" role="status" aria-label="Loading">

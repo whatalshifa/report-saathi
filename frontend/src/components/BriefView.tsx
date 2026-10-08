@@ -1,11 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback } from "react";
 
 import { BriefSheet, PrintButton } from "@/components/BriefSheet";
 import { SharePanel } from "@/components/SharePanel";
-import { ErrorNote } from "@/components/Skeleton";
+import { BackLink } from "@/components/PageHeader";
+import { StatusPanel } from "@/components/StatusPanel";
 import { getBrief, isPending } from "@/lib/api";
 import { usePoll } from "@/lib/usePoll";
 
@@ -13,20 +13,26 @@ export function BriefView({ id }: { id: string }) {
   const load = useCallback(() => getBrief(id), [id]);
   const { data: job, error } = usePoll(load, (j) => isPending(j.status));
 
-  if (error) return <ErrorNote message={error} />;
+  if (error) {
+    return (
+      <StatusPanel tone="error" title="This brief didn’t load" heading="h1" actions={<BackLink href="/">Back to all reports</BackLink>}>
+        {error}
+      </StatusPanel>
+    );
+  }
   if (!job || isPending(job.status)) {
     return (
-      <div className="card p-10 text-center">
-        <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-4 border-teal-200 border-t-teal-600" />
-        <h1 className="text-xl font-semibold">Preparing the doctor brief…</h1>
-        <p className="mx-auto mt-2 max-w-md text-muted">
-          Going through every report on file and summarising what changed.
-        </p>
-      </div>
+      <StatusPanel tone="working" title="Preparing the doctor brief…" heading="h1">
+        Going through every report on file and summarising what changed.
+      </StatusPanel>
     );
   }
   if (job.status === "failed" || !job.content) {
-    return <ErrorNote message={job.error ?? "The brief could not be written."} />;
+    return (
+      <StatusPanel tone="error" title="The brief couldn’t be written" heading="h1" actions={<BackLink href="/">Back to all reports</BackLink>}>
+        {job.error ?? "Please try again from the timeline in a moment."}
+      </StatusPanel>
+    );
   }
   const profileId = job.content.snapshot.profile.profile_id;
   return (
@@ -36,9 +42,7 @@ export function BriefView({ id }: { id: string }) {
         createdAt={job.created_at}
         toolbar={
           <>
-            <Link href={`/profiles/${profileId}`} className="back-link">
-              ← Back to timeline
-            </Link>
+            <BackLink href={`/profiles/${profileId}`}>Back to timeline</BackLink>
             <PrintButton />
           </>
         }

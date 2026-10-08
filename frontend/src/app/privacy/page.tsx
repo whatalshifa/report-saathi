@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { PageHeader } from "@/components/PageHeader";
+
 export const metadata: Metadata = {
   title: "Privacy",
   description: "What ReportSaathi keeps, why, where, for how long, and your rights under India's DPDP Act 2023.",
@@ -10,9 +12,9 @@ const ISSUES = "https://github.com/whatalshifa/report-saathi/issues";
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="space-y-2">
-      <h2 className="text-lg font-semibold">{title}</h2>
-      <div className="space-y-2 text-slate-700 dark:text-slate-300">{children}</div>
+    <section className="space-y-3 border-t border-line pt-8">
+      <h2 className="section-title">{title}</h2>
+      <div className="space-y-3 leading-relaxed text-slate-700 dark:text-slate-300">{children}</div>
     </section>
   );
 }
@@ -20,17 +22,20 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export default function PrivacyPage() {
   return (
     <article className="max-w-2xl space-y-8">
-      <header>
-        <p className="eyebrow">Privacy</p>
-        <h1 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">How we look after your reports</h1>
-        <p className="mt-2 text-muted">
-          Lab reports are some of the most private papers a family has. This page says, in plain words, what
-          ReportSaathi keeps, why, where, for how long, and what you can do about it. Last updated 6 October 2026.
-        </p>
-      </header>
+      <PageHeader
+        eyebrow="Privacy"
+        title="How we look after your reports"
+        description={
+          <>
+            Lab reports are some of the most private papers a family has. This page says, in plain words, what
+            ReportSaathi keeps, why, where, for how long, and what you can do about it.
+            <span className="mt-2 block text-sm">Last updated 6 October 2026</span>
+          </>
+        }
+      />
 
       <Section title="What we keep">
-        <ul className="list-disc space-y-1 pl-5">
+        <ul className="list-disc space-y-1.5 pl-5 marker:text-teal-600">
           <li>Your name, email and password. The password is kept only as a scrambled hash, never as text.</li>
           <li>The family members you add: name, relation, and, if you give them, birth year and sex.</li>
           <li>
@@ -63,7 +68,7 @@ export default function PrivacyPage() {
       </Section>
 
       <Section title="Who else handles it">
-        <ul className="list-disc space-y-1 pl-5">
+        <ul className="list-disc space-y-1.5 pl-5 marker:text-teal-600">
           <li>
             <strong>Anthropic</strong>, when reading is switched on: each report is sent to Claude, Anthropic&apos;s
             AI, to be read and explained. Anthropic does not use it to train its models. On the public demo the AI is
@@ -77,7 +82,7 @@ export default function PrivacyPage() {
       </Section>
 
       <Section title="How long we keep it">
-        <ul className="list-disc space-y-1 pl-5">
+        <ul className="list-disc space-y-1.5 pl-5 marker:text-teal-600">
           <li>Demo accounts, and everything in them, are deleted after 24 hours.</li>
           <li>
             Your own account is kept until you delete it. Deleting a report, a family member or the whole account
@@ -95,32 +100,32 @@ export default function PrivacyPage() {
           India&apos;s Digital Personal Data Protection Act, 2023 gives you these rights. Most of them are a button
           in the app.
         </p>
-        <dl className="space-y-3">
-          <div>
+        <dl className="grid gap-3 sm:grid-cols-2">
+          <div className="card p-4 text-[0.9375rem]">
             <dt className="font-semibold text-foreground">See your data</dt>
-            <dd>
+            <dd className="mt-1">
               Everything is on your reports and timeline pages. To take a copy, use <strong>Download all my data</strong>{" "}
               on the <Link href="/account" className="link">Account page</Link>: one ZIP with the original files, a
               spreadsheet of every value, and the rest.
             </dd>
           </div>
-          <div>
+          <div className="card p-4 text-[0.9375rem]">
             <dt className="font-semibold text-foreground">Correct it</dt>
-            <dd>
+            <dd className="mt-1">
               If a value was read wrongly, tap the pencil beside it on the report and type the right one. You can
               edit a family member&apos;s details on the Family page, and move a report to the right person.
             </dd>
           </div>
-          <div>
+          <div className="card p-4 text-[0.9375rem]">
             <dt className="font-semibold text-foreground">Erase it, or take back your consent</dt>
-            <dd>
+            <dd className="mt-1">
               Delete any report or family member, or delete your whole account on the Account page. Everything,
               including the files, is removed.
             </dd>
           </div>
-          <div>
+          <div className="card p-4 text-[0.9375rem]">
             <dt className="font-semibold text-foreground">Complain or ask a question</dt>
-            <dd>
+            <dd className="mt-1">
               Open an issue on our{" "}
               <a href={ISSUES} className="link">
                 GitHub repository

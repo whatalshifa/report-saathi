@@ -12,3 +12,5 @@ argon2-cffi==25.1.0
 cryptography==49.0.0
 boto3==1.43.108
 sentry-sdk[fastapi]==2.71.0
+qrcode==8.2
+pdfplumber==0.11.10

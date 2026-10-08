@@ -5,7 +5,10 @@ import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 
 import { FlagBadge } from "@/components/FlagBadge";
+import { PageHeader } from "@/components/PageHeader";
 import { ErrorNote, SkeletonPage } from "@/components/Skeleton";
+import { StatCard } from "@/components/StatCard";
+import { LoadError } from "@/components/StatusPanel";
 import { TrendChart } from "@/components/TrendChart";
 import { TypicalRangeNote } from "@/components/TypicalRangeNote";
 import {
@@ -39,7 +42,7 @@ export function TimelineView({ profileId }: { profileId: string }) {
     }
   }
 
-  if (error) return <ErrorNote message={error} />;
+  if (error) return <LoadError message={error} />;
   if (!trends) return <SkeletonPage cards={4} />;
 
   const { profile: person, series } = trends;
@@ -50,36 +53,38 @@ export function TimelineView({ profileId }: { profileId: string }) {
 
   return (
     <div className="space-y-8">
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <Link href={`/?profile=${profileId}`} className="back-link">
-            ← {possessive(person.name)} reports
-          </Link>
-          <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">{person.name}</h1>
-          <p className="mt-1 text-muted">
+      <PageHeader
+        back={{ href: `/?profile=${profileId}`, label: `${possessive(person.name)} reports` }}
+        eyebrow="Health timeline"
+        title={person.name}
+        description={
+          <>
             {[formatAge(person.age), formatSex(person.sex)].filter(Boolean).join(", ")}
             {person.age || person.sex ? " · " : ""}
             {person.report_count} report{person.report_count === 1 ? "" : "s"} from {person.labs.length || 1} lab
             {person.labs.length === 1 ? "" : "s"}, {formatDate(person.first_date)} to {formatDate(person.last_date)}
-          </p>
-        </div>
-        <div className="text-right">
-          <button
-            onClick={startBrief}
-            disabled={starting}
-            className="btn btn-primary"
-          >
+          </>
+        }
+        actions={
+          <button onClick={startBrief} disabled={starting} className="btn btn-primary">
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden>
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2Z"
+              />
+            </svg>
             {starting ? "Starting…" : "Prepare doctor brief"}
           </button>
-          {briefError && <p className="mt-2 text-sm text-rose-700 dark:text-rose-300">{briefError}</p>}
-        </div>
-      </header>
+        }
+      />
+      {briefError && <ErrorNote message={briefError} />}
 
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Stat label="Tests tracked" value={series.length} />
-        <Stat label="Outside range now" value={flagged} tone={flagged > 0 ? "warn" : undefined} />
-        <Stat label="Improving" value={improving} tone={improving > 0 ? "good" : undefined} />
-        <Stat label="Reports" value={person.report_count} />
+        <StatCard label="Tests tracked" value={series.length} />
+        <StatCard label="Outside range now" value={flagged} tone={flagged > 0 ? "warn" : undefined} />
+        <StatCard label="Improving" value={improving} tone={improving > 0 ? "good" : undefined} />
+        <StatCard label="Reports" value={person.report_count} />
       </section>
       <p className="-mt-4 text-sm text-muted">
         &ldquo;Now&rdquo; means each test&apos;s latest reading. Values from different labs are converted to one unit
@@ -98,16 +103,16 @@ export function TimelineView({ profileId }: { profileId: string }) {
 
       {single.length > 0 && (
         <section>
-          <h2 className="mb-1 text-lg font-semibold">Measured once so far</h2>
+          <h2 className="section-title mb-1">Measured once so far</h2>
           <p className="mb-3 text-sm text-muted">A trend appears once a test shows up in a second report.</p>
           <div className="card overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-slate-50 text-left text-muted dark:bg-slate-800/60">
+              <thead className="border-b border-line bg-slate-50/80 text-left text-xs text-muted dark:bg-slate-800/40">
                 <tr>
-                  <th className="px-4 py-2 font-medium">Test</th>
-                  <th className="px-4 py-2 font-medium">Value</th>
-                  <th className="px-4 py-2 font-medium">Date</th>
-                  <th className="px-4 py-2 font-medium">Status</th>
+                  <th className="px-4 py-2.5 font-medium">Test</th>
+                  <th className="px-4 py-2.5 font-medium">Value</th>
+                  <th className="px-4 py-2.5 font-medium">Date</th>
+                  <th className="px-4 py-2.5 font-medium">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-line">
@@ -158,12 +163,12 @@ function TrendCard({ series }: { series: TrendSeries }) {
       </p>
       <DirectionNote series={series} />
       <p className="mb-3 text-sm text-muted">
-        Normal: {formatRange(series.ref_low, series.ref_high, null)} {series.unit}
+        Normal <span className="tabular-nums">{formatRange(series.ref_low, series.ref_high, null)}</span> {series.unit}
         <TypicalRangeNote rangeSource={series.range_source} />
       </p>
       <TrendChart series={series} />
       <details className="mt-2 text-sm">
-        <summary className="cursor-pointer text-muted hover:text-slate-700 dark:hover:text-slate-300">
+        <summary className="w-fit cursor-pointer rounded-md font-medium text-muted hover:text-foreground">
           Show as table
         </summary>
         <table className="mt-2 w-full">
@@ -177,7 +182,7 @@ function TrendCard({ series }: { series: TrendSeries }) {
           </thead>
           <tbody>
             {series.points.map((p) => (
-              <tr key={p.report_id} className="border-t border-slate-100">
+              <tr key={p.report_id} className="border-t border-line">
                 <td className="py-1.5">
                   <Link href={`/reports/${p.report_id}`} className="text-teal-700 hover:underline dark:text-teal-400">
                     {formatDate(p.date)}
@@ -214,9 +219,18 @@ function RecheckCard({ person, due }: { person: TimelineSummary; due: RecheckDue
   return (
     <section
       aria-labelledby="recheck-heading"
-      className="rounded-xl border border-amber-300 bg-amber-50 p-5 dark:border-amber-800 dark:bg-amber-950/40"
+      className="flex gap-4 rounded-2xl border border-amber-300 bg-amber-50 p-5 dark:border-amber-800 dark:bg-amber-950/40"
     >
-      <h2 id="recheck-heading" className="text-lg font-semibold text-amber-950 dark:text-amber-100">
+      <span
+        aria-hidden
+        className="hidden h-10 w-10 shrink-0 place-items-center rounded-xl bg-amber-100 text-amber-800 sm:grid dark:bg-amber-900/60 dark:text-amber-200"
+      >
+        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.7}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+        </svg>
+      </span>
+      <div className="min-w-0">
+      <h2 id="recheck-heading" className="section-title text-amber-950 dark:text-amber-100">
         Due for a recheck
       </h2>
       <ul className="mt-3 space-y-3">
@@ -236,6 +250,7 @@ function RecheckCard({ person, due }: { person: TimelineSummary; due: RecheckDue
           </li>
         ))}
       </ul>
+      </div>
     </section>
   );
 }
@@ -274,15 +289,4 @@ function DirectionNote({ series }: { series: TrendSeries }) {
   if (!d) return null;
   const { text, className } = DIRECTION_TEXT[d];
   return <p className={`mt-1 text-sm font-medium ${className}`}>{text}</p>;
-}
-
-function Stat({ label, value, tone }: { label: string; value: number; tone?: "good" | "warn" }) {
-  const color =
-    tone === "good" ? "text-emerald-700 dark:text-emerald-300" : tone === "warn" ? "text-rose-700 dark:text-rose-300" : "";
-  return (
-    <div className="card p-4">
-      <p className={`text-2xl font-bold tabular-nums sm:text-3xl ${color}`}>{value}</p>
-      <p className="text-sm text-muted">{label}</p>
-    </div>
-  );
 }

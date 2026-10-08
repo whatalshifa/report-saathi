@@ -265,6 +265,8 @@ export const getReport = (id: string) => request<ReportDetail>(`/api/reports/${i
 export const deleteReport = (id: string) => request<void>(`/api/reports/${id}`, { method: "DELETE" });
 /** The original uploaded file, for an <img> or a new tab; the browser sends the sign-in cookie itself. */
 export const reportFileUrl = (id: string) => `/api/reports/${id}/file`;
+/** One page of an original PDF, drawn as an image by the API, so a value can be marked on it. */
+export const reportPageUrl = (id: string, page: number) => `/api/reports/${id}/pages/${page}`;
 /** Whether there is an original file to show; the oldest sample reports have only a text placeholder. */
 export const hasOriginal = (report: ReportDetail) =>
   report.content_type === "application/pdf" || report.content_type.startsWith("image/");
@@ -439,5 +441,10 @@ export const revokeShareLink = (id: string) => request<void>(`/api/shares/${id}`
  */
 export const getSharedBrief = (token: string) =>
   request<SharedBrief>("/api/shared", json("POST", { token }), true);
+/**
+ * A working link of yours as a QR code: an SVG of black squares on white. The link goes in the body,
+ * like the token above, so it never lands in a request log.
+ */
+export const getShareQr = (url: string) => request<{ svg: string }>("/api/shares/qr", json("POST", { url }));
 /** The address to send the doctor: on this website, with the token after "#", which browsers never send. */
 export const shareUrl = (token: string) => `${window.location.origin}/shared#${token}`;

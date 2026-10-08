@@ -32,6 +32,7 @@ from app.services.consent import NEEDS_CONSENT, has_consented
 from app.services.corrections import CorrectionError, correct_result
 from app.services.extraction import Extractor, get_extractor
 from app.services.jobs import run_explanation
+from app.services.pdf_text import render_page
 from app.services.processing import process_report, refresh_typical_ranges
 from app.services.sharing import turn_off_links
 from app.services.uploads import UploadError, prepare_upload
@@ -136,6 +137,28 @@ def get_report_file(report_id: str, user: CurrentUser, session: SessionDep, stor
             "Cache-Control": "private, no-store",
             "X-Content-Type-Options": "nosniff",
         },
+    )
+
+
+@router.get("/{report_id}/pages/{page}")
+def get_report_page(
+    report_id: str, page: int, user: CurrentUser, session: SessionDep, storage: StorageDep
+) -> Response:
+    """One page of an original PDF drawn as an image, so a value can be shown marked on its page.
+
+    Phones can't show a PDF inside a page (and many can't show one at all), but every browser shows
+    an image. Same privacy as the file itself: the owner only, and never cached.
+    """
+    report = owned_report(session, user, report_id)
+    image = None
+    if report.content_type == "application/pdf":
+        image = render_page(storage.read(report.storage_key), page)
+    if image is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Page not found")
+    return Response(
+        image,
+        media_type="image/png",
+        headers={"Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"},
     )
 
 

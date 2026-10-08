@@ -5,12 +5,16 @@
 - A link works for a week. A demo account's links stop when the account is deleted, so a
   link never outlives the data it points to.
 - Every opening is logged (only the time), so the owner can see whether the doctor looked.
+- A new link can be shown as a QR code, so a doctor can scan it off the patient's phone.
 """
 
 import secrets
 from datetime import UTC, datetime, timedelta
 from typing import Literal
+from urllib.parse import urlsplit
 
+import qrcode
+from qrcode.image.svg import SvgPathFillImage
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -81,3 +85,21 @@ def open_share(session: Session, token: str) -> ShareLink | None:
     session.add(ShareView(share_id=link.id))
     session.commit()
     return link
+
+
+def link_token(url: str) -> str | None:
+    """The token in a share link ("https://site/shared#<token>"), or None if it isn't one."""
+    parts = urlsplit(url)
+    if parts.scheme not in ("http", "https") or not parts.netloc or parts.path != "/shared":
+        return None
+    return parts.fragment or None
+
+
+def qr_svg(url: str) -> str:
+    """The link as a QR code: an SVG of black squares on white, with the standard quiet border.
+
+    Medium error correction still scans off a phone screen with a little glare or a crack.
+    """
+    code = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_M, border=4)
+    code.add_data(url)
+    return code.make_image(image_factory=SvgPathFillImage).to_string(encoding="unicode")

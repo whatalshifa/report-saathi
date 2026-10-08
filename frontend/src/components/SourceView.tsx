@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 import { CorrectedChip } from "@/components/ValueFix";
-import { reportFileUrl, type SourceBox, type TestResult } from "@/lib/api";
+import { reportFileUrl, reportPageUrl, type SourceBox, type TestResult } from "@/lib/api";
 import { usePdfViewer } from "@/lib/usePdfViewer";
 
 // "Where did this number come from?": a page icon beside a value opens the original report
@@ -17,7 +17,7 @@ export function SourceButton({ name, onClick }: { name: string; onClick: (trigge
       aria-label={`See ${name} on the original report`}
       aria-haspopup="dialog"
       title="Where did this number come from?"
-      className="-my-1 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg align-middle text-muted transition-colors hover:bg-slate-100 hover:text-teal-700 focus-visible:outline-2 focus-visible:outline-teal-600 dark:hover:bg-slate-800 dark:hover:text-teal-300"
+      className="icon-btn -my-1 h-8 w-8 align-middle hover:text-teal-700 dark:hover:text-teal-300"
     >
       <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden>
         <path
@@ -32,7 +32,10 @@ export function SourceButton({ name, onClick }: { name: string; onClick: (trigge
   );
 }
 
-/** The original page with the value's box highlighted (images), or a way to open the right page (PDFs). */
+/**
+ * The original page with the value's box highlighted. A PDF's page is drawn as an image by the API;
+ * if that fails, the dialog offers the PDF itself, opened at the right page.
+ */
 export function SourceDialog({
   reportId,
   contentType,
@@ -102,7 +105,7 @@ export function SourceDialog({
             type="button"
             onClick={() => dialog.current?.close()}
             aria-label="Close"
-            className="-mr-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-slate-100 hover:text-foreground focus-visible:outline-2 focus-visible:outline-teal-600 dark:hover:bg-slate-800"
+            className="icon-btn -mr-1"
           >
             <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
               <path strokeLinecap="round" d="M6 6l12 12M18 6 6 18" />
@@ -110,7 +113,7 @@ export function SourceDialog({
           </button>
         </div>
 
-        {isPdf ? (
+        {isPdf && failed ? (
           <div className="rounded-xl border border-line bg-background p-6 text-center">
             <p className="font-semibold">Page {box.page} of the original PDF</p>
             <p className="mt-1 text-sm text-muted">
@@ -140,7 +143,7 @@ export function SourceDialog({
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   ref={image}
-                  src={reportFileUrl(reportId)}
+                  src={isPdf ? reportPageUrl(reportId, box.page) : reportFileUrl(reportId)}
                   alt={`Page ${box.page} of the original report, with ${result.name} highlighted`}
                   onLoad={centreOnBox}
                   onError={() => setFailed(true)}
@@ -161,9 +164,21 @@ export function SourceDialog({
             </div>
             <figcaption className="flex flex-wrap items-center justify-between gap-2 text-sm text-muted">
               <span>Read from page {box.page} of the original</span>
-              <button type="button" onClick={() => setZoomed((z) => !z)} className="btn btn-secondary btn-sm">
-                {zoomed ? "Show whole page" : "Zoom in"}
-              </button>
+              <span className="flex flex-wrap gap-2">
+                {isPdf && (
+                  <a
+                    href={`${reportFileUrl(reportId)}#page=${box.page}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-secondary btn-sm"
+                  >
+                    {showsPdf ? "Open the PDF" : "Download the PDF"}
+                  </a>
+                )}
+                <button type="button" onClick={() => setZoomed((z) => !z)} className="btn btn-secondary btn-sm">
+                  {zoomed ? "Show whole page" : "Zoom in"}
+                </button>
+              </span>
             </figcaption>
           </figure>
         )}

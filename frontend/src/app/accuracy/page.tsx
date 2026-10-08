@@ -1,5 +1,8 @@
 import Link from "next/link";
 
+import { PageHeader } from "@/components/PageHeader";
+import { StatCard } from "@/components/StatCard";
+import { StatusPanel } from "@/components/StatusPanel";
 import results from "@/data/accuracy.json";
 
 export const metadata = { title: "How accurate is it? · ReportSaathi" };
@@ -28,29 +31,23 @@ export default function AccuracyPage() {
   const sources = Object.entries(data.by_source ?? {});
 
   return (
-    <div className="max-w-2xl space-y-8">
-      <header>
-        <h1 className="text-2xl font-bold">How accurate is ReportSaathi?</h1>
-        <p className="mt-2 text-muted">
-          We test it on real lab reports from Indian labs, a mix of PDFs and phone photos. A person writes down every value
-          from the paper by hand, then ReportSaathi reads the same reports from scratch and the two are compared value
-          by value.
-        </p>
-      </header>
+    <div className="max-w-3xl space-y-10">
+      <PageHeader
+        eyebrow="Accuracy"
+        title="How accurate is ReportSaathi?"
+        description="We test it on real lab reports from Indian labs, a mix of PDFs and phone photos. A person writes down every value from the paper by hand, then ReportSaathi reads the same reports from scratch and the two are compared value by value."
+      />
 
       {data.run_at && data.overall ? (
         <>
           <section className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {METRICS.slice(0, 3).map(([key, label]) => (
-              <div key={key} className="card p-4">
-                <p className="text-sm text-muted">{label}</p>
-                <p className="mt-1 text-3xl font-semibold tabular-nums">{pct(data.overall?.[key])}</p>
-              </div>
+              <StatCard key={key} label={label} value={pct(data.overall?.[key])} />
             ))}
           </section>
           <section className="overflow-x-auto card">
             <table className="w-full text-sm">
-              <thead className="bg-slate-50 text-left text-muted dark:bg-slate-800/60">
+              <thead className="border-b border-line bg-slate-50/80 text-left text-xs text-muted dark:bg-slate-800/40">
                 <tr>
                   <th className="px-4 py-2 font-medium">Measure</th>
                   <th className="px-4 py-2 text-right font-medium">All</th>
@@ -90,18 +87,18 @@ export default function AccuracyPage() {
           </p>
         </>
       ) : (
-        <p className="rounded-xl border border-dashed border-line p-6 text-center text-slate-600 dark:text-slate-400">
-          The first test run on real reports hasn’t been published yet.
-        </p>
+        <StatusPanel tone="empty" title="Results coming soon">
+          The first test run on real reports hasn’t been published yet. When it is, the numbers will appear here.
+        </StatusPanel>
       )}
 
       <section>
-        <h2 className="mb-2 text-lg font-semibold">What each number means</h2>
-        <dl className="space-y-2 text-sm">
+        <h2 className="section-title mb-4">What each number means</h2>
+        <dl className="grid gap-3 text-sm sm:grid-cols-2">
           {METRICS.map(([key, label, meaning]) => (
-            <div key={key}>
-              <dt className="font-medium">{label}</dt>
-              <dd className="text-muted">{meaning}</dd>
+            <div key={key} className="card p-4">
+              <dt className="font-semibold">{label}</dt>
+              <dd className="mt-1 text-muted">{meaning}</dd>
             </div>
           ))}
         </dl>
@@ -109,7 +106,10 @@ export default function AccuracyPage() {
 
       <p className="text-sm text-muted">
         No report or patient detail is published, only these totals. ReportSaathi can still misread a report, so always
-        check important values against the original. <Link href="/" className="underline">Back to ReportSaathi</Link>
+        check important values against the original.{" "}
+        <Link href="/" className="link">
+          Back to ReportSaathi
+        </Link>
       </p>
     </div>
   );

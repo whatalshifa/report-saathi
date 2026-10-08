@@ -281,3 +281,43 @@ is on warfarin, which is what its guideline is about. The longest overdue (earli
 computed in the trends service (with `today` passed in for tests), not stored, and is left out of the
 doctor brief's saved snapshot because it is meant for the family.
 
+
+## Phase 6
+
+**The QR code is drawn on the server, for the owner's own working links only.** Phase 5 left a QR code
+out to avoid a frontend library; the small Python `qrcode` package draws it as an SVG instead, so the
+website gains no dependency. The page sends the whole link it showed (the API doesn't know the
+website's address) in a POST body to `/api/shares/qr`, never in the address, so the token stays out of
+logs as before. The API checks that the token is one of the signed-in owner's working links before
+drawing anything, so the endpoint can't be used to make codes for other addresses, and answers with
+`no-store`. The code is always black on a white tile with the standard four-square quiet border,
+because many scanners fail on light-on-dark codes, and it uses medium error correction, which still
+scans off a phone screen with some glare. The PNG download is drawn from the SVG in the browser, since
+phone galleries and WhatsApp don't take SVGs.
+
+**Boxes from the PDF's own text, but only exact, unique matches.** Claude's boxes are estimates from
+looking at the page; a PDF made by lab software already holds each character's exact position, so
+`pdfplumber` (pure Python, MIT licensed) reads them for free and without another AI call. For each value
+it needs the test's printed name and then, on the same printed line, the value exactly as Claude copied
+it, as the first result after the name: if a different number comes first (say Claude misread 12.0 as
+13.0, and 13.0 is the start of the range), there is no match, rather than a highlight on the range.
+Names match as whole words ("Hb" never matches "HbA1c"), and a name-and-value found on two lines (a
+repeated page) counts as unsure. A sure match replaces Claude's box; anything else keeps it. Turned
+pages are skipped, a broken PDF just keeps Claude's boxes, and only the kind of error is logged, never
+its message, which could quote the report.
+
+**Draw PDF pages on the server instead of adding a PDF viewer to the website.** Phase 5 sent PDFs to
+the browser's viewer at `#page=N`, which can't show a highlight and doesn't exist on Android. pdfplumber
+already brings `pypdfium2` (Chrome's PDF engine) to draw pages, so the API returns one page as a PNG at
+150 dots per inch, owner only and `no-store` like the file itself, and the dialog treats it exactly as a
+photo report. The website stays free of a PDF library. Pages are drawn on request rather than stored, so no unencrypted copy of a report sits on disk.
+
+**Polish through a few shared pieces, not page-by-page tweaks.** A look at every screen in light, dark
+and on a 390px phone found the same problems in many places: page titles in three sizes, four kinds of
+empty or error message (one was a bare red line with the server's words), buttons of different heights
+side by side, "Ready" on every report row, cut-off names on phones, and white on teal-600 in dark mode
+(3.7:1, below the 4.5:1 AA needs). So the fixes live in `globals.css` (button sizes, a badge, an icon
+button, one focus ring, no motion for people who ask for less) and in four small components:
+`PageHeader`, `StatusPanel` (with `LoadError`), `StatCard` and `BackLink`. A new page gets the same look
+by using them, and a later change to one changes every page. Nothing new was installed: icons are the
+inline SVGs the app already drew, and the brand teal and logo are unchanged.

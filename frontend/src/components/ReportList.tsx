@@ -4,13 +4,15 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { ErrorNote, SkeletonList } from "@/components/Skeleton";
+import { StatusPanel } from "@/components/StatusPanel";
 import { listReports, type ReportSummary } from "@/lib/api";
 import { formatDate } from "@/lib/format";
 
-const STATUS: Record<ReportSummary["status"], { label: string; className: string }> = {
+// A read report needs no label (it is the usual case); only the others say where they are.
+const STATUS: Record<ReportSummary["status"], { label: string; className: string } | null> = {
   queued: { label: "Waiting", className: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300" },
   processing: { label: "Reading…", className: "bg-sky-50 text-sky-800 dark:bg-sky-950 dark:text-sky-200" },
-  done: { label: "Ready", className: "bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200" },
+  done: null,
   failed: { label: "Couldn't read", className: "bg-rose-50 text-rose-800 dark:bg-rose-950 dark:text-rose-200" },
 };
 
@@ -28,10 +30,9 @@ export function ReportList({ profileId }: { profileId: string }) {
   if (reports === null) return <SkeletonList />;
   if (reports.length === 0) {
     return (
-      <div className="card px-6 py-10 text-center">
-        <p className="font-medium">No reports yet</p>
-        <p className="mt-1 text-sm text-muted">Reports you add for this person will show up here, newest first.</p>
-      </div>
+      <StatusPanel tone="empty" title="No reports yet" heading="p">
+        Reports you add for this person will show up here, newest first.
+      </StatusPanel>
     );
   }
 
@@ -43,7 +44,7 @@ export function ReportList({ profileId }: { profileId: string }) {
           <li key={report.id}>
             <Link
               href={`/reports/${report.id}`}
-              className="flex items-center gap-4 px-5 py-4 transition hover:bg-slate-50 dark:hover:bg-slate-800/50"
+              className="group flex items-center gap-4 px-4 py-4 transition-colors hover:bg-slate-50 focus-visible:-outline-offset-2 sm:px-5 dark:hover:bg-slate-800/50"
             >
               <span
                 aria-hidden
@@ -58,16 +59,32 @@ export function ReportList({ profileId }: { profileId: string }) {
                 </svg>
               </span>
               <div className="min-w-0 flex-1">
-                <p className="truncate font-medium">{report.lab_name ?? report.filename}</p>
-                <p className="truncate text-sm text-muted">
-                  {[report.patient_name, formatDate(report.report_date ?? report.created_at)]
-                    .filter(Boolean)
-                    .join(" · ")}
+                <p className="line-clamp-2 font-medium break-words">{report.lab_name ?? report.filename}</p>
+                <p className="mt-0.5 flex flex-wrap gap-x-1.5 text-sm text-muted">
+                  <span className="tabular-nums whitespace-nowrap">
+                    {formatDate(report.report_date ?? report.created_at)}
+                  </span>
+                  {report.patient_name && (
+                    <>
+                      <span aria-hidden>·</span>
+                      <span className="min-w-0 truncate">{report.patient_name}</span>
+                    </>
+                  )}
                 </p>
               </div>
-              <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${status.className}`}>
-                {status.label}
-              </span>
+              {status && <span className={`badge shrink-0 ${status.className}`}>{status.label}</span>}
+              <svg
+                viewBox="0 0 20 20"
+                className="h-5 w-5 shrink-0 text-slate-400 transition-transform group-hover:translate-x-0.5 dark:text-slate-500"
+                fill="currentColor"
+                aria-hidden
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z"
+                  clipRule="evenodd"
+                />
+              </svg>
             </Link>
           </li>
         );

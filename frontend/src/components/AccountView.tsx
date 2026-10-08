@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
-import { SkeletonLines } from "@/components/Skeleton";
+import { PageHeader } from "@/components/PageHeader";
+import { ErrorNote } from "@/components/Skeleton";
 import { deleteAccount, downloadExport, getFeatures, getMe, logout, type User } from "@/lib/api";
 import { clearSharedFile } from "@/lib/sharedFile";
 
@@ -42,8 +43,8 @@ function YourData() {
 
   const working = download.state === "working";
   return (
-    <section className="card p-5" aria-labelledby="your-data">
-      <h2 id="your-data" className="font-semibold">
+    <section className="card p-5 sm:p-6" aria-labelledby="your-data">
+      <h2 id="your-data" className="section-title">
         Your data
       </h2>
       <p className="mt-1 text-sm text-muted">
@@ -54,6 +55,10 @@ function YourData() {
         Something read wrongly? Tap the pencil beside the value on the report to fix it.
       </p>
       <button type="button" onClick={start} disabled={working} className="btn btn-secondary mt-4">
+        <svg viewBox="0 0 20 20" className="h-4 w-4" fill="currentColor" aria-hidden>
+          <path d="M10.75 2.75a.75.75 0 0 0-1.5 0v8.614L6.295 8.235a.75.75 0 1 0-1.09 1.03l4.25 4.5a.75.75 0 0 0 1.09 0l4.25-4.5a.75.75 0 0 0-1.09-1.03l-2.955 3.129V2.75Z" />
+          <path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" />
+        </svg>
         {working ? "Preparing…" : "Download all my data"}
       </button>
       <div aria-live="polite" className="mt-3 text-sm">
@@ -76,11 +81,7 @@ function YourData() {
             </div>
           ))}
         {download.state === "done" && <p>Done. Look for the file in your Downloads folder.</p>}
-        {download.state === "failed" && (
-          <p role="alert" className="text-rose-700 dark:text-rose-300">
-            {download.message}
-          </p>
-        )}
+        {download.state === "failed" && <ErrorNote message={download.message} />}
       </div>
     </section>
   );
@@ -119,23 +120,37 @@ export function AccountView() {
     }
   }
 
-  if (!user) return <SkeletonLines lines={4} />;
+  if (!user) {
+    return (
+      <div className="mx-auto max-w-2xl space-y-8" role="status" aria-label="Loading">
+        <div className="space-y-3">
+          <div className="skeleton h-8 w-56" />
+          <div className="skeleton h-4 w-72 max-w-full" />
+        </div>
+        <div className="skeleton h-40 rounded-2xl" />
+        <div className="skeleton h-40 rounded-2xl" />
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-lg space-y-8">
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">{user.is_guest ? "Demo account" : user.name}</h1>
-          <p className="text-muted">{user.is_guest ? "Temporary, deleted after 24 hours" : user.email}</p>
-        </div>
-        <button onClick={signOut} className="btn btn-secondary">
-          Sign out
-        </button>
-      </header>
+    <div className="mx-auto max-w-2xl space-y-6">
+      <div className="pb-2">
+        <PageHeader
+          eyebrow="Account"
+          title={user.is_guest ? "Demo account" : user.name}
+          description={user.is_guest ? "Temporary, deleted after 24 hours" : user.email}
+          actions={
+            <button onClick={signOut} className="btn btn-secondary">
+              Sign out
+            </button>
+          }
+        />
+      </div>
 
-      <section className="card p-5 text-sm text-slate-600 dark:text-slate-300">
-        <h2 className="mb-2 text-base font-semibold text-slate-900 dark:text-slate-100">How your data is kept</h2>
-        <ul className="list-disc space-y-1 pl-5">
+      <section className="card p-5 text-sm sm:p-6">
+        <h2 className="section-title mb-3">How your data is kept</h2>
+        <ul className="list-disc space-y-1.5 pl-5 text-slate-700 marker:text-teal-600 dark:text-slate-300">
           <li>Report files are encrypted before they are stored, each with its own key.</li>
           {!user.is_guest && <li>Your password is stored only as a slow, salted hash (Argon2), never as text.</li>}
           <li>Only your account can see your family’s reports.</li>
@@ -156,8 +171,8 @@ export function AccountView() {
       <YourData />
 
       {user.is_guest ? (
-        <section className="card p-5">
-          <h2 className="font-semibold">Keep your own reports</h2>
+        <section className="card p-5 sm:p-6">
+          <h2 className="section-title">Keep your own reports</h2>
           <p className="mt-1 text-sm text-muted">
             This demo account and everything in it is deleted after 24 hours. Create a free account to keep your
             family&apos;s reports.
@@ -167,17 +182,21 @@ export function AccountView() {
           </Link>
         </section>
       ) : (
-        <section className="rounded-2xl border border-rose-200 bg-surface p-5 dark:border-rose-900">
-          <h2 className="font-semibold text-rose-800 dark:text-rose-300">Delete account</h2>
+        <section className="rounded-2xl border border-rose-200 bg-surface p-5 sm:p-6 dark:border-rose-900">
+          <h2 className="section-title text-rose-800 dark:text-rose-300">Delete account</h2>
           <p className="mt-1 text-sm text-muted">
             Deletes your account, every family profile, every report and its file, and all explanations and briefs.
             This can’t be undone.
           </p>
-          <label className="mt-4 block text-sm">
+          <label className="label mt-4 font-normal">
             Type <strong>DELETE</strong> to confirm
             <input value={confirmText} onChange={(e) => setConfirmText(e.target.value)} className="input" />
           </label>
-          {error && <p className="mt-2 text-sm text-rose-700 dark:text-rose-300">{error}</p>}
+          {error && (
+            <div className="mt-3">
+              <ErrorNote message={error} />
+            </div>
+          )}
           <button
             disabled={confirmText !== "DELETE"}
             onClick={removeAccount}

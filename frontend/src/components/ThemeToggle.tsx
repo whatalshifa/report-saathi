@@ -55,7 +55,7 @@ export function ThemeToggle() {
       onClick={cycle}
       title={LABEL[current]}
       aria-label={`${LABEL[current]}. Click to change.`}
-      className="grid h-9 w-9 place-items-center rounded-lg text-muted transition hover:bg-slate-100 hover:text-foreground dark:hover:bg-slate-800"
+      className="icon-btn"
     >
       <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden>
         {current === "light" && (

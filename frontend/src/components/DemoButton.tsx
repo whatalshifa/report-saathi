@@ -12,8 +12,11 @@ export function WakeServer() {
   return null;
 }
 
-/** `next`: where to go once the demo is open (from the sign-in page, the page that asked for it). */
-export function DemoButton({ className = "btn btn-primary", label = "Try the demo", next = "/" }) {
+/**
+ * `next`: where to go once the demo is open (from the sign-in page, the page that asked for it).
+ * `full`: as wide as its column on phones, its own width from tablets up.
+ */
+export function DemoButton({ className = "btn btn-primary", label = "Try the demo", next = "/", full = false }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,7 +35,7 @@ export function DemoButton({ className = "btn btn-primary", label = "Try the dem
   }
 
   return (
-    <span className="inline-flex flex-col items-start gap-2">
+    <span className={`flex-col items-start gap-2 ${full ? "flex w-full sm:inline-flex sm:w-auto" : "inline-flex"}`}>
       <button type="button" onClick={start} disabled={busy} className={className}>
         {busy ? (
           <>

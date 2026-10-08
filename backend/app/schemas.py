@@ -312,6 +312,16 @@ class OpenShared(BaseModel):
     token: str = Field(max_length=200)
 
 
+class ShareQrRequest(BaseModel):
+    """The full link the owner was shown, sent in the body for the same reason as OpenShared."""
+
+    url: str = Field(max_length=500)
+
+
+class ShareQr(BaseModel):
+    svg: str  # black squares on a white square, so phones can scan it in dark mode too
+
+
 class SharedBrief(BaseModel):
     """What a doctor sees: the brief's content, and nothing that leads back into the account."""
 

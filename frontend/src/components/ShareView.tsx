@@ -4,7 +4,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { PageHeader } from "@/components/PageHeader";
 import { ErrorNote, SkeletonLines } from "@/components/Skeleton";
+import { StatusPanel } from "@/components/StatusPanel";
 import { ReadingPaused, useReportUpload } from "@/components/UploadCard";
 import { getFeatures, listProfiles, type Profile } from "@/lib/api";
 import { formatFileSize, possessive, RELATION_LABEL } from "@/lib/format";
@@ -58,12 +60,7 @@ export function ShareView({ error: shareError }: { error?: string }) {
 
   return (
     <div className="mx-auto max-w-xl space-y-6">
-      <header>
-        <Link href="/" className="back-link">
-          ← Your reports
-        </Link>
-        <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">Add a shared report</h1>
-      </header>
+      <PageHeader back={{ href: "/", label: "Your reports" }} title="Add a shared report" />
 
       {problem && <ErrorNote message={problem} />}
       {error && <ErrorNote message={error} />}
@@ -71,16 +68,18 @@ export function ShareView({ error: shareError }: { error?: string }) {
       {!error && (shared === undefined || !profiles || !features) && <SkeletonLines lines={4} />}
 
       {shared === null && !problem && (
-        <div className="card p-5">
-          <p className="font-semibold">Nothing is waiting to be added</p>
-          <p className="mt-1 text-sm text-muted">
-            On an Android phone, add ReportSaathi to your home screen. Then, in WhatsApp, tap and hold a report, tap
-            Share and choose ReportSaathi.
-          </p>
-          <Link href="/" className="btn btn-secondary mt-4">
-            Go to your reports
-          </Link>
-        </div>
+        <StatusPanel
+          tone="empty"
+          title="Nothing is waiting to be added"
+          actions={
+            <Link href="/" className="btn btn-secondary">
+              Go to your reports
+            </Link>
+          }
+        >
+          On an Android phone, add ReportSaathi to your home screen. Then, in WhatsApp, tap and hold a report, tap
+          Share and choose ReportSaathi.
+        </StatusPanel>
       )}
 
       {shared && profiles && features && (
@@ -125,7 +124,7 @@ export function ShareView({ error: shareError }: { error?: string }) {
                 {people.map((p) => (
                   <label
                     key={p.id}
-                    className="flex cursor-pointer items-center gap-2 rounded-full border border-line bg-surface py-1.5 pr-4 pl-3 text-sm has-checked:border-teal-700 has-checked:bg-teal-700 has-checked:text-white dark:has-checked:border-teal-600 dark:has-checked:bg-teal-600"
+                    className="flex cursor-pointer items-center gap-2 rounded-full border border-line bg-surface py-1.5 pr-4 pl-3 text-sm min-h-10 has-checked:border-teal-700 has-checked:bg-teal-700 has-checked:text-white has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-teal-600"
                   >
                     <input
                       type="radio"
@@ -143,11 +142,7 @@ export function ShareView({ error: shareError }: { error?: string }) {
             </fieldset>
           )}
 
-          {uploadError && (
-            <p role="alert" className="text-sm text-rose-700 dark:text-rose-300">
-              {uploadError}
-            </p>
-          )}
+          {uploadError && <ErrorNote message={uploadError} />}
           <div className="flex flex-wrap gap-2">
             {features.reading && chosen && (
               <button
