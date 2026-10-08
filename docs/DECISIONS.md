@@ -311,3 +311,13 @@ the browser's viewer at `#page=N`, which can't show a highlight and doesn't exis
 already brings `pypdfium2` (Chrome's PDF engine) to draw pages, so the API returns one page as a PNG at
 150 dots per inch, owner only and `no-store` like the file itself, and the dialog treats it exactly as a
 photo report. The website stays free of a PDF library. Pages are drawn on request rather than stored, so no unencrypted copy of a report sits on disk.
+
+**Polish through a few shared pieces, not page-by-page tweaks.** A look at every screen in light, dark
+and on a 390px phone found the same problems in many places: page titles in three sizes, four kinds of
+empty or error message (one was a bare red line with the server's words), buttons of different heights
+side by side, "Ready" on every report row, cut-off names on phones, and white on teal-600 in dark mode
+(3.7:1, below the 4.5:1 AA needs). So the fixes live in `globals.css` (button sizes, a badge, an icon
+button, one focus ring, no motion for people who ask for less) and in four small components:
+`PageHeader`, `StatusPanel` (with `LoadError`), `StatCard` and `BackLink`. A new page gets the same look
+by using them, and a later change to one changes every page. Nothing new was installed: icons are the
+inline SVGs the app already drew, and the brand teal and logo are unchanged.

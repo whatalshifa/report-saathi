@@ -31,6 +31,13 @@ keeps the whole family's reports, privately and encrypted.
   PDFs to a new tab. Now the API draws the page as an image (`GET /api/reports/{id}/pages/{n}`, owner
   only, never cached), so phones without a PDF viewer see the marked value too. "Open the PDF" is still
   there, and if a page can't be drawn the old "open page N" button comes back.
+- **A finishing pass on every screen.** Every page now opens with the same header (back link, title,
+  one line about the page, its buttons), and every empty, missing, failed or still-working moment uses
+  one panel with an icon, a plain sentence and the next thing to do, including a "Try again" where a
+  list didn't load. Buttons share one height per size, flags and labels share one badge style, values
+  use even-width figures, and every link and button shows the same focus ring. On phones, report names
+  wrap instead of being cut off, the report page's stat cards line up, and each result shows its range
+  on its own line. Dark-mode buttons keep white on teal-700, which passes the AA contrast check.
 
 ### Phase 5: beating the competition on trust
 
