@@ -22,6 +22,15 @@ keeps the whole family's reports, privately and encrypted.
   patient's phone. "Download image" saves it as a PNG for the gallery or WhatsApp, "Download SVG" for
   printing. The code is drawn by the API (`qrcode`), only for the owner's own working links, and the
   link travels in the request body, so its token still never reaches a log.
+- **Exact source boxes for PDFs, found without the AI.** Most lab PDFs carry their text, with every
+  character's position. After Claude reads a PDF, `pdfplumber` looks for each test's name and, on the
+  same line, the value exactly as read; when exactly one line matches, that box is used (it replaces
+  Claude's estimate). No sure match leaves Claude's box, or none, since a wrong highlight is worse than
+  none. Scanned PDFs have no text, so they keep Claude's boxes.
+- **PDF pages shown in the page, highlight and all.** "Where did this number come from?" used to send
+  PDFs to a new tab. Now the API draws the page as an image (`GET /api/reports/{id}/pages/{n}`, owner
+  only, never cached), so phones without a PDF viewer see the marked value too. "Open the PDF" is still
+  there, and if a page can't be drawn the old "open page N" button comes back.
 
 ### Phase 5: beating the competition on trust
 
@@ -204,9 +213,9 @@ written in advance. Add `ANTHROPIC_API_KEY` and uploads switch on.
 ## Tests
 
 ```bash
-cd backend && pytest        # 321 tests: flags, units, trends, sign-in, privacy, encryption, demo accounts, limits, fixes, share links, data export, consent, QR codes
+cd backend && pytest        # 336 tests: flags, units, trends, sign-in, privacy, encryption, demo accounts, limits, fixes, share links, data export, consent, QR codes, PDF boxes
 cd frontend && npm run lint && npm run build
-cd frontend && npx playwright test   # 28 browser tests, 55 runs on a computer and a phone (one is phone-only); starts the API and the site itself
+cd frontend && npx playwright test   # 29 browser tests, 57 runs on a computer and a phone (one is phone-only); starts the API and the site itself
 ```
 
 The tests never call the real Claude API; they use a stand-in for Claude, so they are free and fast.
@@ -226,11 +235,12 @@ backend/
     services/
       uploads.py          checks file type by its bytes, shrinks big photos
       extraction.py       sends the report to Claude, gets structured data back
+      pdf_text.py         exact value boxes from a PDF's own text, and PDF pages drawn as images
       flagging.py         parses reference ranges, decides low / high / normal
       corrections.py      saves a value the person fixed, re-flags it, logs the fix
       catalog.py          229 tests: spellings, units, LOINC codes, typical ranges, recheck intervals
       auth.py             password hashing, sessions, lockout
-      sharing.py          share-link tokens, expiry, and the opening log
+      sharing.py          share-link tokens, expiry, the opening log, and QR codes
       export.py           "download all my data": the ZIP of files, JSON and CSV
       consent.py          the data notice version people agree to before uploading
       crypto.py           envelope encryption for uploaded files

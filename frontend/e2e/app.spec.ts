@@ -116,6 +116,47 @@ test("a value can be traced back to the original report", async ({ page }) => {
   await expect(dialog).toBeHidden();
 });
 
+test("a value on a PDF is shown marked on its page, drawn by the API", async ({ page }) => {
+  await startDemo(page);
+  // The demo can't read uploads, so a sample report stands in for a PDF: its page comes from the
+  // PDF page address instead of the file itself.
+  await page.route(/\/api\/reports\/[\w-]+$/, async (route) => {
+    const response = await route.fetch();
+    await route.fulfill({ response, json: { ...(await response.json()), content_type: "application/pdf" } });
+  });
+  let drawn = 0;
+  await page.route(/\/api\/reports\/[\w-]+\/pages\/1$/, async (route) => {
+    drawn += 1;
+    if (drawn > 1) return route.fulfill({ status: 404, json: { detail: "Page not found" } });
+    const file = await page.request.get(route.request().url().replace(/pages\/1$/, "file"));
+    await route.fulfill({ status: 200, contentType: "image/png", body: await file.body() });
+  });
+  await page.getByRole("link", { name: /Sample Pathology Lab, Pune.*12 Jan 2026/ }).click();
+
+  const source = page
+    .getByRole("region", { name: "Needs attention" })
+    .getByRole("button", { name: "See Haemoglobin (Hb) on the original report" });
+  await source.click();
+  const dialog = page.getByRole("dialog", { name: "Where this number came from" });
+  const original = dialog.getByRole("img", { name: "Page 1 of the original report, with Haemoglobin (Hb) highlighted" });
+  await expect(original).toHaveAttribute("src", /\/api\/reports\/.+\/pages\/1$/);
+  await expect.poll(() => original.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
+  await expect(dialog.getByTestId("source-highlight")).toBeInViewport();
+  await expect(dialog.getByRole("link", { name: /(Open|Download) the PDF/ })).toHaveAttribute(
+    "href",
+    /\/api\/reports\/.+\/file#page=1$/,
+  );
+  await page.keyboard.press("Escape");
+
+  // When the page can't be drawn, the PDF itself is offered, opened at the right page.
+  await source.click();
+  await expect(dialog.getByText("Page 1 of the original PDF")).toBeVisible();
+  await expect(dialog.getByRole("link", { name: /Open page 1|Download the PDF/ })).toHaveAttribute(
+    "href",
+    /\/file#page=1$/,
+  );
+});
+
 test("the timeline shows trends and the doctor brief", async ({ page }) => {
   await startDemo(page);
   await page.getByRole("link", { name: /results over time/ }).click();

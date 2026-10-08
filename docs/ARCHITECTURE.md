@@ -278,6 +278,23 @@ signed-in person's working links, and returns the link drawn as an SVG by the `q
 page shows it on a white tile (scanners need dark squares on light, whatever the theme) and can save
 it as a PNG or an SVG.
 
+### 20. Exact boxes on PDFs (`backend/app/services/pdf_text.py`)
+
+Claude returns a rough box around each value it reads (section 5). A PDF made by a lab's software
+also contains its text, with the exact position of every word, so after Claude reads a PDF,
+`add_pdf_boxes()` uses `pdfplumber` to:
+
+1. collect the words on each page and group them into printed lines,
+2. for each value, find the line that prints the test's name and then the value exactly as Claude read
+   it, as the first result after the name,
+3. keep the box only if exactly one line in the whole file matches, as fractions of the page like
+   Claude's boxes, so nothing else in the app changes.
+
+A sure match replaces Claude's box; anything else leaves it. Scans have no text, so nothing changes for
+them. The same library draws a page as an image: `GET /api/reports/{id}/pages/{n}` returns a PNG for the
+owner, and the "where did this number come from" dialog shows it with the highlight, the same way it
+shows a photo.
+
 ## The database
 
 Seven tables, defined in `backend/app/models.py`:

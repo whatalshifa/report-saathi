@@ -23,6 +23,7 @@ from app.services.catalog import (
 )
 from app.services.extraction import ExtractedReport, ExtractedTest, ExtractionError, Extractor
 from app.services.flagging import compute_flag, parse_value, resolve_range
+from app.services.pdf_text import add_pdf_boxes
 from app.services.storage import Storage
 
 log = logging.getLogger(__name__)
@@ -189,7 +190,8 @@ def process_report(
         session.commit()
 
         try:
-            extracted = extractor.extract(storage.read(report.storage_key), report.content_type)
+            data = storage.read(report.storage_key)
+            extracted = extractor.extract(data, report.content_type)
             if not extracted.is_lab_report:
                 raise ExtractionError("This file does not look like a lab report.")
             if not extracted.tests:
@@ -204,6 +206,9 @@ def process_report(
             session.commit()
             return
 
+        if report.content_type == "application/pdf":
+            # Exact boxes from the PDF's own text where it has some; Claude's estimates otherwise.
+            add_pdf_boxes(data, extracted.tests)
         report.lab_name = _clip(extracted.lab_name, 255)
         report.patient_name = _clip(extracted.patient_name, 255)
         report.patient_age = _clip(extracted.patient_age, 50)

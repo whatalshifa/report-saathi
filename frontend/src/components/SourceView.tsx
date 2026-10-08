@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 import { CorrectedChip } from "@/components/ValueFix";
-import { reportFileUrl, type SourceBox, type TestResult } from "@/lib/api";
+import { reportFileUrl, reportPageUrl, type SourceBox, type TestResult } from "@/lib/api";
 import { usePdfViewer } from "@/lib/usePdfViewer";
 
 // "Where did this number come from?": a page icon beside a value opens the original report
@@ -32,7 +32,10 @@ export function SourceButton({ name, onClick }: { name: string; onClick: (trigge
   );
 }
 
-/** The original page with the value's box highlighted (images), or a way to open the right page (PDFs). */
+/**
+ * The original page with the value's box highlighted. A PDF's page is drawn as an image by the API;
+ * if that fails, the dialog offers the PDF itself, opened at the right page.
+ */
 export function SourceDialog({
   reportId,
   contentType,
@@ -110,7 +113,7 @@ export function SourceDialog({
           </button>
         </div>
 
-        {isPdf ? (
+        {isPdf && failed ? (
           <div className="rounded-xl border border-line bg-background p-6 text-center">
             <p className="font-semibold">Page {box.page} of the original PDF</p>
             <p className="mt-1 text-sm text-muted">
@@ -140,7 +143,7 @@ export function SourceDialog({
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   ref={image}
-                  src={reportFileUrl(reportId)}
+                  src={isPdf ? reportPageUrl(reportId, box.page) : reportFileUrl(reportId)}
                   alt={`Page ${box.page} of the original report, with ${result.name} highlighted`}
                   onLoad={centreOnBox}
                   onError={() => setFailed(true)}
@@ -161,9 +164,21 @@ export function SourceDialog({
             </div>
             <figcaption className="flex flex-wrap items-center justify-between gap-2 text-sm text-muted">
               <span>Read from page {box.page} of the original</span>
-              <button type="button" onClick={() => setZoomed((z) => !z)} className="btn btn-secondary btn-sm">
-                {zoomed ? "Show whole page" : "Zoom in"}
-              </button>
+              <span className="flex flex-wrap gap-2">
+                {isPdf && (
+                  <a
+                    href={`${reportFileUrl(reportId)}#page=${box.page}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-secondary btn-sm"
+                  >
+                    {showsPdf ? "Open the PDF" : "Download the PDF"}
+                  </a>
+                )}
+                <button type="button" onClick={() => setZoomed((z) => !z)} className="btn btn-secondary btn-sm">
+                  {zoomed ? "Show whole page" : "Zoom in"}
+                </button>
+              </span>
             </figcaption>
           </figure>
         )}

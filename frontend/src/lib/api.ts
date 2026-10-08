@@ -265,6 +265,8 @@ export const getReport = (id: string) => request<ReportDetail>(`/api/reports/${i
 export const deleteReport = (id: string) => request<void>(`/api/reports/${id}`, { method: "DELETE" });
 /** The original uploaded file, for an <img> or a new tab; the browser sends the sign-in cookie itself. */
 export const reportFileUrl = (id: string) => `/api/reports/${id}/file`;
+/** One page of an original PDF, drawn as an image by the API, so a value can be marked on it. */
+export const reportPageUrl = (id: string, page: number) => `/api/reports/${id}/pages/${page}`;
 /** Whether there is an original file to show; the oldest sample reports have only a text placeholder. */
 export const hasOriginal = (report: ReportDetail) =>
   report.content_type === "application/pdf" || report.content_type.startsWith("image/");

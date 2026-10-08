@@ -294,3 +294,20 @@ drawing anything, so the endpoint can't be used to make codes for other addresse
 because many scanners fail on light-on-dark codes, and it uses medium error correction, which still
 scans off a phone screen with some glare. The PNG download is drawn from the SVG in the browser, since
 phone galleries and WhatsApp don't take SVGs.
+
+**Boxes from the PDF's own text, but only exact, unique matches.** Claude's boxes are estimates from
+looking at the page; a PDF made by lab software already holds each character's exact position, so
+`pdfplumber` (pure Python, MIT licensed) reads them for free and without another AI call. For each value
+it needs the test's printed name and then, on the same printed line, the value exactly as Claude copied
+it, as the first result after the name: if a different number comes first (say Claude misread 12.0 as
+13.0, and 13.0 is the start of the range), there is no match, rather than a highlight on the range.
+Names match as whole words ("Hb" never matches "HbA1c"), and a name-and-value found on two lines (a
+repeated page) counts as unsure. A sure match replaces Claude's box; anything else keeps it. Turned
+pages are skipped, a broken PDF just keeps Claude's boxes, and only the kind of error is logged, never
+its message, which could quote the report.
+
+**Draw PDF pages on the server instead of adding a PDF viewer to the website.** Phase 5 sent PDFs to
+the browser's viewer at `#page=N`, which can't show a highlight and doesn't exist on Android. pdfplumber
+already brings `pypdfium2` (Chrome's PDF engine) to draw pages, so the API returns one page as a PNG at
+150 dots per inch, owner only and `no-store` like the file itself, and the dialog treats it exactly as a
+photo report. The website stays free of a PDF library. Pages are drawn on request rather than stored, so no unencrypted copy of a report sits on disk.
