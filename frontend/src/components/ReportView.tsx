@@ -1,16 +1,18 @@
 "use client";
 
+import { ArrowRight, ExternalLink, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { ExplanationPanel } from "@/components/ExplanationPanel";
 import { FlagBadge } from "@/components/FlagBadge";
+import { MoreMenu, MoreMenuItem } from "@/components/MoreMenu";
 import { BackLink, PageHeader } from "@/components/PageHeader";
 import { RangeBar } from "@/components/RangeBar";
 import { SkeletonPage } from "@/components/Skeleton";
 import { SourceButton, SourceDialog } from "@/components/SourceView";
-import { StatCard } from "@/components/StatCard";
+import { StatCard, StatRow } from "@/components/StatCard";
 import { StatusPanel } from "@/components/StatusPanel";
 import { TypicalRangeNote } from "@/components/TypicalRangeNote";
 import { CorrectedChip, FixButton, ValueEditor } from "@/components/ValueFix";
@@ -128,7 +130,7 @@ export function ReportView({ id }: { id: string }) {
         title={report.lab_name ?? report.filename}
         description={
           <>
-            <p className="flex flex-wrap gap-x-2">
+            <p className="flex flex-wrap gap-x-2 text-sm">
               {[
                 report.patient_name,
                 [formatAge(report.patient_age), formatSex(report.patient_sex)].filter(Boolean).join(", "),
@@ -140,7 +142,7 @@ export function ReportView({ id }: { id: string }) {
                   <span key={part} className="whitespace-nowrap">
                     {part}
                     {i < parts.length - 1 && (
-                      <span aria-hidden className="ml-2">
+                      <span aria-hidden className="ml-2 text-stone-400">
                         ·
                       </span>
                     )}
@@ -148,8 +150,9 @@ export function ReportView({ id }: { id: string }) {
                 ))}
             </p>
             <p className="mt-2 text-sm">
-              <Link href={`/profiles/${report.profile.id}`} className="link">
-                See {possessive(report.profile.name)} results over time →
+              <Link href={`/profiles/${report.profile.id}`} className="link inline-flex items-center gap-1">
+                See {possessive(report.profile.name)} results over time
+                <ArrowRight aria-hidden className="h-4 w-4" />
               </Link>
             </p>
           </>
@@ -164,48 +167,51 @@ export function ReportView({ id }: { id: string }) {
                 className="btn btn-secondary btn-sm"
                 title={downloadsPdf ? "This phone saves the PDF to its downloads to open it" : undefined}
               >
+                <ExternalLink aria-hidden className="h-3.5 w-3.5" />
                 {downloadsPdf ? "Download original" : "View original"}
               </a>
             )}
-            <button onClick={handleDelete} className="btn btn-danger-quiet btn-sm">
-              Delete
-            </button>
+            <MoreMenu label="More actions for this report">
+              <MoreMenuItem danger onSelect={handleDelete} icon={<Trash2 aria-hidden className="h-4 w-4" />}>
+                Delete
+              </MoreMenuItem>
+            </MoreMenu>
           </>
         }
       />
 
       {report.name_matches_profile === false && <WrongPersonWarning report={report} onMoved={setReport} />}
 
-      <section className="grid grid-cols-3 gap-3">
+      <StatRow>
         <StatCard label="Values read" value={report.results.length} />
         <StatCard label="Outside normal range" value={flagged.length} tone={flagged.length > 0 ? "warn" : undefined} />
         <StatCard label="Within range" value={report.results.filter((r) => r.flag === "normal").length} />
-      </section>
+      </StatRow>
 
       {flagged.length > 0 && (
         <section aria-labelledby="needs-attention">
           <h2 id="needs-attention" className="section-title mb-3">
             Needs attention
           </h2>
-          <ul className="grid gap-3 sm:grid-cols-2">
+          {/* One list on phones; two columns of cards from tablets up. */}
+          <ul className="card divide-y divide-line overflow-hidden sm:grid sm:grid-cols-2 sm:gap-3 sm:divide-y-0 sm:overflow-visible sm:rounded-none sm:border-0 sm:bg-transparent">
             {flagged.map((r) => (
-              <li
-                key={r.id}
-                className="card p-4"
-              >
+              <li key={r.id} className="p-4 sm:rounded-card sm:border sm:border-line sm:bg-surface">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="font-medium">{r.name}</p>
+                  <p className="text-[15px] font-medium">{r.name}</p>
                   <FlagBadge flag={r.flag} />
                 </div>
-                <p className="mt-1 flex items-center gap-1.5">
-                  <span className="text-2xl font-semibold tracking-tight tabular-nums">{r.value_text}</span>
-                  <span className="text-sm text-muted">{r.unit}</span>
-                  <SourceToggle name={r.name} onShow={showSource(r)} />
-                </p>
-                <p className="mb-3 text-sm text-muted">
-                  Normal <span className="tabular-nums">{formatRange(r.ref_low, r.ref_high, r.reference_text)}</span>
-                  <TypicalRangeNote rangeSource={r.range_source} source={r.typical_range_source} />
-                </p>
+                <div className="mt-1 mb-2.5 flex flex-wrap items-center justify-between gap-x-3">
+                  <p className="flex items-center gap-1.5">
+                    <span className="text-lg font-semibold tracking-tight tabular-nums">{r.value_text}</span>
+                    <span className="text-sm text-muted">{r.unit}</span>
+                    <SourceToggle name={r.name} onShow={showSource(r)} />
+                  </p>
+                  <p className="text-[13px] text-muted">
+                    Normal <span className="tabular-nums">{formatRange(r.ref_low, r.ref_high, r.reference_text)}</span>
+                    <TypicalRangeNote rangeSource={r.range_source} source={r.typical_range_source} />
+                  </p>
+                </div>
                 <RangeBar result={r} />
                 {r.corrected && (
                   <div className="mt-3">
@@ -233,7 +239,7 @@ export function ReportView({ id }: { id: string }) {
         </div>
         {sections.map(([section, results]) => (
           <div key={section}>
-            <h3 className="mb-2 text-xs font-semibold tracking-[0.08em] text-muted uppercase">{section}</h3>
+            <h3 className="mb-2 text-sm font-medium text-muted">{section}</h3>
             {/* Phones get a stacked list; wider screens get a table. */}
             <ul className="card divide-y divide-line sm:hidden">
               {results.map((r) => (
@@ -255,13 +261,13 @@ export function ReportView({ id }: { id: string }) {
                   <col className="w-[20%]" />
                   <col className="w-[14%]" />
                 </colgroup>
-                <thead className="border-b border-line bg-stone-50/80 text-left text-xs text-muted dark:bg-stone-800/40">
+                <thead className="border-b border-line text-left text-xs text-muted">
                   <tr>
                     <th className="px-4 py-2.5 font-medium">Test</th>
                     <th className="px-4 py-2.5 font-medium">Result</th>
                     <th className="px-4 py-2.5 font-medium">Normal range</th>
                     <th className="px-4 py-2.5 font-medium">Where it sits</th>
-                    <th className="px-4 py-2.5 font-medium">Status</th>
+                    <th className="px-4 py-2.5 text-right font-medium">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-line">
@@ -339,28 +345,42 @@ function useFixForm() {
 function ResultItem({ reportId, result: r, onSaved, onShowSource }: ResultProps) {
   const { editing, button, toggle, close } = useFixForm();
   return (
-    <li className="space-y-2 px-4 py-3.5">
-      <div className="flex items-start justify-between gap-3">
-        <p className="font-medium">{r.name}</p>
-        <FlagBadge flag={r.flag} />
+    <li className="px-4 py-3">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-[15px] font-medium">{r.name}</p>
+          <p className="mt-0.5 text-[13px] text-muted">
+            Normal <span className="tabular-nums">{formatRange(r.ref_low, r.ref_high, r.reference_text)}</span>
+            <TypicalRangeNote rangeSource={r.range_source} source={r.typical_range_source} />
+          </p>
+        </div>
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          <p className="text-[15px] whitespace-nowrap tabular-nums">
+            <span className="font-semibold">{r.value_text}</span>{" "}
+            <span className="text-[13px] text-muted">{r.unit}</span>
+          </p>
+          <FlagBadge flag={r.flag} />
+        </div>
       </div>
-      <div className="flex items-center justify-between gap-3 text-sm">
-        <p className="flex min-w-0 flex-wrap items-baseline gap-x-1">
-          <span className="text-base font-semibold tabular-nums">{r.value_text}</span>
-          <span className="text-muted">{r.unit}</span>
-        </p>
+      <div className="mt-2 flex items-center gap-3">
+        <div className="min-w-0 flex-1">
+          <RangeBar result={r} />
+        </div>
         <span className="-mr-2 flex shrink-0">
           <SourceToggle name={r.name} onShow={onShowSource} />
           <FixButton ref={button} name={r.name} open={editing} onClick={toggle} />
         </span>
       </div>
-      <p className="text-sm text-muted">
-        Normal <span className="tabular-nums">{formatRange(r.ref_low, r.ref_high, r.reference_text)}</span>
-        <TypicalRangeNote rangeSource={r.range_source} source={r.typical_range_source} />
-      </p>
-      <CorrectedChip result={r} showReading />
-      {editing && <ValueEditor reportId={reportId} result={r} onSaved={onSaved} onClose={close} />}
-      <RangeBar result={r} />
+      {r.corrected && (
+        <div className="mt-2">
+          <CorrectedChip result={r} showReading />
+        </div>
+      )}
+      {editing && (
+        <div className="mt-2">
+          <ValueEditor reportId={reportId} result={r} onSaved={onSaved} onClose={close} />
+        </div>
+      )}
     </li>
   );
 }
@@ -391,7 +411,7 @@ function ResultRow({ reportId, result: r, onSaved, onShowSource }: ResultProps) 
         <td className="px-4 py-2.5">
           <RangeBar result={r} />
         </td>
-        <td className="px-4 py-2.5">
+        <td className="px-4 py-2.5 text-right">
           <FlagBadge flag={r.flag} />
         </td>
       </tr>
@@ -451,7 +471,7 @@ function WrongPersonWarning({ report, onMoved }: { report: ReportDetail; onMoved
   return (
     <section
       role="status"
-      className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm dark:border-amber-800 dark:bg-amber-950/40"
+      className="rounded-card border border-amber-200 bg-amber-50 p-4 text-sm dark:border-amber-800 dark:bg-amber-950/40"
     >
       <p className="font-medium text-amber-900 dark:text-amber-200">
         This report is in {possessive(report.profile.name)} reports, but the name on it is {report.patient_name}.
@@ -465,7 +485,7 @@ function WrongPersonWarning({ report, onMoved }: { report: ReportDetail; onMoved
             value={target}
             onChange={(e) => setTarget(e.target.value)}
             aria-label="Move to"
-            className="rounded-lg border border-amber-300 bg-surface px-3 py-1.5 dark:border-amber-800"
+            className="h-9 rounded-ctl border border-amber-300 bg-surface px-3 dark:border-amber-800"
           >
             <option value="">Move to…</option>
             {profiles.map((p) => (
@@ -477,7 +497,7 @@ function WrongPersonWarning({ report, onMoved }: { report: ReportDetail; onMoved
           <button
             disabled={!target}
             onClick={move}
-            className="rounded-lg bg-amber-700 px-3 py-1.5 font-semibold text-white hover:bg-amber-800 disabled:opacity-50"
+            className="h-9 rounded-ctl bg-amber-700 px-3 font-medium text-white hover:bg-amber-800 disabled:opacity-50"
           >
             Move
           </button>

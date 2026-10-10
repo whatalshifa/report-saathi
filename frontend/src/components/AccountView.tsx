@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Download } from "lucide-react";
 import Link from "next/link";
 
 import { PageHeader } from "@/components/PageHeader";
@@ -55,10 +56,7 @@ function YourData() {
         Something read wrongly? Tap the pencil beside the value on the report to fix it.
       </p>
       <button type="button" onClick={start} disabled={working} className="btn btn-secondary mt-4">
-        <svg viewBox="0 0 20 20" className="h-4 w-4" fill="currentColor" aria-hidden>
-          <path d="M10.75 2.75a.75.75 0 0 0-1.5 0v8.614L6.295 8.235a.75.75 0 1 0-1.09 1.03l4.25 4.5a.75.75 0 0 0 1.09 0l4.25-4.5a.75.75 0 0 0-1.09-1.03l-2.955 3.129V2.75Z" />
-          <path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" />
-        </svg>
+        <Download aria-hidden className="h-4 w-4" />
         {working ? "Preparing…" : "Download all my data"}
       </button>
       <div aria-live="polite" className="mt-3 text-sm">
@@ -127,8 +125,8 @@ export function AccountView() {
           <div className="skeleton h-8 w-56" />
           <div className="skeleton h-4 w-72 max-w-full" />
         </div>
-        <div className="skeleton h-40 rounded-2xl" />
-        <div className="skeleton h-40 rounded-2xl" />
+        <div className="skeleton h-40 rounded-card" />
+        <div className="skeleton h-40 rounded-card" />
       </div>
     );
   }
@@ -150,7 +148,7 @@ export function AccountView() {
 
       <section className="card p-5 text-sm sm:p-6">
         <h2 className="section-title mb-3">How your data is kept</h2>
-        <ul className="list-disc space-y-1.5 pl-5 text-stone-700 marker:text-brand-600 dark:text-stone-300">
+        <ul className="list-disc space-y-1.5 pl-5 text-stone-700 marker:text-stone-400 dark:text-stone-300">
           <li>Report files are encrypted before they are stored, each with its own key.</li>
           {!user.is_guest && <li>Your password is stored only as a slow, salted hash (Argon2), never as text.</li>}
           <li>Only your account can see your family’s reports.</li>
@@ -182,8 +180,8 @@ export function AccountView() {
           </Link>
         </section>
       ) : (
-        <section className="rounded-2xl border border-rose-200 bg-surface p-5 sm:p-6 dark:border-rose-900">
-          <h2 className="section-title text-rose-800 dark:text-rose-300">Delete account</h2>
+        <section className="card p-5 sm:p-6">
+          <h2 className="section-title">Delete account</h2>
           <p className="mt-1 text-sm text-muted">
             Deletes your account, every family profile, every report and its file, and all explanations and briefs.
             This can’t be undone.
@@ -200,7 +198,7 @@ export function AccountView() {
           <button
             disabled={confirmText !== "DELETE"}
             onClick={removeAccount}
-            className="btn btn-danger mt-3"
+            className="btn btn-danger mt-4"
           >
             Delete everything
           </button>

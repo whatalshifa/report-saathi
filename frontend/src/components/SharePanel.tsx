@@ -1,5 +1,6 @@
 "use client";
 
+import { Check } from "lucide-react";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 
 import { ErrorNote } from "@/components/Skeleton";
@@ -116,7 +117,7 @@ export function SharePanel({
       </p>
 
       {created && (
-        <div className="mt-5 rounded-xl border border-brand-200 bg-brand-50/60 p-4 sm:p-5 dark:border-brand-900 dark:bg-brand-950/40">
+        <div className="mt-5 rounded-ctl border border-brand-200 bg-brand-50/60 p-4 sm:p-5 dark:border-brand-900 dark:bg-brand-950/40">
           <label htmlFor="share-url" className="label">
             Your link, works until {formatDate(created.expires_at)}
           </label>
@@ -130,13 +131,7 @@ export function SharePanel({
           <div className="mt-3 flex flex-wrap gap-2">
             <button onClick={copy} className="btn btn-primary btn-sm">
               {copied ? (
-                <svg viewBox="0 0 20 20" className="h-4 w-4" fill="currentColor" aria-hidden>
-                  <path
-                    fillRule="evenodd"
-                    d="M16.7 5.3a1 1 0 0 1 0 1.4l-8 8a1 1 0 0 1-1.4 0l-4-4a1 1 0 1 1 1.4-1.4L8 12.58l7.3-7.3a1 1 0 0 1 1.4 0Z"
-                    clipRule="evenodd"
-                  />
-                </svg>
+                <Check aria-hidden className="h-4 w-4" />
               ) : null}
               {copied ? "Copied" : "Copy link"}
             </button>
@@ -165,7 +160,7 @@ export function SharePanel({
         </div>
       )}
 
-      <button onClick={create} disabled={busy} className={`btn mt-4 ${created ? "btn-secondary" : "btn-primary"}`}>
+      <button onClick={create} disabled={busy} className="btn btn-secondary mt-4">
         {busy ? "Making a link…" : created ? "Make another link" : "Create a link"}
       </button>
 
@@ -231,7 +226,7 @@ function ShareQr({ url }: { url: string }) {
       ) : (
         <>
           {/* Always black on a white tile: scanners need the contrast, in dark mode too. */}
-          <div className="h-48 w-48 shrink-0 rounded-xl border border-stone-200 bg-white p-1 shadow-sm">
+          <div className="h-48 w-48 shrink-0 rounded-ctl border border-stone-200 bg-white p-1 shadow-sm">
             {svg ? (
               // A data URL made here, not a remote image, so not one for Next's image optimiser.
               // eslint-disable-next-line @next/next/no-img-element

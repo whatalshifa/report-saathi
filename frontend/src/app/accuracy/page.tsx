@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { PageHeader } from "@/components/PageHeader";
-import { StatCard } from "@/components/StatCard";
+import { StatCard, StatRow } from "@/components/StatCard";
 import { StatusPanel } from "@/components/StatusPanel";
 import results from "@/data/accuracy.json";
 
@@ -40,11 +40,11 @@ export default function AccuracyPage() {
 
       {data.run_at && data.overall ? (
         <>
-          <section className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <StatRow>
             {METRICS.slice(0, 3).map(([key, label]) => (
               <StatCard key={key} label={label} value={pct(data.overall?.[key])} />
             ))}
-          </section>
+          </StatRow>
           <section className="overflow-x-auto card">
             <table className="w-full text-sm">
               <thead className="border-b border-line bg-stone-50/80 text-left text-xs text-muted dark:bg-stone-800/40">

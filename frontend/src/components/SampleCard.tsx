@@ -22,8 +22,8 @@ export function SampleCard({ onAdded }: { onAdded: (profile: Profile) => void })
 
   return (
     <div className="card p-5">
-      <p className="eyebrow">No report handy?</p>
-      <p className="mt-2 font-semibold">Try the sample reports</p>
+      <p className="text-[13px] text-muted">No report handy?</p>
+      <p className="mt-0.5 font-semibold">Try the sample reports</p>
       <p className="mt-1 text-sm text-muted">
         Adds Meera, a made-up person, with three reports from two labs, explanations in three languages and a doctor
         brief.
