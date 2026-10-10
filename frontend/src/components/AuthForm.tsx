@@ -57,17 +57,17 @@ export function AuthForm({ mode, next }: { mode: "login" | "signup"; next?: stri
 
   return (
     <div className="mx-auto grid max-w-4xl overflow-hidden rounded-3xl border border-line bg-surface shadow-sm md:grid-cols-2">
-      <aside className="hidden flex-col justify-between bg-teal-800 p-10 text-teal-50 md:flex dark:bg-teal-950">
+      <aside className="hidden flex-col justify-between bg-brand-800 p-10 text-brand-50 md:flex dark:bg-brand-950">
         <span className="flex items-center gap-2.5 text-lg font-bold tracking-tight text-white">
           <LogoMark className="h-9 w-9 rounded-[10px] ring-1 ring-white/25" />
           ReportSaathi
         </span>
         <div>
           <p className="text-2xl font-semibold text-white">Every value read. Every flag explained.</p>
-          <ul className="mt-6 space-y-3 text-sm text-teal-50">
+          <ul className="mt-6 space-y-3 text-sm text-brand-50">
             {POINTS.map((point) => (
               <li key={point} className="flex items-start gap-3">
-                <svg viewBox="0 0 20 20" className="mt-0.5 h-4 w-4 shrink-0 text-teal-300" fill="currentColor" aria-hidden>
+                <svg viewBox="0 0 20 20" className="mt-0.5 h-4 w-4 shrink-0 text-brand-300" fill="currentColor" aria-hidden>
                   <path
                     fillRule="evenodd"
                     d="M16.7 5.3a1 1 0 0 1 0 1.4l-8 8a1 1 0 0 1-1.4 0l-4-4a1 1 0 1 1 1.4-1.4L8 12.58l7.3-7.3a1 1 0 0 1 1.4 0Z"
@@ -79,7 +79,7 @@ export function AuthForm({ mode, next }: { mode: "login" | "signup"; next?: stri
             ))}
           </ul>
         </div>
-        <p className="text-xs text-teal-100/80">Not medical advice. Always check with your doctor.</p>
+        <p className="text-xs text-brand-100/80">Not medical advice. Always check with your doctor.</p>
       </aside>
       <div className="p-6 sm:p-10">
       <h1 className="page-title">{isSignup ? "Create your account" : "Sign in"}</h1>

@@ -19,7 +19,7 @@ export default function Image() {
           width: "100%",
           height: "100%",
           display: "flex",
-          background: "linear-gradient(135deg, #f0fdfa 0%, #f7f9fb 55%, #e0f2fe 100%)",
+          background: "linear-gradient(135deg, #fbf7f2 0%, #fbf7f2 55%, #ffe7dc 100%)",
           padding: 72,
           fontFamily: "sans-serif",
         }}
@@ -30,8 +30,8 @@ export default function Image() {
               style={{
                 width: 64,
                 height: 64,
-                borderRadius: 18,
-                background: "#0f766e",
+                borderRadius: 32,
+                background: "#6b3768",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -39,13 +39,13 @@ export default function Image() {
             >
               <div style={{ width: 30, height: 38, background: "white", borderRadius: 4, display: "flex" }} />
             </div>
-            <div style={{ display: "flex", fontSize: 40, fontWeight: 700, color: "#0f766e" }}>ReportSaathi</div>
+            <div style={{ display: "flex", fontSize: 40, fontWeight: 700, color: "#6b3768" }}>ReportSaathi</div>
           </div>
           <div style={{ display: "flex", flexDirection: "column" }}>
-            <div style={{ fontSize: 60, fontWeight: 700, color: "#0f172a", lineHeight: 1.1 }}>
+            <div style={{ fontSize: 60, fontWeight: 700, color: "#2a1d28", lineHeight: 1.1 }}>
               Understand every lab report your family gets.
             </div>
-            <div style={{ fontSize: 28, color: "#475569", marginTop: 24 }}>
+            <div style={{ fontSize: 28, color: "#6e5f69", marginTop: 24 }}>
               Every value read and flagged, explained in English, Hindi or Marathi.
             </div>
           </div>
@@ -61,14 +61,14 @@ export default function Image() {
             display: "flex",
             flexDirection: "column",
             gap: 18,
-            boxShadow: "0 20px 50px rgba(15, 118, 110, 0.15)",
+            boxShadow: "0 20px 50px rgba(107, 55, 104, 0.15)",
           }}
         >
           {ROWS.map(([name, value, flag, bg, fg]) => (
             <div key={name} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div style={{ display: "flex", flexDirection: "column" }}>
-                <div style={{ fontSize: 24, fontWeight: 600, color: "#0f172a" }}>{name}</div>
-                <div style={{ fontSize: 20, color: "#64748b" }}>{value}</div>
+                <div style={{ fontSize: 24, fontWeight: 600, color: "#2a1d28" }}>{name}</div>
+                <div style={{ fontSize: 20, color: "#6e5f69" }}>{value}</div>
               </div>
               <div
                 style={{

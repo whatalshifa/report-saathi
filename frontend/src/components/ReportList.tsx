@@ -10,7 +10,7 @@ import { formatDate } from "@/lib/format";
 
 // A read report needs no label (it is the usual case); only the others say where they are.
 const STATUS: Record<ReportSummary["status"], { label: string; className: string } | null> = {
-  queued: { label: "Waiting", className: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300" },
+  queued: { label: "Waiting", className: "bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-300" },
   processing: { label: "Reading…", className: "bg-sky-50 text-sky-800 dark:bg-sky-950 dark:text-sky-200" },
   done: null,
   failed: { label: "Couldn't read", className: "bg-rose-50 text-rose-800 dark:bg-rose-950 dark:text-rose-200" },
@@ -44,11 +44,11 @@ export function ReportList({ profileId }: { profileId: string }) {
           <li key={report.id}>
             <Link
               href={`/reports/${report.id}`}
-              className="group flex items-center gap-4 px-4 py-4 transition-colors hover:bg-slate-50 focus-visible:-outline-offset-2 sm:px-5 dark:hover:bg-slate-800/50"
+              className="group flex items-center gap-4 px-4 py-4 transition-colors hover:bg-stone-50 focus-visible:-outline-offset-2 sm:px-5 dark:hover:bg-stone-800/50"
             >
               <span
                 aria-hidden
-                className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-teal-50 text-teal-700 dark:bg-teal-950 dark:text-teal-300"
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300"
               >
                 <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.6}>
                   <path
@@ -75,7 +75,7 @@ export function ReportList({ profileId }: { profileId: string }) {
               {status && <span className={`badge shrink-0 ${status.className}`}>{status.label}</span>}
               <svg
                 viewBox="0 0 20 20"
-                className="h-5 w-5 shrink-0 text-slate-400 transition-transform group-hover:translate-x-0.5 dark:text-slate-500"
+                className="h-5 w-5 shrink-0 text-stone-400 transition-transform group-hover:translate-x-0.5 dark:text-stone-500"
                 fill="currentColor"
                 aria-hidden
               >

@@ -134,7 +134,7 @@ export function TrendChart({ series }: { series: TrendSeries }) {
                 x2={PAD.left + plotW}
                 y1={y(t)}
                 y2={y(t)}
-                className="stroke-slate-200/80 dark:stroke-slate-800"
+                className="stroke-stone-200/80 dark:stroke-stone-800"
                 strokeWidth={1}
               />
               <text
@@ -142,7 +142,7 @@ export function TrendChart({ series }: { series: TrendSeries }) {
                 y={y(t)}
                 textAnchor="end"
                 dominantBaseline="middle"
-                className="fill-slate-500 text-[11px] tabular-nums"
+                className="fill-stone-500 text-[11px] tabular-nums"
               >
                 {compact(t)}
               </text>
@@ -155,7 +155,7 @@ export function TrendChart({ series }: { series: TrendSeries }) {
               x={x(times[i])}
               y={HEIGHT - 8}
               textAnchor={points.length > 1 && i === 0 ? "start" : i === points.length - 1 && i > 0 ? "end" : "middle"}
-              className="fill-slate-500 text-[11px]"
+              className="fill-stone-500 text-[11px]"
             >
               {formatShortDate(p.date)}
             </text>
@@ -166,11 +166,11 @@ export function TrendChart({ series }: { series: TrendSeries }) {
               x2={x(times[active])}
               y1={PAD.top}
               y2={PAD.top + plotH}
-              className="stroke-slate-400"
+              className="stroke-stone-400"
               strokeWidth={1}
             />
           )}
-          <path d={path} fill="none" strokeWidth={2} strokeLinejoin="round" className="stroke-slate-500" />
+          <path d={path} fill="none" strokeWidth={2} strokeLinejoin="round" className="stroke-stone-500" />
           {points.map((p, i) => (
             <circle
               key={p.report_id}
@@ -179,7 +179,7 @@ export function TrendChart({ series }: { series: TrendSeries }) {
               r={active === i ? 6.5 : 5}
               fill={DOT[p.flag]}
               strokeWidth={2}
-              className="stroke-white dark:stroke-slate-900"
+              className="stroke-white dark:stroke-stone-900"
             />
           ))}
           {/* Invisible hover and keyboard targets */}

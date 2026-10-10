@@ -16,11 +16,11 @@ const ICONS: Record<Exclude<Tone, "working">, string> = {
 };
 
 const TONE_STYLE: Record<Tone, string> = {
-  empty: "bg-teal-50 text-teal-700 dark:bg-teal-950 dark:text-teal-300",
-  missing: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300",
-  link: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300",
+  empty: "bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300",
+  missing: "bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-300",
+  link: "bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-300",
   error: "bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300",
-  working: "bg-teal-50 text-teal-700 dark:bg-teal-950 dark:text-teal-300",
+  working: "bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300",
 };
 
 /**

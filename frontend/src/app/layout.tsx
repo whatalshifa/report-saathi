@@ -1,17 +1,25 @@
 import type { Metadata, Viewport } from "next";
-import { Geist } from "next/font/google";
+import { Baloo_2, Mukta } from "next/font/google";
 import { cookies } from "next/headers";
 import Link from "next/link";
 
+import { MobileTabs } from "@/components/MobileTabs";
 import { ServerWaking } from "@/components/ServerWaking";
 import { ServiceWorker } from "@/components/ServiceWorker";
 import { SiteHeader } from "@/components/SiteHeader";
 import { THEME_SCRIPT } from "@/components/ThemeToggle";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+// Both have Devanagari, so explanations in Hindi and Marathi match the English ones.
+const mukta = Mukta({
+  variable: "--font-mukta",
+  subsets: ["latin", "devanagari"],
+  weight: ["400", "500", "600", "700"],
+});
+const baloo = Baloo_2({
+  variable: "--font-baloo",
+  subsets: ["latin", "devanagari"],
+  weight: ["500", "600", "700", "800"],
 });
 
 const DESCRIPTION =
@@ -34,15 +42,15 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f7f9fb" },
-    { media: "(prefers-color-scheme: dark)", color: "#070b14" },
+    { media: "(prefers-color-scheme: light)", color: "#fbf7f2" },
+    { media: "(prefers-color-scheme: dark)", color: "#141015" },
   ],
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const signedIn = (await cookies()).has("rs_session");
   return (
-    <html lang="en" className={`${geistSans.variable} h-full antialiased`} suppressHydrationWarning>
+    <html lang="en" className={`${mukta.variable} ${baloo.variable} h-full antialiased`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
@@ -73,6 +81,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
             </nav>
           </div>
         </footer>
+        <MobileTabs signedIn={signedIn} />
         <ServerWaking />
         <ServiceWorker />
       </body>

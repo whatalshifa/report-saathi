@@ -33,17 +33,17 @@ export async function GET(_request: Request, { params }: RouteContext<"/icons/[n
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "#0f766e",
-          borderRadius: maskable ? 0 : size * (9 / 32),
+          background: "#6b3768",
+          borderRadius: maskable ? 0 : size / 2,
         }}
       >
         <svg width={glyph} height={glyph} viewBox="0 0 32 32">
           <path d="M10 7.5h8.5L23 12v12.5a1 1 0 0 1-1 1H10a1 1 0 0 1-1-1v-16a1 1 0 0 1 1-1Z" fill="#fff" />
-          <path d="M18.5 7.5V12H23" fill="none" stroke="#99f6e4" strokeWidth={1.5} strokeLinejoin="round" />
+          <path d="M18.5 7.5V12H23" fill="none" stroke="#e7cfe4" strokeWidth={1.5} strokeLinejoin="round" />
           <path
             d="M11 18.5h2.6l1.5-3.5 2.2 6 1.5-2.5H21"
             fill="none"
-            stroke="#0f766e"
+            stroke="#f06a48"
             strokeWidth={1.8}
             strokeLinecap="round"
             strokeLinejoin="round"

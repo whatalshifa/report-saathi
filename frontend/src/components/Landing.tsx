@@ -108,8 +108,20 @@ export function Landing() {
       <section className="grid items-center gap-12 pt-4 lg:grid-cols-[1.05fr_1fr] lg:pt-10">
         <div>
           <p className="eyebrow">Lab reports, made clear</p>
-          <h1 className="mt-4 text-4xl font-bold tracking-tight text-balance sm:text-5xl">
-            Understand every lab report your family gets.
+          <h1 className="mt-4 text-4xl leading-[1.05] font-extrabold text-balance sm:text-6xl">
+            Understand every lab report your{" "}
+            <span className="relative whitespace-nowrap text-brand-700 dark:text-brand-300">
+              family
+              <svg
+                aria-hidden
+                viewBox="0 0 200 12"
+                preserveAspectRatio="none"
+                className="absolute -bottom-1 left-0 h-3 w-full text-coral-400"
+              >
+                <path d="M2 9C50 3 150 3 198 7" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+              </svg>
+            </span>{" "}
+            gets.
           </h1>
           <p className="mt-5 max-w-xl text-lg text-pretty text-muted">
             Upload a photo or PDF. ReportSaathi reads every value, flags what&apos;s out of range, explains it in
@@ -129,13 +141,13 @@ export function Landing() {
       {/* How it works */}
       <section aria-labelledby="how">
         <p className="eyebrow">How it works</p>
-        <h2 id="how" className="mt-3 text-3xl font-bold tracking-tight">
+        <h2 id="how" className="mt-3 text-3xl font-bold">
           From a crumpled printout to a clear answer
         </h2>
         <ol className="mt-10 grid gap-6 md:grid-cols-3">
           {STEPS.map((step, i) => (
             <li key={step.title} className="card p-6">
-              <span className="grid h-9 w-9 place-items-center rounded-full bg-teal-50 text-sm font-bold text-teal-800 dark:bg-teal-950 dark:text-teal-200">
+              <span className="font-display grid h-10 w-10 place-items-center rounded-full bg-highlight text-lg font-bold text-brand-800 dark:text-brand-100">
                 {i + 1}
               </span>
               <h3 className="mt-4 font-semibold">{step.title}</h3>
@@ -148,13 +160,13 @@ export function Landing() {
       {/* Features */}
       <section aria-labelledby="features">
         <p className="eyebrow">What you get</p>
-        <h2 id="features" className="mt-3 max-w-2xl text-3xl font-bold tracking-tight">
+        <h2 id="features" className="mt-3 max-w-2xl text-3xl font-bold">
           Built for families who look after each other&apos;s health
         </h2>
         <div className="mt-10 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map((f) => (
             <div key={f.title}>
-              <span className="grid h-10 w-10 place-items-center rounded-xl bg-teal-700 text-white dark:bg-teal-600">
+              <span className="grid h-11 w-11 place-items-center rounded-full bg-brand-100 text-brand-700 dark:bg-brand-900 dark:text-brand-200">
                 <Icon d={f.icon} />
               </span>
               <h3 className="mt-4 font-semibold">{f.title}</h3>
@@ -169,7 +181,7 @@ export function Landing() {
         <div className="grid gap-8 p-6 sm:p-10 lg:grid-cols-2">
           <div>
             <p className="eyebrow">Under the hood</p>
-            <h2 id="stack" className="mt-3 text-2xl font-bold tracking-tight">
+            <h2 id="stack" className="mt-3 text-2xl font-bold">
               Production engineering, not a weekend demo
             </h2>
             <p className="mt-3 text-muted">
@@ -204,7 +216,7 @@ export function Landing() {
       <section aria-labelledby="faq" className="grid gap-10 lg:grid-cols-[1fr_2fr]">
         <div>
           <p className="eyebrow">Questions</p>
-          <h2 id="faq" className="mt-3 text-3xl font-bold tracking-tight">
+          <h2 id="faq" className="mt-3 text-3xl font-bold">
             Good to know
           </h2>
         </div>
@@ -219,61 +231,67 @@ export function Landing() {
       </section>
 
       {/* Closing call to action */}
-      <section className="rounded-3xl bg-teal-800 px-6 py-12 text-center text-white sm:px-12 dark:bg-teal-900">
-        <h2 className="text-3xl font-bold tracking-tight text-balance">See it with a real-looking report</h2>
-        <p className="mx-auto mt-3 max-w-xl text-teal-100">
+      <section className="relative overflow-hidden rounded-[2rem] bg-brand-800 px-6 py-12 text-center text-white sm:px-12 dark:bg-brand-900">
+        <div aria-hidden className="absolute -top-16 -right-16 h-48 w-48 rounded-full bg-coral-400/25" />
+        <div aria-hidden className="absolute -bottom-20 -left-10 h-48 w-48 rounded-full bg-brand-500/30" />
+        <h2 className="relative text-3xl font-bold text-balance">See it with a real-looking report</h2>
+        <p className="relative mx-auto mt-3 max-w-xl text-brand-100">
           The demo has three reports from two labs, explanations in three languages and a doctor brief.
         </p>
-        <div className="mt-8 flex justify-center">
-          <DemoButton className="btn btn-lg bg-white text-teal-900 shadow-sm hover:bg-teal-50" />
+        <div className="relative mt-8 flex justify-center">
+          <DemoButton className="btn btn-lg bg-white text-brand-900 shadow-sm hover:bg-brand-50" />
         </div>
       </section>
     </div>
   );
 }
 
-/** A still picture of the results screen, built from the same badge the app uses. */
+/**
+ * A still picture of what ReportSaathi does: a lab report sheet, the values it read marked with a
+ * highlighter where they're out of range, and a note in plain words pinned on top. Built from the same
+ * badge the app uses.
+ */
 function Preview() {
   return (
-    <div className="relative" aria-label="Preview of a read report" role="img">
-      <div
-        aria-hidden
-        className="absolute -inset-6 -z-10 rounded-[2rem] bg-gradient-to-br from-teal-200/60 via-sky-100/40 to-transparent blur-2xl dark:from-teal-900/40 dark:via-slate-900/20"
-      />
-      <div className="card p-5 shadow-xl shadow-teal-900/5 sm:p-6">
-        <div className="flex items-start justify-between gap-3">
+    <div className="relative pb-36 sm:pb-28" aria-label="Preview of a read report" role="img">
+      <div className="rotate-[0.6deg] rounded-[1.75rem] border border-line bg-surface p-5 shadow-xl shadow-brand-900/10 sm:p-7">
+        <div className="flex items-start justify-between gap-3 border-b-2 border-dashed border-line pb-4">
           <div>
-            <p className="font-semibold">Sample Pathology Lab, Pune</p>
+            <p className="font-display text-lg font-bold">Sample Pathology Lab, Pune</p>
             <p className="text-sm text-muted">Meera Joshi · 12 Jan 2026</p>
           </div>
           <span className="badge shrink-0 bg-rose-50 text-rose-800 ring-1 ring-rose-600/20 ring-inset dark:bg-rose-950/60 dark:text-rose-200 dark:ring-rose-400/25">
             10 outside range
           </span>
         </div>
-        <ul className="mt-5 divide-y divide-line">
+        <ul className="mt-2">
           {PREVIEW.map((row) => (
-            <li key={row.name} className="flex items-center justify-between gap-3 py-2.5 text-sm">
+            <li
+              key={row.name}
+              className="flex items-center justify-between gap-3 border-b border-line/70 py-2.5 text-sm last:border-0"
+            >
               <span className="min-w-0">
-                <span className="block truncate font-medium">{row.name}</span>
+                <span className="block truncate font-semibold">{row.name}</span>
                 <span className="text-xs text-muted">Normal {row.range}</span>
               </span>
               <span className="flex shrink-0 items-center gap-3">
-                <span className="tabular-nums">
-                  <span className="font-semibold">{row.value}</span> <span className="text-muted">{row.unit}</span>
+                <span
+                  className={`rounded-md px-1.5 tabular-nums ${row.flag === "normal" ? "" : "-rotate-1 bg-highlight"}`}
+                >
+                  <span className="font-bold">{row.value}</span> <span className="text-muted">{row.unit}</span>
                 </span>
                 <FlagBadge flag={row.flag} />
               </span>
             </li>
           ))}
         </ul>
-        <div className="mt-4 rounded-xl bg-teal-50 p-4 text-sm dark:bg-teal-950/60">
-          <p className="font-semibold text-teal-900 dark:text-teal-100">In plain words</p>
-          <p className="mt-1 text-teal-900/80 dark:text-teal-100/80">
-            A few values are outside their normal ranges, mostly linked to low iron, blood sugar on the higher side,
-            cholesterol, thyroid and vitamin D. None is at a dangerous level, but together they are worth a calm talk
-            with your doctor.
-          </p>
-        </div>
+      </div>
+      <div className="absolute right-2 -bottom-2 left-8 -rotate-2 rounded-2xl bg-brand-800 p-4 text-sm text-white shadow-lg sm:left-16 dark:bg-brand-900">
+        <p className="font-display text-base font-bold">In plain words</p>
+        <p className="mt-1 text-brand-50">
+          A few values are outside their normal ranges, mostly linked to low iron and blood sugar on the higher side.
+          None is at a dangerous level, but together they are worth a calm talk with your doctor.
+        </p>
       </div>
     </div>
   );

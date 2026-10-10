@@ -78,14 +78,14 @@ export function FamilyManager() {
                 <div className="flex min-w-0 items-center gap-3">
                   <span
                     aria-hidden
-                    className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-teal-50 text-sm font-semibold text-teal-800 dark:bg-teal-950 dark:text-teal-200"
+                    className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-brand-50 text-sm font-semibold text-brand-800 dark:bg-brand-950 dark:text-brand-200"
                   >
                     {p.name.trim().charAt(0).toUpperCase()}
                   </span>
                   <div className="min-w-0">
                   <p className="flex flex-wrap items-center gap-x-2 font-medium">
                     {p.name}
-                    <span className="badge bg-slate-100 font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                    <span className="badge bg-stone-100 font-medium text-stone-600 dark:bg-stone-800 dark:text-stone-300">
                       {p.is_sample ? "Sample" : RELATION_LABEL[p.relation]}
                     </span>
                   </p>

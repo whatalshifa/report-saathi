@@ -37,7 +37,7 @@ export function SiteHeader({ signedIn }: { signedIn: boolean }) {
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-background/95 backdrop-blur-lg print:hidden">
       {user?.is_guest && (
-        <div className="bg-teal-800 px-4 py-2 text-center text-sm text-teal-50 dark:bg-teal-900">
+        <div className="bg-brand-800 px-4 py-2 text-center text-sm text-brand-50 dark:bg-brand-900">
           You&apos;re exploring a demo account. It&apos;s deleted after 24 hours.{" "}
           <Link href="/signup" className="font-semibold underline underline-offset-4">
             Create your own free account
@@ -51,21 +51,24 @@ export function SiteHeader({ signedIn }: { signedIn: boolean }) {
         <nav className="flex items-center gap-1 text-sm sm:gap-2">
           {signedIn && user ? (
             <>
-              <NavLink href="/" active={pathname === "/"}>
-                Reports
-              </NavLink>
-              <NavLink href="/family" active={pathname === "/family"}>
-                Family
-              </NavLink>
+              {/* On phones these live in the bottom tab bar (MobileTabs). */}
+              <span className="hidden items-center gap-1 sm:flex sm:gap-2">
+                <NavLink href="/" active={pathname === "/"}>
+                  Reports
+                </NavLink>
+                <NavLink href="/family" active={pathname === "/family"}>
+                  Family
+                </NavLink>
+              </span>
               <ThemeToggle />
               <Link
                 href="/account"
                 aria-label="Your account"
-                className="ml-1 flex items-center gap-2 rounded-full p-1 text-sm font-medium text-muted transition-colors hover:bg-slate-100 hover:text-foreground md:pr-3 dark:hover:bg-slate-800"
+                className="ml-1 flex items-center gap-2 rounded-full p-1 text-sm font-medium text-muted transition-colors hover:bg-stone-100 hover:text-foreground md:pr-3 dark:hover:bg-stone-800"
               >
                 <span
                   aria-hidden
-                  className="grid h-8 w-8 place-items-center rounded-full bg-teal-100 text-sm font-semibold text-teal-800 dark:bg-teal-900 dark:text-teal-100"
+                  className="grid h-8 w-8 place-items-center rounded-full bg-brand-100 text-sm font-semibold text-brand-800 dark:bg-brand-900 dark:text-brand-100"
                 >
                   {user.name.trim().charAt(0).toUpperCase()}
                 </span>
@@ -100,8 +103,8 @@ function NavLink({ href, active, children }: { href: string; active: boolean; ch
       aria-current={active ? "page" : undefined}
       className={`rounded-lg px-3 py-2 font-medium transition-colors ${
         active
-          ? "bg-teal-50 text-teal-800 dark:bg-teal-950 dark:text-teal-200"
-          : "text-muted hover:bg-slate-100 hover:text-foreground dark:hover:bg-slate-800"
+          ? "bg-brand-50 text-brand-800 dark:bg-brand-950 dark:text-brand-200"
+          : "text-muted hover:bg-stone-100 hover:text-foreground dark:hover:bg-stone-800"
       }`}
     >
       {children}

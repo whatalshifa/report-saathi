@@ -255,7 +255,7 @@ export function ReportView({ id }: { id: string }) {
                   <col className="w-[20%]" />
                   <col className="w-[14%]" />
                 </colgroup>
-                <thead className="border-b border-line bg-slate-50/80 text-left text-xs text-muted dark:bg-slate-800/40">
+                <thead className="border-b border-line bg-stone-50/80 text-left text-xs text-muted dark:bg-stone-800/40">
                   <tr>
                     <th className="px-4 py-2.5 font-medium">Test</th>
                     <th className="px-4 py-2.5 font-medium">Result</th>

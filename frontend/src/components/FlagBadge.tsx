@@ -20,7 +20,7 @@ const STYLES: Record<Flag, { label: string; className: string }> = {
   },
   unknown: {
     label: "No range",
-    className: "bg-slate-50 text-slate-600 ring-slate-500/20 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-400/20",
+    className: "bg-stone-50 text-stone-600 ring-stone-500/20 dark:bg-stone-800 dark:text-stone-300 dark:ring-stone-400/20",
   },
 };
 

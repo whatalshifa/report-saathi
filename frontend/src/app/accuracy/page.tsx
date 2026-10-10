@@ -47,7 +47,7 @@ export default function AccuracyPage() {
           </section>
           <section className="overflow-x-auto card">
             <table className="w-full text-sm">
-              <thead className="border-b border-line bg-slate-50/80 text-left text-xs text-muted dark:bg-slate-800/40">
+              <thead className="border-b border-line bg-stone-50/80 text-left text-xs text-muted dark:bg-stone-800/40">
                 <tr>
                   <th className="px-4 py-2 font-medium">Measure</th>
                   <th className="px-4 py-2 text-right font-medium">All</th>

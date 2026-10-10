@@ -50,20 +50,20 @@ export function Dashboard({ profileId }: { profileId?: string }) {
                   aria-current={active ? "page" : undefined}
                   className={`flex min-h-10 items-center gap-2.5 rounded-full border py-1 pr-4 pl-1 text-sm transition-colors ${
                     active
-                      ? "border-teal-700 bg-teal-700 text-white shadow-sm"
-                      : "border-line bg-surface hover:border-slate-300 hover:bg-slate-50 dark:hover:border-slate-600 dark:hover:bg-slate-800/60"
+                      ? "border-brand-700 bg-brand-700 text-white shadow-sm"
+                      : "border-line bg-surface hover:border-stone-300 hover:bg-stone-50 dark:hover:border-stone-600 dark:hover:bg-stone-800/60"
                   }`}
                 >
                   <span
                     aria-hidden
                     className={`grid h-7 w-7 place-items-center rounded-full text-xs font-semibold ${
-                      active ? "bg-white/20" : "bg-teal-50 text-teal-800 dark:bg-teal-950 dark:text-teal-200"
+                      active ? "bg-white/20" : "bg-brand-50 text-brand-800 dark:bg-brand-950 dark:text-brand-200"
                     }`}
                   >
                     {p.name.trim().charAt(0).toUpperCase()}
                   </span>
                   <span className="font-medium">{p.name}</span>
-                  <span className={active ? "text-teal-50/90" : "text-muted"}>
+                  <span className={active ? "text-brand-50/90" : "text-muted"}>
                     {p.is_sample ? "Sample" : RELATION_LABEL[p.relation]}
                   </span>
                 </Link>
@@ -73,7 +73,7 @@ export function Dashboard({ profileId }: { profileId?: string }) {
           <li>
             <Link
               href="/family"
-              className="flex min-h-10 items-center gap-1.5 rounded-full border border-dashed border-slate-300 px-4 py-1 text-sm font-medium text-muted transition-colors hover:border-teal-600 hover:text-teal-700 dark:border-slate-700 dark:hover:border-teal-400 dark:hover:text-teal-300"
+              className="flex min-h-10 items-center gap-1.5 rounded-full border border-dashed border-stone-300 px-4 py-1 text-sm font-medium text-muted transition-colors hover:border-brand-600 hover:text-brand-700 dark:border-stone-700 dark:hover:border-brand-400 dark:hover:text-brand-300"
             >
               <svg viewBox="0 0 20 20" className="h-4 w-4" fill="currentColor" aria-hidden>
                 <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
@@ -97,7 +97,7 @@ export function Dashboard({ profileId }: { profileId?: string }) {
           {selected.report_count > 0 && (
             <Link
               href={`/profiles/${selected.id}`}
-              className="card group block p-5 transition-colors hover:border-teal-500 dark:hover:border-teal-700"
+              className="card group block p-5 transition-colors hover:border-brand-500 dark:hover:border-brand-700"
             >
               <p className="eyebrow">Timeline</p>
               <p className="mt-2 font-semibold">{possessive(selected.name)} results over time</p>
@@ -113,7 +113,7 @@ export function Dashboard({ profileId }: { profileId?: string }) {
                   </div>
                 )}
               </dl>
-              <p className="mt-4 text-sm font-medium text-teal-700 group-hover:underline dark:text-teal-400">
+              <p className="mt-4 text-sm font-medium text-brand-700 group-hover:underline dark:text-brand-400">
                 See trends and a doctor brief →
               </p>
             </Link>
@@ -129,7 +129,7 @@ export function Dashboard({ profileId }: { profileId?: string }) {
           )}
 
           <div className="card flex gap-3 p-5 text-sm">
-            <svg viewBox="0 0 24 24" className="mt-0.5 h-5 w-5 shrink-0 text-teal-700 dark:text-teal-400" fill="none" stroke="currentColor" strokeWidth={1.6} aria-hidden>
+            <svg viewBox="0 0 24 24" className="mt-0.5 h-5 w-5 shrink-0 text-brand-700 dark:text-brand-400" fill="none" stroke="currentColor" strokeWidth={1.6} aria-hidden>
               <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
             </svg>
             <div>
