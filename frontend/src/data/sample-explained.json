@@ -1,0 +1,705 @@
+{
+ "_source": "backend/app/samples/meera.json: the sample family's January report, its explanations and the doctor brief, exactly as the demo account gets them.",
+ "report": {
+  "lab_name": "Sample Pathology Lab, Pune",
+  "patient_name": "Mrs. Meera Joshi",
+  "patient_age": "54 Years",
+  "patient_sex": "Female",
+  "report_date": "2026-01-12"
+ },
+ "image": {
+  "src": "/landing/sample-report-2026-01.png",
+  "width": 1240,
+  "height": 1754
+ },
+ "tests": [
+  {
+   "section": "Complete Blood Count",
+   "name": "Haemoglobin (Hb)",
+   "catalog_key": "hemoglobin",
+   "value_text": "10.6",
+   "unit": "g/dL",
+   "reference_text": "12.0 - 15.5",
+   "ref_low": 12.0,
+   "ref_high": 15.5,
+   "numeric_value": 10.6,
+   "box": {
+    "page": 1,
+    "x0": 0.421,
+    "y0": 0.2503,
+    "x1": 0.4774,
+    "y1": 0.2662
+   }
+  },
+  {
+   "section": "Complete Blood Count",
+   "name": "Total RBC Count",
+   "catalog_key": "rbc",
+   "value_text": "4.10",
+   "unit": "million/cumm",
+   "reference_text": "3.8 - 4.8",
+   "ref_low": 3.8,
+   "ref_high": 4.8,
+   "numeric_value": 4.1,
+   "box": {
+    "page": 1,
+    "x0": 0.421,
+    "y0": 0.2742,
+    "x1": 0.4734,
+    "y1": 0.2902
+   }
+  },
+  {
+   "section": "Complete Blood Count",
+   "name": "Total WBC Count",
+   "catalog_key": "wbc",
+   "value_text": "7200",
+   "unit": "/cumm",
+   "reference_text": "4000 - 10000",
+   "ref_low": 4000,
+   "ref_high": 10000,
+   "numeric_value": 7200.0,
+   "box": {
+    "page": 1,
+    "x0": 0.421,
+    "y0": 0.2982,
+    "x1": 0.479,
+    "y1": 0.3141
+   }
+  },
+  {
+   "section": "Complete Blood Count",
+   "name": "Platelet Count",
+   "catalog_key": "platelets",
+   "value_text": "260000",
+   "unit": "/cumm",
+   "reference_text": "150000 - 410000",
+   "ref_low": 150000,
+   "ref_high": 410000,
+   "numeric_value": 260000.0,
+   "box": {
+    "page": 1,
+    "x0": 0.421,
+    "y0": 0.3221,
+    "x1": 0.5016,
+    "y1": 0.3381
+   }
+  },
+  {
+   "section": "Complete Blood Count",
+   "name": "MCV",
+   "catalog_key": "mcv",
+   "value_text": "76",
+   "unit": "fL",
+   "reference_text": "80 - 100",
+   "ref_low": 80,
+   "ref_high": 100,
+   "numeric_value": 76.0,
+   "box": {
+    "page": 1,
+    "x0": 0.421,
+    "y0": 0.3461,
+    "x1": 0.4589,
+    "y1": 0.362
+   }
+  },
+  {
+   "section": "Iron Studies",
+   "name": "Serum Ferritin",
+   "catalog_key": "ferritin",
+   "value_text": "9",
+   "unit": "ng/mL",
+   "reference_text": "15 - 150",
+   "ref_low": 15,
+   "ref_high": 150,
+   "numeric_value": 9.0,
+   "box": {
+    "page": 1,
+    "x0": 0.421,
+    "y0": 0.3974,
+    "x1": 0.446,
+    "y1": 0.4133
+   }
+  },
+  {
+   "section": "Diabetes Screening",
+   "name": "Fasting Blood Sugar (FBS)",
+   "catalog_key": "glucose_fasting",
+   "value_text": "108",
+   "unit": "mg/dL",
+   "reference_text": "70 - 100",
+   "ref_low": 70,
+   "ref_high": 100,
+   "numeric_value": 108.0,
+   "box": {
+    "page": 1,
+    "x0": 0.421,
+    "y0": 0.4487,
+    "x1": 0.471,
+    "y1": 0.4647
+   }
+  },
+  {
+   "section": "Diabetes Screening",
+   "name": "HbA1c (Glycated Haemoglobin)",
+   "catalog_key": "hba1c",
+   "value_text": "6.1",
+   "unit": "%",
+   "reference_text": "4.0 - 5.6",
+   "ref_low": 4.0,
+   "ref_high": 5.6,
+   "numeric_value": 6.1,
+   "box": {
+    "page": 1,
+    "x0": 0.421,
+    "y0": 0.4726,
+    "x1": 0.4653,
+    "y1": 0.4886
+   }
+  },
+  {
+   "section": "Lipid Profile",
+   "name": "Total Cholesterol",
+   "catalog_key": "cholesterol_total",
+   "value_text": "224",
+   "unit": "mg/dL",
+   "reference_text": "< 200",
+   "ref_low": null,
+   "ref_high": 200,
+   "numeric_value": 224.0,
+   "box": {
+    "page": 1,
+    "x0": 0.421,
+    "y0": 0.5239,
+    "x1": 0.471,
+    "y1": 0.5399
+   }
+  },
+  {
+   "section": "Lipid Profile",
+   "name": "Triglycerides",
+   "catalog_key": "triglycerides",
+   "value_text": "168",
+   "unit": "mg/dL",
+   "reference_text": "< 150",
+   "ref_low": null,
+   "ref_high": 150,
+   "numeric_value": 168.0,
+   "box": {
+    "page": 1,
+    "x0": 0.421,
+    "y0": 0.5479,
+    "x1": 0.471,
+    "y1": 0.5639
+   }
+  },
+  {
+   "section": "Lipid Profile",
+   "name": "HDL Cholesterol",
+   "catalog_key": "hdl",
+   "value_text": "46",
+   "unit": "mg/dL",
+   "reference_text": "> 40",
+   "ref_low": 40,
+   "ref_high": null,
+   "numeric_value": 46.0,
+   "box": {
+    "page": 1,
+    "x0": 0.421,
+    "y0": 0.5718,
+    "x1": 0.4565,
+    "y1": 0.5878
+   }
+  },
+  {
+   "section": "Lipid Profile",
+   "name": "LDL Cholesterol",
+   "catalog_key": "ldl",
+   "value_text": "142",
+   "unit": "mg/dL",
+   "reference_text": "< 100",
+   "ref_low": null,
+   "ref_high": 100,
+   "numeric_value": 142.0,
+   "box": {
+    "page": 1,
+    "x0": 0.421,
+    "y0": 0.5958,
+    "x1": 0.471,
+    "y1": 0.6117
+   }
+  },
+  {
+   "section": "Thyroid Profile",
+   "name": "TSH",
+   "catalog_key": "tsh",
+   "value_text": "5.8",
+   "unit": "µIU/mL",
+   "reference_text": "0.4 - 4.5",
+   "ref_low": 0.4,
+   "ref_high": 4.5,
+   "numeric_value": 5.8,
+   "box": {
+    "page": 1,
+    "x0": 0.421,
+    "y0": 0.6471,
+    "x1": 0.4653,
+    "y1": 0.6631
+   }
+  },
+  {
+   "section": "Vitamins",
+   "name": "25-OH Vitamin D",
+   "catalog_key": "vitamin_d",
+   "value_text": "14",
+   "unit": "ng/mL",
+   "reference_text": "30 - 100",
+   "ref_low": 30,
+   "ref_high": 100,
+   "numeric_value": 14.0,
+   "box": {
+    "page": 1,
+    "x0": 0.421,
+    "y0": 0.6984,
+    "x1": 0.4589,
+    "y1": 0.7144
+   }
+  },
+  {
+   "section": "Vitamins",
+   "name": "Vitamin B12",
+   "catalog_key": "vitamin_b12",
+   "value_text": "260",
+   "unit": "pg/mL",
+   "reference_text": "200 - 900",
+   "ref_low": 200,
+   "ref_high": 900,
+   "numeric_value": 260.0,
+   "box": {
+    "page": 1,
+    "x0": 0.421,
+    "y0": 0.7223,
+    "x1": 0.4677,
+    "y1": 0.7383
+   }
+  },
+  {
+   "section": "Kidney Function",
+   "name": "Serum Creatinine",
+   "catalog_key": "creatinine",
+   "value_text": "0.8",
+   "unit": "mg/dL",
+   "reference_text": "0.6 - 1.1",
+   "ref_low": 0.6,
+   "ref_high": 1.1,
+   "numeric_value": 0.8,
+   "box": {
+    "page": 1,
+    "x0": 0.421,
+    "y0": 0.7737,
+    "x1": 0.4621,
+    "y1": 0.7896
+   }
+  }
+ ],
+ "explanations": {
+  "en": {
+   "summary": "This report shows a few values outside their normal ranges, mostly linked to low iron, blood sugar on the higher side, cholesterol, thyroid and vitamin D. None of them is at a dangerous level, but together they are worth a calm talk with your doctor. Your kidney test, white cells and platelets are normal.",
+   "flagged": [
+    {
+     "test_name": "Haemoglobin (Hb) (the iron-rich part of blood)",
+     "what_it_measures": "Haemoglobin carries oxygen from your lungs to the rest of your body.",
+     "what_your_result_means": "At 10.6, it is a little below the normal range. This can make you feel tired or breathless on stairs.",
+     "common_reasons": [
+      "Low iron in the diet",
+      "Heavy periods in earlier years",
+      "Not absorbing iron well"
+     ],
+     "what_you_can_do": "Eat iron-rich food like leafy greens, chana, jaggery and dates with something sour like lemon. Ask your doctor whether you need an iron check-up or supplements."
+    },
+    {
+     "test_name": "MCV (size of red blood cells)",
+     "what_it_measures": "MCV tells how big your red blood cells are.",
+     "what_your_result_means": "At 76, your red cells are smaller than usual. Small red cells often go with low iron.",
+     "common_reasons": [
+      "Low iron stores",
+      "Long-standing low haemoglobin"
+     ],
+     "what_you_can_do": "This usually improves when iron levels improve. Your doctor will look at it together with haemoglobin and ferritin."
+    },
+    {
+     "test_name": "Serum Ferritin (stored iron)",
+     "what_it_measures": "Ferritin shows how much iron your body has kept in reserve.",
+     "what_your_result_means": "At 9, your iron reserve is low. This fits with the low haemoglobin and small red cells.",
+     "common_reasons": [
+      "Not enough iron in food",
+      "Blood loss over time",
+      "Tea or coffee with meals, which blocks iron"
+     ],
+     "what_you_can_do": "Avoid tea right after meals. Ask your doctor how to build your iron back up and when to re-test."
+    },
+    {
+     "test_name": "Fasting Blood Sugar (FBS)",
+     "what_it_measures": "This measures sugar in your blood after not eating overnight.",
+     "what_your_result_means": "At 108, it is slightly above normal. This is in the 'watch' zone, not diabetes.",
+     "common_reasons": [
+      "Less physical activity",
+      "Sweet or refined food in the evening",
+      "Family history"
+     ],
+     "what_you_can_do": "A 30-minute walk most days and fewer sweets and white rice can bring it down. Re-check in 3 months."
+    },
+    {
+     "test_name": "HbA1c (average sugar over 3 months)",
+     "what_it_measures": "HbA1c shows your average blood sugar over the last two to three months.",
+     "what_your_result_means": "At 6.1%, it is above normal and in the range often called 'prediabetes'. It is an early warning, and it can often be brought back to normal.",
+     "common_reasons": [
+      "Weight around the waist",
+      "Low activity",
+      "Family history of diabetes"
+     ],
+     "what_you_can_do": "Regular walking, smaller portions of rice and roti, and fewer sweet drinks help. Ask your doctor when to repeat it."
+    },
+    {
+     "test_name": "Total Cholesterol",
+     "what_it_measures": "This is the total amount of cholesterol, a kind of fat, in your blood.",
+     "what_your_result_means": "At 224, it is higher than the desirable level of under 200.",
+     "common_reasons": [
+      "Fried and oily food",
+      "Less exercise",
+      "Thyroid running slow"
+     ],
+     "what_you_can_do": "Cut down on fried snacks and ghee, add more vegetables and fruit, and stay active."
+    },
+    {
+     "test_name": "Triglycerides (blood fat)",
+     "what_it_measures": "Triglycerides are a type of fat that rises with sugar and refined food.",
+     "what_your_result_means": "At 168, it is a little above the normal limit of 150.",
+     "common_reasons": [
+      "Sweets and refined flour",
+      "Higher blood sugar",
+      "Low activity"
+     ],
+     "what_you_can_do": "Less sugar and maida, and regular exercise, usually lower this."
+    },
+    {
+     "test_name": "LDL Cholesterol ('bad' cholesterol)",
+     "what_it_measures": "LDL is the cholesterol that can build up in blood vessels over many years.",
+     "what_your_result_means": "At 142, it is above the target of under 100.",
+     "common_reasons": [
+      "Diet high in saturated fat",
+      "Family history",
+      "Thyroid running slow"
+     ],
+     "what_you_can_do": "Food changes and exercise help. Your doctor will decide if anything more is needed, looking at your overall heart risk."
+    },
+    {
+     "test_name": "TSH (thyroid control hormone)",
+     "what_it_measures": "TSH is the signal your brain sends to the thyroid gland, which controls your body's speed.",
+     "what_your_result_means": "At 5.8, it is a little high. This can mean the thyroid is working slightly slower than it should.",
+     "common_reasons": [
+      "Mild underactive thyroid, common in women over 50",
+      "Recent illness",
+      "Low iodine"
+     ],
+     "what_you_can_do": "Mention tiredness, weight gain or feeling cold to your doctor. TSH is usually re-checked before any decision."
+    },
+    {
+     "test_name": "25-OH Vitamin D",
+     "what_it_measures": "Vitamin D keeps bones and muscles strong.",
+     "what_your_result_means": "At 14, it is low. This is very common in India, even with sunshine.",
+     "common_reasons": [
+      "Little time in the sun",
+      "Covering skin outdoors",
+      "Low vitamin D in food"
+     ],
+     "what_you_can_do": "Spend 15 to 20 minutes in morning sun with arms uncovered. Ask your doctor about a supplement."
+    }
+   ],
+   "questions_for_doctor": [
+    "Do I need iron tablets, and for how long?",
+    "Is my sugar level something to treat now, or watch?",
+    "Should my thyroid be checked again, and when?",
+    "What is the best vitamin D dose for me?",
+    "When should I repeat these tests?"
+   ]
+  },
+  "hi": {
+   "summary": "इस रिपोर्ट में कुछ जाँचें सामान्य सीमा से बाहर हैं, जो ज़्यादातर कम आयरन, थोड़ी बढ़ी हुई शुगर, कोलेस्ट्रॉल, थायरॉइड और विटामिन D से जुड़ी हैं। इनमें से कोई भी ख़तरनाक स्तर पर नहीं है, लेकिन डॉक्टर से आराम से बात करना अच्छा रहेगा। किडनी की जाँच, सफ़ेद रक्त कोशिकाएँ और प्लेटलेट्स सामान्य हैं।",
+   "flagged": [
+    {
+     "test_name": "Haemoglobin (Hb) (ख़ून में आयरन वाला हिस्सा)",
+     "what_it_measures": "हीमोग्लोबिन फेफड़ों से ऑक्सीजन लेकर पूरे शरीर तक पहुँचाता है।",
+     "what_your_result_means": "10.6 पर यह सामान्य से थोड़ा कम है। इससे थकान या सीढ़ियाँ चढ़ते समय साँस फूल सकती है।",
+     "common_reasons": [
+      "खाने में आयरन की कमी",
+      "पहले के सालों में ज़्यादा माहवारी",
+      "आयरन का ठीक से न पचना"
+     ],
+     "what_you_can_do": "हरी पत्तेदार सब्ज़ी, चना, गुड़ और खजूर खाएँ, साथ में नींबू जैसी खट्टी चीज़ लें। डॉक्टर से पूछें कि क्या आयरन की गोली चाहिए।"
+    },
+    {
+     "test_name": "MCV (लाल रक्त कोशिकाओं का आकार)",
+     "what_it_measures": "MCV बताता है कि आपकी लाल रक्त कोशिकाएँ कितनी बड़ी हैं।",
+     "what_your_result_means": "76 पर कोशिकाएँ सामान्य से छोटी हैं। ऐसा अक्सर आयरन की कमी में होता है।",
+     "common_reasons": [
+      "शरीर में आयरन का कम भंडार",
+      "लंबे समय से कम हीमोग्लोबिन"
+     ],
+     "what_you_can_do": "आयरन ठीक होने पर यह भी आम तौर पर सुधर जाता है।"
+    },
+    {
+     "test_name": "Serum Ferritin (जमा आयरन)",
+     "what_it_measures": "फ़ेरिटिन बताता है कि शरीर में कितना आयरन जमा है।",
+     "what_your_result_means": "9 पर आयरन का भंडार कम है। यह कम हीमोग्लोबिन से मेल खाता है।",
+     "common_reasons": [
+      "खाने में कम आयरन",
+      "समय के साथ ख़ून की कमी",
+      "खाने के साथ चाय पीना"
+     ],
+     "what_you_can_do": "खाने के तुरंत बाद चाय न पिएँ। डॉक्टर से पूछें कि आयरन कैसे बढ़ाएँ और दोबारा जाँच कब कराएँ।"
+    },
+    {
+     "test_name": "Fasting Blood Sugar (FBS) (ख़ाली पेट शुगर)",
+     "what_it_measures": "रात भर कुछ न खाने के बाद ख़ून में शुगर की मात्रा।",
+     "what_your_result_means": "108 पर यह सामान्य से थोड़ा ज़्यादा है। यह 'ध्यान रखने' वाला स्तर है, डायबिटीज़ नहीं।",
+     "common_reasons": [
+      "कम चलना-फिरना",
+      "शाम को मीठा या मैदा",
+      "परिवार में डायबिटीज़"
+     ],
+     "what_you_can_do": "रोज़ 30 मिनट टहलें और मीठा व सफ़ेद चावल कम करें। 3 महीने बाद फिर जाँच कराएँ।"
+    },
+    {
+     "test_name": "HbA1c (3 महीने की औसत शुगर)",
+     "what_it_measures": "पिछले दो-तीन महीनों की औसत शुगर।",
+     "what_your_result_means": "6.1% पर यह सामान्य से ज़्यादा है, जिसे अक्सर 'प्री-डायबिटीज़' कहते हैं। यह शुरुआती चेतावनी है और अक्सर ठीक हो सकती है।",
+     "common_reasons": [
+      "पेट के आसपास वज़न",
+      "कम कसरत",
+      "परिवार में डायबिटीज़"
+     ],
+     "what_you_can_do": "रोज़ टहलना, चावल-रोटी थोड़ी कम और मीठे पेय कम करना मदद करता है।"
+    },
+    {
+     "test_name": "Total Cholesterol (कुल कोलेस्ट्रॉल)",
+     "what_it_measures": "ख़ून में कोलेस्ट्रॉल नाम की चर्बी की कुल मात्रा।",
+     "what_your_result_means": "224 पर यह 200 की सही सीमा से ज़्यादा है।",
+     "common_reasons": [
+      "तला-भुना खाना",
+      "कम कसरत",
+      "थायरॉइड का धीमा होना"
+     ],
+     "what_you_can_do": "तले नाश्ते और घी कम करें, सब्ज़ी-फल ज़्यादा खाएँ और सक्रिय रहें।"
+    },
+    {
+     "test_name": "Triglycerides (ख़ून की चर्बी)",
+     "what_it_measures": "एक तरह की चर्बी जो मीठे और मैदे से बढ़ती है।",
+     "what_your_result_means": "168 पर यह 150 की सीमा से थोड़ा ज़्यादा है।",
+     "common_reasons": [
+      "मिठाई और मैदा",
+      "बढ़ी हुई शुगर",
+      "कम कसरत"
+     ],
+     "what_you_can_do": "चीनी और मैदा कम करें और नियमित कसरत करें।"
+    },
+    {
+     "test_name": "LDL Cholesterol ('ख़राब' कोलेस्ट्रॉल)",
+     "what_it_measures": "LDL वह कोलेस्ट्रॉल है जो सालों में नसों में जम सकता है।",
+     "what_your_result_means": "142 पर यह 100 से कम के लक्ष्य से ज़्यादा है।",
+     "common_reasons": [
+      "ज़्यादा चिकनाई वाला खाना",
+      "परिवार में इतिहास",
+      "थायरॉइड का धीमा होना"
+     ],
+     "what_you_can_do": "खाने में बदलाव और कसरत मदद करते हैं। आगे क्या करना है, यह डॉक्टर तय करेंगे।"
+    },
+    {
+     "test_name": "TSH (थायरॉइड का संकेत)",
+     "what_it_measures": "TSH दिमाग़ का संकेत है जो थायरॉइड ग्रंथि को चलाता है।",
+     "what_your_result_means": "5.8 पर यह थोड़ा ज़्यादा है, यानी थायरॉइड थोड़ा धीमे काम कर रहा हो सकता है।",
+     "common_reasons": [
+      "50 के बाद महिलाओं में आम हल्की थायरॉइड की कमी",
+      "हाल की बीमारी",
+      "आयोडीन की कमी"
+     ],
+     "what_you_can_do": "थकान, वज़न बढ़ना या ठंड लगना हो तो डॉक्टर को बताएँ। आम तौर पर TSH दोबारा जाँचा जाता है।"
+    },
+    {
+     "test_name": "25-OH Vitamin D (विटामिन D)",
+     "what_it_measures": "विटामिन D हड्डियों और मांसपेशियों को मज़बूत रखता है।",
+     "what_your_result_means": "14 पर यह कम है। भारत में धूप होने पर भी यह बहुत आम है।",
+     "common_reasons": [
+      "धूप में कम समय",
+      "बाहर पूरी त्वचा ढकी रहना",
+      "खाने में कम विटामिन D"
+     ],
+     "what_you_can_do": "सुबह 15-20 मिनट धूप में बैठें, बाँहें खुली रखें। सप्लीमेंट के बारे में डॉक्टर से पूछें।"
+    }
+   ],
+   "questions_for_doctor": [
+    "क्या मुझे आयरन की गोली लेनी चाहिए, और कितने समय तक?",
+    "मेरी शुगर का इलाज अभी करना है या बस ध्यान रखना है?",
+    "थायरॉइड की जाँच दोबारा कब करानी चाहिए?",
+    "मेरे लिए विटामिन D की सही मात्रा क्या है?",
+    "ये जाँचें दोबारा कब करानी हैं?"
+   ]
+  },
+  "mr": {
+   "summary": "या रिपोर्टमध्ये काही तपासण्या सामान्य मर्यादेबाहेर आहेत. त्या मुख्यतः कमी लोह, थोडी वाढलेली साखर, कोलेस्टेरॉल, थायरॉइड आणि व्हिटॅमिन D शी संबंधित आहेत. यापैकी काहीही धोकादायक पातळीवर नाही, पण डॉक्टरांशी शांतपणे बोलणे चांगले. मूत्रपिंडाची तपासणी, पांढऱ्या पेशी आणि प्लेटलेट्स सामान्य आहेत.",
+   "flagged": [
+    {
+     "test_name": "Haemoglobin (Hb) (रक्तातील लोहयुक्त भाग)",
+     "what_it_measures": "हिमोग्लोबिन फुफ्फुसातून ऑक्सिजन घेऊन संपूर्ण शरीरात पोहोचवते.",
+     "what_your_result_means": "10.6 वर ते सामान्यपेक्षा थोडे कमी आहे. यामुळे थकवा किंवा जिना चढताना धाप लागू शकते.",
+     "common_reasons": [
+      "आहारात लोहाची कमतरता",
+      "पूर्वीच्या वर्षांत जास्त मासिक पाळी",
+      "लोह नीट शोषले न जाणे"
+     ],
+     "what_you_can_do": "पालेभाज्या, हरभरा, गूळ आणि खजूर खा, सोबत लिंबासारखे आंबट घ्या. लोहाच्या गोळ्यांची गरज आहे का, हे डॉक्टरांना विचारा."
+    },
+    {
+     "test_name": "MCV (लाल पेशींचा आकार)",
+     "what_it_measures": "MCV सांगते की तुमच्या लाल रक्तपेशी किती मोठ्या आहेत.",
+     "what_your_result_means": "76 वर पेशी नेहमीपेक्षा लहान आहेत. हे बहुतेक लोहाच्या कमतरतेत होते.",
+     "common_reasons": [
+      "शरीरातील लोहाचा कमी साठा",
+      "दीर्घकाळ कमी हिमोग्लोबिन"
+     ],
+     "what_you_can_do": "लोह सुधारले की हेही सहसा सुधारते."
+    },
+    {
+     "test_name": "Serum Ferritin (साठवलेले लोह)",
+     "what_it_measures": "फेरिटिन सांगते की शरीरात किती लोह साठवलेले आहे.",
+     "what_your_result_means": "9 वर लोहाचा साठा कमी आहे. हे कमी हिमोग्लोबिनशी जुळते.",
+     "common_reasons": [
+      "आहारात कमी लोह",
+      "काळानुसार रक्त कमी होणे",
+      "जेवणासोबत चहा"
+     ],
+     "what_you_can_do": "जेवणानंतर लगेच चहा टाळा. लोह कसे वाढवायचे आणि पुन्हा तपासणी कधी करायची, हे डॉक्टरांना विचारा."
+    },
+    {
+     "test_name": "Fasting Blood Sugar (FBS) (उपाशीपोटी साखर)",
+     "what_it_measures": "रात्रभर काही न खाल्ल्यानंतर रक्तातील साखर.",
+     "what_your_result_means": "108 वर ती सामान्यपेक्षा थोडी जास्त आहे. ही 'लक्ष ठेवण्याची' पातळी आहे, मधुमेह नाही.",
+     "common_reasons": [
+      "कमी हालचाल",
+      "संध्याकाळी गोड किंवा मैदा",
+      "कुटुंबात मधुमेह"
+     ],
+     "what_you_can_do": "रोज 30 मिनिटे चाला आणि गोड व पांढरा भात कमी करा. 3 महिन्यांनी पुन्हा तपासा."
+    },
+    {
+     "test_name": "HbA1c (3 महिन्यांची सरासरी साखर)",
+     "what_it_measures": "मागील दोन-तीन महिन्यांची सरासरी साखर.",
+     "what_your_result_means": "6.1% वर ती सामान्यपेक्षा जास्त आहे, ज्याला 'प्री-डायबिटीज' म्हणतात. ही लवकरची सूचना आहे आणि बहुतेक वेळा सुधारता येते.",
+     "common_reasons": [
+      "पोटाभोवती वजन",
+      "कमी व्यायाम",
+      "कुटुंबात मधुमेह"
+     ],
+     "what_you_can_do": "नियमित चालणे, भात-पोळी थोडी कमी आणि गोड पेये कमी करणे मदत करते."
+    },
+    {
+     "test_name": "Total Cholesterol (एकूण कोलेस्टेरॉल)",
+     "what_it_measures": "रक्तातील कोलेस्टेरॉल नावाच्या चरबीचे एकूण प्रमाण.",
+     "what_your_result_means": "224 वर ते 200 च्या योग्य मर्यादेपेक्षा जास्त आहे.",
+     "common_reasons": [
+      "तळलेले पदार्थ",
+      "कमी व्यायाम",
+      "थायरॉइड मंद असणे"
+     ],
+     "what_you_can_do": "तळलेला नाश्ता आणि तूप कमी करा, भाज्या-फळे जास्त खा आणि सक्रिय राहा."
+    },
+    {
+     "test_name": "Triglycerides (रक्तातील चरबी)",
+     "what_it_measures": "गोड आणि मैद्याने वाढणारी एक प्रकारची चरबी.",
+     "what_your_result_means": "168 वर ती 150 च्या मर्यादेपेक्षा थोडी जास्त आहे.",
+     "common_reasons": [
+      "मिठाई आणि मैदा",
+      "वाढलेली साखर",
+      "कमी व्यायाम"
+     ],
+     "what_you_can_do": "साखर आणि मैदा कमी करा आणि नियमित व्यायाम करा."
+    },
+    {
+     "test_name": "LDL Cholesterol ('वाईट' कोलेस्टेरॉल)",
+     "what_it_measures": "LDL हे असे कोलेस्टेरॉल आहे जे वर्षानुवर्षे रक्तवाहिन्यांमध्ये साचू शकते.",
+     "what_your_result_means": "142 वर ते 100 पेक्षा कमीच्या लक्ष्यापेक्षा जास्त आहे.",
+     "common_reasons": [
+      "जास्त स्निग्ध आहार",
+      "कौटुंबिक इतिहास",
+      "थायरॉइड मंद असणे"
+     ],
+     "what_you_can_do": "आहारातील बदल आणि व्यायाम मदत करतात. पुढे काय करायचे ते डॉक्टर ठरवतील."
+    },
+    {
+     "test_name": "TSH (थायरॉइडचा संकेत)",
+     "what_it_measures": "TSH हा मेंदूचा संकेत आहे जो थायरॉइड ग्रंथीला चालवतो.",
+     "what_your_result_means": "5.8 वर तो थोडा जास्त आहे, म्हणजे थायरॉइड थोडे मंद काम करत असू शकते.",
+     "common_reasons": [
+      "50 नंतर स्त्रियांमध्ये सामान्य असलेली सौम्य थायरॉइडची कमतरता",
+      "अलीकडील आजार",
+      "आयोडीनची कमतरता"
+     ],
+     "what_you_can_do": "थकवा, वजन वाढणे किंवा थंडी वाजणे असेल तर डॉक्टरांना सांगा. सहसा TSH पुन्हा तपासले जाते."
+    },
+    {
+     "test_name": "25-OH Vitamin D (व्हिटॅमिन D)",
+     "what_it_measures": "व्हिटॅमिन D हाडे आणि स्नायू मजबूत ठेवते.",
+     "what_your_result_means": "14 वर ते कमी आहे. भारतात ऊन असूनही हे खूप सामान्य आहे.",
+     "common_reasons": [
+      "उन्हात कमी वेळ",
+      "बाहेर त्वचा पूर्ण झाकलेली",
+      "आहारात कमी व्हिटॅमिन D"
+     ],
+     "what_you_can_do": "सकाळी 15-20 मिनिटे हात उघडे ठेवून उन्हात बसा. पूरक औषधाबद्दल डॉक्टरांना विचारा."
+    }
+   ],
+   "questions_for_doctor": [
+    "मला लोहाच्या गोळ्या घ्याव्या लागतील का, आणि किती काळ?",
+    "माझ्या साखरेवर आत्ता उपचार करायचा की फक्त लक्ष ठेवायचे?",
+    "थायरॉइडची तपासणी पुन्हा कधी करावी?",
+    "माझ्यासाठी व्हिटॅमिन D चे योग्य प्रमाण किती?",
+    "या तपासण्या पुन्हा कधी करायच्या?"
+   ]
+  }
+ },
+ "brief": {
+  "overview": "54-year-old woman, three reports from two labs between 12 Jan and 8 Sep 2026. Low haemoglobin, MCV and ferritin, raised fasting sugar and HbA1c, raised TSH and low vitamin D in January have all moved into range by September. LDL remains above target but is falling.",
+  "key_findings": [
+   {
+    "test": "Hemoglobin",
+    "finding": "10.6 (Jan) → 11.4 (Apr) → 12.4 g/dL (Sep); low twice, now in range."
+   },
+   {
+    "test": "Ferritin",
+    "finding": "9 (Jan) → 18 (Apr) → 34 ng/mL (Sep); low in January, in range since April."
+   },
+   {
+    "test": "HbA1c",
+    "finding": "6.1% (Jan) → 5.9% (Apr) → 5.6% (Sep); high twice, now at the top of the range."
+   },
+   {
+    "test": "TSH",
+    "finding": "5.8 (Jan) → 4.6 (Apr) → 3.1 µIU/mL (Sep); high twice, now in range."
+   },
+   {
+    "test": "Vitamin D (25-OH)",
+    "finding": "14 (Jan) → 22 (Apr) → 31 ng/mL (Sep); low twice, now just in range."
+   },
+   {
+    "test": "LDL cholesterol",
+    "finding": "142 (Jan) → 128 (Apr) → 110 mg/dL (Sep); falling but still above the <100 target."
+   }
+  ],
+  "questions_for_doctor": [
+   "Is my LDL low enough now, or do I need to do more?",
+   "Can I stop or reduce the iron and vitamin D supplements?",
+   "Should my thyroid be checked again, and when?",
+   "How often should I repeat these tests?"
+  ]
+ }
+}

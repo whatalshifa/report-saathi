@@ -208,6 +208,17 @@ h3 {
     @apply text-[13px] font-medium text-brand-700 dark:text-brand-300;
   }
 
+  /* The landing page: bigger, tighter headings and a calm lead paragraph. */
+  .landing-h2 {
+    @apply text-[32px] leading-[1.08] font-semibold tracking-[-0.03em] text-balance sm:text-[44px];
+  }
+  .landing-lead {
+    @apply max-w-2xl text-[17px] leading-relaxed text-pretty text-muted sm:text-lg;
+  }
+  .landing-eyebrow {
+    @apply text-[13px] font-semibold tracking-[0.08em] text-brand-700 uppercase dark:text-brand-300;
+  }
+
   .skeleton {
     @apply animate-pulse rounded-ctl bg-stone-200/80 dark:bg-stone-800/80;
   }

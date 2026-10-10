@@ -1,17 +1,18 @@
 import { readFile } from "node:fs/promises";
+import path from "node:path";
 
 import { expect, test, type Page } from "@playwright/test";
 
-/** Opens the sample family on the home page, which turns it into a live demo account. */
+/** Opens the sample family on the dashboard, which turns it into a live demo account. */
 async function startDemo(page: Page) {
-  await page.goto("/");
+  await page.goto("/dashboard");
   await page.getByRole("link", { name: /Meera Joshi\s*Sample/ }).click();
   await expect(page.getByText("You're exploring a demo account")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Meera Joshi", level: 1 })).toBeVisible();
 }
 
-test("signed-out visitors land in the app with the sample family open", async ({ page }) => {
-  await page.goto("/");
+test("signed-out visitors open the app with the sample family", async ({ page }) => {
+  await page.goto("/dashboard");
   await expect(page.getByText("You're exploring a sample family.")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Meera Joshi", level: 1 })).toBeVisible();
   await expect(page.getByRole("region", { name: "Needs attention" }).getByText("LDL cholesterol")).toBeVisible();
@@ -21,20 +22,79 @@ test("signed-out visitors land in the app with the sample family open", async ({
 });
 
 test("opening a sample report starts a demo and lands on that report", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/dashboard");
   await page.getByRole("link", { name: /Sample Pathology Lab, Pune.*12 Jan 2026/ }).click();
   await expect(page).toHaveURL(/\/reports\/[\w-]+$/);
   await expect(page.getByRole("heading", { name: "Needs attention" })).toBeVisible();
   await expect(page.getByText("You're exploring a demo account")).toBeVisible();
 });
 
-test("the about page explains the product", async ({ page }) => {
+/** Runs axe (the accessibility checker the lint rules already use) on the page, against WCAG 2.1 A and AA. */
+async function axeViolations(page: Page) {
+  // axe-core comes with eslint-plugin-jsx-a11y, so nothing extra is installed for it.
+  await page.addScriptTag({ path: path.join(process.cwd(), "node_modules/axe-core/axe.min.js") });
+  return page.evaluate(async () => {
+    // @ts-expect-error axe is added to the page above
+    const result = await window.axe.run(document, { runOnly: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"] });
+    return result.violations.map((v: { id: string; nodes: { target: string[] }[] }) => ({
+      id: v.id,
+      targets: v.nodes.map((n) => n.target.join(" ")),
+    }));
+  });
+}
+
+test("the landing page shows the product and leads into the app", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("contentinfo").getByRole("link", { name: "About" }).click();
-  await expect(page).toHaveURL(/\/about$/);
-  await expect(page.getByRole("heading", { name: "Understand every lab report your family gets." })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Create a free account" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Our privacy promises" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Your family's lab reports, explained.", level: 1 })).toBeVisible();
+  // The explanation demo: the January report's HbA1c, then the same value in Hindi.
+  const how = page.locator("#how");
+  await how.getByRole("button", { name: /Haemoglobin \(Hb\)/ }).first().click();
+  await expect(how.getByRole("heading", { name: /Haemoglobin \(Hb\) \(the iron-rich part of blood\)/ })).toBeVisible();
+  await how.getByRole("button", { name: "हिन्दी" }).click();
+  await expect(how.getByText(/10.6 पर यह सामान्य से थोड़ा कम है/)).toBeVisible();
+  // The trends picker redraws the chart for the test picked.
+  await page.locator("#trends").getByRole("button", { name: /Vitamin D/ }).click();
+  await expect(page.locator("#trends").getByText("14 in Jan 2026")).toBeVisible();
+
+  await page.getByRole("main").getByRole("link", { name: "Try the sample family" }).first().click();
+  await expect(page).toHaveURL(/\/dashboard$/);
+  await expect(page.getByRole("heading", { name: "Meera Joshi", level: 1 })).toBeVisible();
+  // Inside the app, the way back to the landing page is "About ReportSaathi".
+  await page.getByRole("contentinfo").getByRole("link", { name: "About ReportSaathi" }).click();
+  await expect(page).toHaveURL(/\/$/);
+});
+
+test("old addresses lead to the landing page and the dashboard", async ({ page }) => {
+  await page.goto("/about");
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole("heading", { name: "Health reports are personal. They stay yours." })).toBeVisible();
+  await page.goto("/?profile=sample-meera");
+  await expect(page).toHaveURL(/\/dashboard\?profile=sample-meera$/);
+});
+
+for (const scheme of ["light", "dark"] as const) {
+  test(`the landing page passes axe in ${scheme} mode`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: scheme });
+    await page.goto("/");
+    await page.waitForLoadState("networkidle");
+    await expect(page.locator("html")).toHaveClass(scheme === "dark" ? /dark/ : /^(?!.*dark)/);
+    expect(await axeViolations(page)).toEqual([]);
+  });
+}
+
+test("the landing page never scrolls sideways on a phone", async ({ page, isMobile }) => {
+  test.skip(!isMobile, "phone layout only");
+  await page.goto("/");
+  await page.waitForLoadState("networkidle");
+  const { overflow, width } = await page.evaluate(() => ({
+    overflow: document.documentElement.scrollWidth - window.innerWidth,
+    width: window.innerWidth,
+  }));
+  expect(overflow).toBeLessThanOrEqual(0);
+  expect(width).toBe(page.viewportSize()!.width);
+  // The product shot shows up early, not after a long scroll.
+  const shot = await page.getByRole("figure").first().boundingBox();
+  expect(shot!.y).toBeLessThan(900);
 });
 
 test("private pages send signed-out visitors to sign in", async ({ page }) => {
@@ -434,7 +494,7 @@ test("the app can be installed, with icons and WhatsApp share-to", async ({ page
   await page.goto("/");
   const href = await page.locator('link[rel="manifest"]').getAttribute("href");
   const manifest = await (await page.request.get(href!)).json();
-  expect(manifest).toMatchObject({ name: "ReportSaathi", start_url: "/", display: "standalone" });
+  expect(manifest).toMatchObject({ name: "ReportSaathi", start_url: "/dashboard", display: "standalone" });
   expect(manifest.share_target).toMatchObject({
     action: "/share-target",
     method: "POST",
@@ -666,7 +726,7 @@ test("the Listen button is hidden without a voice for the language", async ({ pa
 });
 
 test("the theme switch changes and remembers the theme", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/dashboard");
   const html = page.locator("html");
   await page.getByRole("button", { name: /Theme:/ }).click(); // system -> light
   await expect(html).not.toHaveClass(/dark/);
@@ -686,7 +746,7 @@ test("unknown pages show a friendly 404", async ({ page }) => {
 test("the page never scrolls sideways on a phone", async ({ page, isMobile }) => {
   test.skip(!isMobile, "phone layout only");
   await startDemo(page);
-  for (const path of ["/", "/reports", "/briefs"]) {
+  for (const path of ["/dashboard", "/reports", "/briefs"]) {
     await page.goto(path);
     await page.waitForLoadState("networkidle");
     // A too-wide page also widens the phone's layout viewport, so check it against the screen too.

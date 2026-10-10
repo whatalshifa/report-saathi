@@ -96,7 +96,7 @@ export function TrendChart({ series }: { series: TrendSeries }) {
         <svg
           width={width}
           height={HEIGHT}
-          role="img"
+          role="group"
           aria-label={`${series.name} over time: ${points
             .map((p) => `${formatDate(p.date)} ${formatNumber(p.value)} ${series.unit} (${p.flag})`)
             .join("; ")}`}
@@ -192,6 +192,7 @@ export function TrendChart({ series }: { series: TrendSeries }) {
               height={HEIGHT}
               fill="transparent"
               tabIndex={0}
+              role="button"
               aria-label={`${formatDate(p.date)}: ${p.printed}, ${p.flag}`}
               onPointerEnter={(e) => e.pointerType === "mouse" && setActive(i)}
               onClick={() => setActive(active === i ? null : i)}

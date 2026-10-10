@@ -15,7 +15,7 @@ export function BriefView({ id }: { id: string }) {
 
   if (error) {
     return (
-      <StatusPanel tone="error" title="This brief didn’t load" heading="h1" actions={<BackLink href="/">Back to all reports</BackLink>}>
+      <StatusPanel tone="error" title="This brief didn’t load" heading="h1" actions={<BackLink href="/dashboard">Back to all reports</BackLink>}>
         {error}
       </StatusPanel>
     );
@@ -29,7 +29,7 @@ export function BriefView({ id }: { id: string }) {
   }
   if (job.status === "failed" || !job.content) {
     return (
-      <StatusPanel tone="error" title="The brief couldn’t be written" heading="h1" actions={<BackLink href="/">Back to all reports</BackLink>}>
+      <StatusPanel tone="error" title="The brief couldn’t be written" heading="h1" actions={<BackLink href="/dashboard">Back to all reports</BackLink>}>
         {job.error ?? "Please try again from the timeline in a moment."}
       </StatusPanel>
     );

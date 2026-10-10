@@ -140,7 +140,7 @@ export function Dashboard({ profileId }: { profileId?: string }) {
     <SampleCard
       onAdded={(sample) => {
         shell.reloadProfiles();
-        router.push(`/?profile=${sample.id}`);
+        router.push(`/dashboard?profile=${sample.id}`);
       }}
     />
   );

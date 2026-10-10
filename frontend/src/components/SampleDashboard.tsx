@@ -38,7 +38,7 @@ export function SampleDashboard() {
               <Link href="/signup" className="btn btn-primary btn-sm flex-1">
                 Sign up free
               </Link>
-              <Link href="/about" className="btn btn-secondary btn-sm">
+              <Link href="/#how" className="btn btn-secondary btn-sm">
                 How it works
               </Link>
             </div>

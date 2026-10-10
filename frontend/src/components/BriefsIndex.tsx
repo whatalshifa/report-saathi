@@ -38,7 +38,7 @@ export function BriefsIndex({ profileId }: { profileId?: string }) {
           title="No reports to summarise yet"
           heading="p"
           actions={
-            <AppLink href="/" className="btn btn-secondary">
+            <AppLink href="/dashboard" className="btn btn-secondary">
               Add a report
             </AppLink>
           }

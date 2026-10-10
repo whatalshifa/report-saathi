@@ -10,7 +10,7 @@ export default function NotFound() {
       heading="h1"
       bare
       actions={
-        <Link href="/" className="btn btn-primary">
+        <Link href="/dashboard" className="btn btn-primary">
           Go to your reports
         </Link>
       }
