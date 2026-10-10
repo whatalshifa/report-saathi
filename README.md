@@ -3,7 +3,7 @@
 [![CI](https://github.com/whatalshifa/report-saathi/actions/workflows/ci.yml/badge.svg)](https://github.com/whatalshifa/report-saathi/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-**Live demo: [report-saathi-six.vercel.app](https://report-saathi-six.vercel.app)** (click "Try the demo", no sign-up needed)
+**Live demo: [report-saathi-six.vercel.app](https://report-saathi-six.vercel.app)** (opens straight into a sample family, no sign-up needed)
 
 Understand every lab report your family gets. Upload a lab report from any Indian lab, as a PDF or a
 phone photo. ReportSaathi reads every value, flags the ones outside the normal range, explains them in
@@ -120,7 +120,7 @@ written in advance. Add `ANTHROPIC_API_KEY` and uploads switch on.
 ```bash
 cd backend && pytest        # 336 tests: flags, units, trends, sign-in, privacy, encryption, demo accounts, limits, fixes, share links, data export, consent, QR codes, PDF boxes
 cd frontend && npm run lint && npm run build
-cd frontend && npx playwright test   # 29 browser tests, 57 runs on a computer and a phone (one is phone-only); starts the API and the site itself
+cd frontend && npx playwright test   # 32 browser tests, 63 runs on a computer and a phone (one is phone-only); starts the API and the site itself
 ```
 
 The tests never call the real Claude API; they use a stand-in for Claude, so they are free and fast.

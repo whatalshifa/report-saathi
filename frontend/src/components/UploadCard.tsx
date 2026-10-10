@@ -68,7 +68,16 @@ export function ReadingPaused() {
   );
 }
 
-export function UploadCard({ profile, reading }: { profile: Profile; reading: boolean }) {
+export function UploadCard({
+  profile,
+  reading,
+  compact = false,
+}: {
+  profile: Profile;
+  reading: boolean;
+  /** A smaller box for the dashboard's side column. */
+  compact?: boolean;
+}) {
   const router = useRouter();
   const input = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
@@ -96,7 +105,9 @@ export function UploadCard({ profile, reading }: { profile: Profile; reading: bo
           handleFile(e.dataTransfer.files[0]);
         }}
         disabled={uploading}
-        className={`flex w-full flex-col items-center gap-2 rounded-card border border-dashed px-6 py-8 text-center transition-colors sm:py-10 ${
+        className={`flex w-full flex-col items-center gap-2 border border-dashed text-center transition-colors ${
+          compact ? "rounded-xl px-4 py-5" : "rounded-card px-6 py-8 sm:py-10"
+        } ${
           dragging
             ? "border-brand-600 bg-brand-50 dark:bg-brand-950/40"
             : "border-stone-300 bg-surface hover:border-brand-500 hover:bg-brand-50/40 dark:border-stone-700 dark:hover:bg-brand-950/20"

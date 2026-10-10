@@ -1,13 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Noto_Sans_Devanagari } from "next/font/google";
 import { cookies } from "next/headers";
-import Link from "next/link";
 
-import { Logo } from "@/components/Logo";
-import { MobileTabs } from "@/components/MobileTabs";
 import { ServerWaking } from "@/components/ServerWaking";
 import { ServiceWorker } from "@/components/ServiceWorker";
-import { SiteHeader } from "@/components/SiteHeader";
+import { AppShell } from "@/components/shell/AppShell";
 import { THEME_SCRIPT } from "@/components/ThemeToggle";
 import "./globals.css";
 
@@ -59,57 +56,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         >
           Skip to content
         </a>
-        <SiteHeader signedIn={signedIn} />
-        <main id="main" className="mx-auto w-full max-w-5xl flex-1 px-4 pt-8 sm:px-6 sm:pt-10 print:py-0">
-          {children}
-        </main>
-        <footer className="mt-16 border-t border-line print:hidden">
-          <div className="mx-auto grid max-w-5xl gap-10 px-4 py-12 sm:px-6 md:grid-cols-[1.4fr_1fr_1fr]">
-            <div className="max-w-xs">
-              <Logo size="sm" />
-              <p className="mt-3 text-sm text-muted">
-                Reads your family&apos;s lab reports, flags what&apos;s out of range and explains it in English, Hindi
-                or Marathi.
-              </p>
-            </div>
-            <nav aria-label="Product" className="text-sm">
-              <p className="font-medium">Product</p>
-              <ul className="mt-3 space-y-2 text-muted">
-                <li>
-                  <Link href="/accuracy" className="hover:text-foreground">
-                    How accurate is it?
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/signup" className="hover:text-foreground">
-                    Create an account
-                  </Link>
-                </li>
-              </ul>
-            </nav>
-            <nav aria-label="Trust" className="text-sm">
-              <p className="font-medium">Trust</p>
-              <ul className="mt-3 space-y-2 text-muted">
-                <li>
-                  <Link href="/privacy" className="hover:text-foreground">
-                    Privacy
-                  </Link>
-                </li>
-                <li>
-                  <a href="https://github.com/whatalshifa/report-saathi" className="hover:text-foreground">
-                    Source code
-                  </a>
-                </li>
-              </ul>
-            </nav>
-          </div>
-          <div className="border-t border-line">
-            <p className="mx-auto max-w-5xl px-4 py-5 text-[13px] text-muted sm:px-6">
-              ReportSaathi explains lab reports. It is not medical advice; always check with your doctor.
-            </p>
-          </div>
-        </footer>
-        <MobileTabs signedIn={signedIn} />
+        <AppShell signedIn={signedIn}>{children}</AppShell>
         <ServerWaking />
         <ServiceWorker />
       </body>

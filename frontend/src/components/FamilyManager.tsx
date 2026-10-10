@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 import { PageHeader } from "@/components/PageHeader";
+import { PersonAvatar } from "@/components/shell/PersonAvatar";
+import { useShell } from "@/components/shell/ShellContext";
 import { ErrorNote, SkeletonList } from "@/components/Skeleton";
 import { LoadError } from "@/components/StatusPanel";
 import {
@@ -22,7 +24,13 @@ const noRepeat = () => false;
 const RELATIONS: Relation[] = ["spouse", "parent", "child", "sibling", "grandparent", "other"];
 
 export function FamilyManager() {
-  const { data: profiles, error, reload } = usePoll(listProfiles, noRepeat);
+  const { data: profiles, error, reload: reloadList } = usePoll(listProfiles, noRepeat);
+  const { reloadProfiles } = useShell();
+  // The sidebar lists the family too, so it reloads with this page.
+  const reload = useCallback(() => {
+    reloadList();
+    reloadProfiles();
+  }, [reloadList, reloadProfiles]);
   const [editing, setEditing] = useState<string | null>(null);
 
   if (error) return <LoadError message={error} onRetry={reload} />;
@@ -76,12 +84,7 @@ export function FamilyManager() {
             ) : (
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-3">
-                  <span
-                    aria-hidden
-                    className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-stone-100 text-sm font-semibold text-stone-700 dark:bg-stone-800 dark:text-stone-200"
-                  >
-                    {p.name.trim().charAt(0).toUpperCase()}
-                  </span>
+                  <PersonAvatar name={p.name} size="lg" className="!h-9 !w-9 !text-[13px]" />
                   <div className="min-w-0">
                     <p className="flex flex-wrap items-center gap-x-2 text-[15px] font-medium">
                       {p.name}
