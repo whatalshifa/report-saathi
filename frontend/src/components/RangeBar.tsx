@@ -19,7 +19,7 @@ export function RangeBar({ result }: { result: TestResult }) {
 
   return (
     <div
-      className="relative h-2 w-full min-w-24 rounded-full bg-slate-200 dark:bg-slate-700"
+      className="relative h-2 w-full min-w-24 rounded-full bg-stone-200 dark:bg-stone-700"
       role="img"
       aria-label={`${value} against ${result.range_source === "typical" ? "a typical" : "a normal"} range of ${
         result.reference_text ?? `${low ?? ""}–${high ?? ""}`
@@ -30,7 +30,7 @@ export function RangeBar({ result }: { result: TestResult }) {
         style={{ left: `${bandStart}%`, width: `${bandEnd - bandStart}%` }}
       />
       <div
-        className={`absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white dark:border-slate-900 ${dotColor}`}
+        className={`absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white dark:border-stone-900 ${dotColor}`}
         style={{ left: `${Math.min(Math.max(position(value), 2), 98)}%` }}
       />
     </div>

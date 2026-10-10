@@ -104,13 +104,13 @@ export function UploadCard({ profile, reading }: { profile: Profile; reading: bo
         disabled={uploading}
         className={`flex w-full flex-col items-center gap-3 rounded-2xl border-2 border-dashed px-6 py-10 text-center transition-colors sm:py-12 ${
           dragging
-            ? "border-teal-600 bg-teal-50 dark:bg-teal-950/40"
-            : "border-line bg-surface hover:border-teal-500 hover:bg-teal-50/40 dark:hover:bg-teal-950/20"
+            ? "border-brand-600 bg-brand-50 dark:bg-brand-950/40"
+            : "border-line bg-surface hover:border-brand-500 hover:bg-brand-50/40 dark:hover:bg-brand-950/20"
         } disabled:cursor-wait disabled:opacity-70`}
       >
         <span
           aria-hidden
-          className="grid h-12 w-12 place-items-center rounded-full bg-teal-50 text-teal-700 dark:bg-teal-950 dark:text-teal-300"
+          className="grid h-12 w-12 place-items-center rounded-full bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300"
         >
           <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor">
             <path strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" d="M12 16V4m0 0-4 4m4-4 4 4M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />

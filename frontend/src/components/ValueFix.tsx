@@ -29,7 +29,7 @@ export function FixButton({
       aria-label={`Fix ${name}`}
       aria-expanded={open}
       title="Read wrongly? Fix it"
-      className="icon-btn -my-1 h-8 w-8 align-middle hover:text-teal-700 dark:hover:text-teal-300"
+      className="icon-btn -my-1 h-8 w-8 align-middle hover:text-brand-700 dark:hover:text-brand-300"
     >
       <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden>
         <path strokeLinecap="round" strokeLinejoin="round" d="M4 20h4L19 9l-4-4L4 16v4ZM13.5 6.5l4 4" />

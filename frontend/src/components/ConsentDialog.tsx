@@ -48,7 +48,7 @@ export function ConsentDialog({ onAgree, onCancel }: { onAgree: () => void; onCa
       ref={dialog}
       aria-labelledby={titleId}
       onClose={() => (agreed.current ? onAgree() : onCancel())}
-      className="m-auto w-[calc(100%-2rem)] max-w-lg rounded-2xl border border-line bg-surface p-0 text-foreground shadow-xl backdrop:bg-slate-950/60"
+      className="m-auto w-[calc(100%-2rem)] max-w-lg rounded-2xl border border-line bg-surface p-0 text-foreground shadow-xl backdrop:bg-stone-950/60"
     >
       <div className="max-h-[calc(100dvh-2rem)] overflow-y-auto p-5 sm:p-6">
         <h2 id={titleId} ref={heading} tabIndex={-1} className="text-lg font-semibold outline-none">

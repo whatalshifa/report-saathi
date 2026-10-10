@@ -5,22 +5,25 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #f7f9fb;
-  --foreground: #0f172a;
+  /* ReportSaathi's look: a warm family health notebook. Cream paper, plum ink, a coral highlighter. */
+  --background: #fbf7f2;
+  --foreground: #2a1d28;
   --surface: #ffffff;
-  --muted: #64748b;
-  --border: #e2e8f0;
-  --focus: #0d9488;
+  --muted: #6e5f69;
+  --border: #ebe1da;
+  --focus: #82457f;
+  --highlight: #ffd9c7;
   color-scheme: light;
 }
 
 .dark {
-  --background: #070b14;
-  --foreground: #e2e8f0;
-  --surface: #0f1623;
-  --muted: #94a3b8;
-  --border: #1e293b;
-  --focus: #2dd4bf;
+  --background: #141015;
+  --foreground: #f1e9ee;
+  --surface: #1e1820;
+  --muted: #b5a6af;
+  --border: #382c37;
+  --focus: #d3abd0;
+  --highlight: #6b2f22;
   color-scheme: dark;
 }
 
@@ -30,14 +33,43 @@
   --color-surface: var(--surface);
   --color-muted: var(--muted);
   --color-line: var(--border);
-  --font-sans: var(--font-geist-sans);
+  --color-highlight: var(--highlight);
+  --font-sans: var(--font-mukta), var(--font-baloo), system-ui, sans-serif;
+  --font-display: var(--font-baloo), var(--font-mukta), system-ui, sans-serif;
+}
+
+/* Plum: white text on brand-700 is 8.9:1, and brand-400 text on the dark background is 6.9:1. */
+@theme {
+  --color-brand-50: #faf4f9;
+  --color-brand-100: #f3e6f1;
+  --color-brand-200: #e7cfe4;
+  --color-brand-300: #d3abd0;
+  --color-brand-400: #c08cbc;
+  --color-brand-500: #9c5a98;
+  --color-brand-600: #82457f;
+  --color-brand-700: #6b3768;
+  --color-brand-800: #572d55;
+  --color-brand-900: #482646;
+  --color-brand-950: #2c122a;
+  --color-coral-300: #ffb39a;
+  --color-coral-400: #fb8f6f;
+  --color-coral-500: #f06a48;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-family: var(--font-sans);
+  font-size: 1.0625rem;
   text-rendering: optimizeLegibility;
+}
+
+/* Headings use Baloo 2: rounded and friendly, and it has matching Devanagari for Hindi and Marathi. */
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
 }
 
 /* One visible focus ring for everything you can tab to, in both themes. Elements that draw their own
@@ -64,25 +96,25 @@ body {
 /* The few building blocks every page shares, so buttons and cards look the same everywhere. */
 @layer components {
   .card {
-    @apply rounded-2xl border border-line bg-surface shadow-[0_1px_2px_rgb(15_23_42/0.04)];
+    @apply rounded-3xl border border-line bg-surface shadow-[0_1px_2px_rgb(42_29_40/0.04)];
   }
 
   /* Buttons: one height per size, so buttons side by side always line up. */
   .btn {
-    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-transparent px-4 py-2 text-sm
+    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-transparent px-4 py-2 text-sm
       font-semibold whitespace-nowrap transition-colors select-none
       disabled:cursor-not-allowed disabled:opacity-60;
   }
-  /* White on teal-700 is 5.5:1; the dark theme keeps it (teal-600 would fall below 4.5:1). */
+  /* White on brand-700 is 8.9:1, in both themes. */
   .btn-primary {
-    @apply bg-teal-700 text-white shadow-sm hover:bg-teal-800 dark:hover:bg-teal-800;
+    @apply bg-brand-700 text-white shadow-sm hover:bg-brand-800 dark:hover:bg-brand-800;
   }
   .btn-secondary {
-    @apply border-line bg-surface text-foreground shadow-[0_1px_1px_rgb(15_23_42/0.04)] hover:border-slate-300
-      hover:bg-slate-50 dark:hover:border-slate-600 dark:hover:bg-slate-800/60;
+    @apply border-line bg-surface text-foreground shadow-[0_1px_1px_rgb(42_29_40/0.04)] hover:border-stone-300
+      hover:bg-stone-50 dark:hover:border-stone-600 dark:hover:bg-stone-800/60;
   }
   .btn-ghost {
-    @apply text-muted hover:bg-slate-100 hover:text-foreground dark:hover:bg-slate-800;
+    @apply text-muted hover:bg-stone-100 hover:text-foreground dark:hover:bg-stone-800;
   }
   .btn-danger {
     @apply bg-rose-700 text-white shadow-sm hover:bg-rose-800;
@@ -93,16 +125,16 @@ body {
       dark:hover:border-rose-900 dark:hover:bg-rose-950/40;
   }
   .btn-sm {
-    @apply min-h-8 rounded-lg px-3 py-1;
+    @apply min-h-8 rounded-full px-3.5 py-1;
   }
   .btn-lg {
-    @apply min-h-12 px-5 text-base;
+    @apply min-h-12 px-6 text-base;
   }
 
   /* Square buttons that hold only an icon (theme switch, pencil, page icon, close). */
   .icon-btn {
     @apply inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted transition-colors
-      hover:bg-slate-100 hover:text-foreground dark:hover:bg-slate-800;
+      hover:bg-stone-100 hover:text-foreground dark:hover:bg-stone-800;
   }
 
   /* Small rounded labels: flags, statuses, "Sample". Colour comes from the caller. */
@@ -112,9 +144,9 @@ body {
 
   .input {
     @apply mt-1.5 block min-h-11 w-full rounded-xl border border-line bg-surface px-3 py-2 text-foreground
-      shadow-[inset_0_1px_1px_rgb(15_23_42/0.03)] outline-none transition placeholder:text-slate-400
-      focus:border-teal-600 focus:ring-4 focus:ring-teal-600/15 focus-visible:outline-none dark:focus:border-teal-400
-      dark:focus:ring-teal-400/20;
+      shadow-[inset_0_1px_1px_rgb(42_29_40/0.03)] outline-none transition placeholder:text-stone-400
+      focus:border-brand-600 focus:ring-4 focus:ring-brand-600/15 focus-visible:outline-none dark:focus:border-brand-400
+      dark:focus:ring-brand-400/20;
   }
   .label {
     @apply block text-sm font-medium;
@@ -124,30 +156,32 @@ body {
   }
 
   .link {
-    @apply font-medium text-teal-700 underline-offset-4 hover:underline dark:text-teal-400;
+    @apply font-medium text-brand-700 underline-offset-4 hover:underline dark:text-brand-400;
   }
 
   .back-link {
-    @apply inline-flex items-center gap-1 text-sm font-medium text-teal-700 hover:underline dark:text-teal-400;
+    @apply inline-flex items-center gap-1 text-sm font-medium text-brand-700 hover:underline dark:text-brand-400;
   }
 
   /* Every page title, and the line under it, share one size and rhythm. */
   .page-title {
-    @apply text-2xl font-bold tracking-tight text-balance sm:text-3xl;
+    @apply font-display text-3xl leading-tight font-bold text-balance sm:text-4xl;
   }
   .page-lead {
     @apply mt-2 max-w-2xl text-pretty text-muted;
   }
   .section-title {
-    @apply text-lg font-semibold tracking-tight;
+    @apply font-display text-xl font-semibold;
   }
 
+  /* A short label above a heading, marked with a coral highlighter stroke instead of capitals. */
   .eyebrow {
-    @apply text-xs font-semibold tracking-[0.14em] text-teal-700 uppercase dark:text-teal-400;
+    @apply inline-block -rotate-1 rounded-md bg-highlight px-2 py-0.5 text-sm font-semibold text-brand-800
+      dark:text-brand-100;
   }
 
   .skeleton {
-    @apply animate-pulse rounded-lg bg-slate-200/80 dark:bg-slate-800/80;
+    @apply animate-pulse rounded-lg bg-stone-200/80 dark:bg-stone-800/80;
   }
 }
 
@@ -160,6 +194,7 @@ body {
     --surface: #ffffff;
     --muted: #475569;
     --border: #cbd5e1;
+    --highlight: #ffe7dc;
     color-scheme: light;
   }
 }

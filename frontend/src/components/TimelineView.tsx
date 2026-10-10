@@ -107,7 +107,7 @@ export function TimelineView({ profileId }: { profileId: string }) {
           <p className="mb-3 text-sm text-muted">A trend appears once a test shows up in a second report.</p>
           <div className="card overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="border-b border-line bg-slate-50/80 text-left text-xs text-muted dark:bg-slate-800/40">
+              <thead className="border-b border-line bg-stone-50/80 text-left text-xs text-muted dark:bg-stone-800/40">
                 <tr>
                   <th className="px-4 py-2.5 font-medium">Test</th>
                   <th className="px-4 py-2.5 font-medium">Value</th>
@@ -184,7 +184,7 @@ function TrendCard({ series }: { series: TrendSeries }) {
             {series.points.map((p) => (
               <tr key={p.report_id} className="border-t border-line">
                 <td className="py-1.5">
-                  <Link href={`/reports/${p.report_id}`} className="text-teal-700 hover:underline dark:text-teal-400">
+                  <Link href={`/reports/${p.report_id}`} className="text-brand-700 hover:underline dark:text-brand-400">
                     {formatDate(p.date)}
                   </Link>
                 </td>

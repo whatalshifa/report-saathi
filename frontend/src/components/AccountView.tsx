@@ -71,7 +71,7 @@ function YourData() {
                 value={download.total ? download.received : undefined}
                 max={download.total ?? undefined}
                 aria-label="Download progress"
-                className="h-2 w-full overflow-hidden rounded-full accent-teal-600"
+                className="h-2 w-full overflow-hidden rounded-full accent-brand-600"
               />
               <p className="text-muted">
                 {download.total
@@ -150,7 +150,7 @@ export function AccountView() {
 
       <section className="card p-5 text-sm sm:p-6">
         <h2 className="section-title mb-3">How your data is kept</h2>
-        <ul className="list-disc space-y-1.5 pl-5 text-slate-700 marker:text-teal-600 dark:text-slate-300">
+        <ul className="list-disc space-y-1.5 pl-5 text-stone-700 marker:text-brand-600 dark:text-stone-300">
           <li>Report files are encrypted before they are stored, each with its own key.</li>
           {!user.is_guest && <li>Your password is stored only as a slow, salted hash (Argon2), never as text.</li>}
           <li>Only your account can see your family’s reports.</li>

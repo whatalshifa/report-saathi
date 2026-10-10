@@ -116,7 +116,7 @@ export function SharePanel({
       </p>
 
       {created && (
-        <div className="mt-5 rounded-xl border border-teal-200 bg-teal-50/60 p-4 sm:p-5 dark:border-teal-900 dark:bg-teal-950/40">
+        <div className="mt-5 rounded-xl border border-brand-200 bg-brand-50/60 p-4 sm:p-5 dark:border-brand-900 dark:bg-brand-950/40">
           <label htmlFor="share-url" className="label">
             Your link, works until {formatDate(created.expires_at)}
           </label>
@@ -125,7 +125,7 @@ export function SharePanel({
             readOnly
             value={url}
             onFocus={(e) => e.currentTarget.select()}
-            className="input font-mono text-[13px] text-slate-700 dark:text-slate-300"
+            className="input font-mono text-[13px] text-stone-700 dark:text-stone-300"
           />
           <div className="mt-3 flex flex-wrap gap-2">
             <button onClick={copy} className="btn btn-primary btn-sm">
@@ -231,13 +231,13 @@ function ShareQr({ url }: { url: string }) {
       ) : (
         <>
           {/* Always black on a white tile: scanners need the contrast, in dark mode too. */}
-          <div className="h-48 w-48 shrink-0 rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
+          <div className="h-48 w-48 shrink-0 rounded-xl border border-stone-200 bg-white p-1 shadow-sm">
             {svg ? (
               // A data URL made here, not a remote image, so not one for Next's image optimiser.
               // eslint-disable-next-line @next/next/no-img-element
               <img src={image} alt="QR code for your link" className="h-full w-full [image-rendering:pixelated]" />
             ) : (
-              <div role="status" className="h-full w-full animate-pulse rounded-lg bg-slate-100">
+              <div role="status" className="h-full w-full animate-pulse rounded-lg bg-stone-100">
                 <span className="sr-only">Making the QR code…</span>
               </div>
             )}
@@ -301,7 +301,7 @@ function ShareRow({
           Revoke
         </button>
       ) : (
-        <span className="badge bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+        <span className="badge bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-300">
           {link.state === "revoked" ? "Revoked" : "Expired"}
         </span>
       )}
