@@ -13,6 +13,10 @@
   --border: #ebe1da;
   --focus: #82457f;
   --highlight: #ffd9c7;
+  /* The app sidebar: a shade deeper than the page, so the work area reads as the paper on top. */
+  --sidebar: #f5ede6;
+  --sidebar-hover: #ede3db;
+  --sidebar-active: #ffffff;
   color-scheme: light;
 }
 
@@ -24,6 +28,9 @@
   --border: #382c37;
   --focus: #d3abd0;
   --highlight: #6b2f22;
+  --sidebar: #100c11;
+  --sidebar-hover: #1f1820;
+  --sidebar-active: #241c26;
   color-scheme: dark;
 }
 
@@ -34,6 +41,9 @@
   --color-muted: var(--muted);
   --color-line: var(--border);
   --color-highlight: var(--highlight);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-hover: var(--sidebar-hover);
+  --color-sidebar-active: var(--sidebar-active);
   /* Inter for Latin; Devanagari letters fall through to Noto Sans Devanagari, drawn to match it. */
   --font-sans: var(--font-inter), var(--font-devanagari), ui-sans-serif, system-ui, sans-serif;
 }
@@ -58,6 +68,14 @@
   /* One radius scale: controls 10px, cards 16px, full pills only for small status badges. */
   --radius-ctl: 10px;
   --radius-card: 16px;
+}
+
+/* Phones have a sticky top bar and a fixed tab bar: whatever is scrolled to stays clear of both. */
+@media (max-width: 1023px) {
+  html {
+    scroll-padding-top: 4rem;
+    scroll-padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+  }
 }
 
 body {
@@ -164,13 +182,19 @@ h3 {
     @apply font-medium text-brand-700 underline-offset-4 hover:underline dark:text-brand-400;
   }
 
+  /* A quiet "see more" link at the end of a dashboard heading or card. */
+  .dash-link {
+    @apply inline-flex items-center gap-1 text-[13px] font-medium text-brand-700 underline-offset-4 hover:underline
+      dark:text-brand-300;
+  }
+
   .back-link {
     @apply inline-flex items-center gap-1 text-sm font-medium text-muted hover:text-foreground;
   }
 
   /* Every page title, and the line under it, share one size and rhythm. */
   .page-title {
-    @apply text-[26px] leading-tight font-semibold tracking-[-0.015em] text-balance sm:text-[32px];
+    @apply text-[24px] leading-tight font-semibold tracking-[-0.015em] text-balance sm:text-[28px];
   }
   .page-lead {
     @apply mt-2 max-w-2xl text-[15px] text-pretty text-muted;

@@ -2,16 +2,39 @@ import { readFile } from "node:fs/promises";
 
 import { expect, test, type Page } from "@playwright/test";
 
+/** Opens the sample family on the home page, which turns it into a live demo account. */
 async function startDemo(page: Page) {
   await page.goto("/");
-  await page.getByRole("button", { name: "Try the demo, no sign-up" }).click();
-  await expect(page.getByRole("heading", { name: "Whose reports?" })).toBeVisible();
+  await page.getByRole("link", { name: /Meera Joshi\s*Sample/ }).click();
+  await expect(page.getByText("You're exploring a demo account")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Meera Joshi", level: 1 })).toBeVisible();
 }
 
-test("signed-out visitors see the landing page", async ({ page }) => {
+test("signed-out visitors land in the app with the sample family open", async ({ page }) => {
   await page.goto("/");
+  await expect(page.getByText("You're exploring a sample family.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Meera Joshi", level: 1 })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Needs attention" }).getByText("LDL cholesterol")).toBeVisible();
+  await expect(page.getByRole("region", { name: "Key markers" }).getByText("HbA1c")).toBeVisible();
+  await expect(page.getByRole("link", { name: /Sample Pathology Lab, Pune/ })).toHaveCount(2);
+  await expect(page.getByRole("main").getByRole("link", { name: "Sign up free" })).toBeVisible();
+});
+
+test("opening a sample report starts a demo and lands on that report", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("link", { name: /Sample Pathology Lab, Pune.*12 Jan 2026/ }).click();
+  await expect(page).toHaveURL(/\/reports\/[\w-]+$/);
+  await expect(page.getByRole("heading", { name: "Needs attention" })).toBeVisible();
+  await expect(page.getByText("You're exploring a demo account")).toBeVisible();
+});
+
+test("the about page explains the product", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("contentinfo").getByRole("link", { name: "About" }).click();
+  await expect(page).toHaveURL(/\/about$/);
   await expect(page.getByRole("heading", { name: "Understand every lab report your family gets." })).toBeVisible();
   await expect(page.getByRole("link", { name: "Create a free account" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Our privacy promises" })).toBeVisible();
 });
 
 test("private pages send signed-out visitors to sign in", async ({ page }) => {
@@ -20,17 +43,16 @@ test("private pages send signed-out visitors to sign in", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
 });
 
-test("the sign-in page never sends anyone to another site", async ({ page }) => {
+test("the sign-in page never sends anyone to another site", async ({ page, baseURL }) => {
   // Browsers read "/\evil.example" as "//evil.example".
   await page.goto("/login?next=/%5Cevil.example");
   await page.getByRole("button", { name: "Open the demo account" }).click();
-  await expect(page.getByRole("heading", { name: "Whose reports?" })).toBeVisible();
-  expect(new URL(page.url()).host).toBe("localhost:3000");
+  await expect(page.getByRole("heading", { name: "Meera Joshi", level: 1 })).toBeVisible();
+  expect(new URL(page.url()).origin).toBe(new URL(baseURL!).origin);
 });
 
 test("the demo opens an account with the sample reports", async ({ page }) => {
   await startDemo(page);
-  await expect(page.getByText("You're exploring a demo account")).toBeVisible();
   await expect(page.getByRole("link", { name: /Meera Joshi\s*Sample/ })).toBeVisible();
   await expect(page.getByRole("link", { name: /Sample Pathology Lab, Pune/ })).toHaveCount(2);
   await expect(page.getByText("Reading new reports is paused on this demo")).toBeVisible();
@@ -300,13 +322,27 @@ test("a new link can be shown as a QR code to scan, in dark mode too", async ({ 
   await expect(qr).toHaveCount(0);
 });
 
+test("the reports and doctor briefs pages cover the whole family", async ({ page }) => {
+  await startDemo(page);
+  await page.goto("/reports");
+  await expect(page.getByRole("heading", { name: "Reports", level: 1 })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Sample Pathology Lab, Pune/ })).toHaveCount(2);
+  await expect(page.getByRole("link", { name: /Demo Diagnostics Centre, Pune/ })).toHaveCount(1);
+
+  await page.goto("/briefs");
+  const meera = page.getByRole("region", { name: "Meera Joshi" });
+  await expect(meera.getByText("No brief shared yet")).toBeVisible();
+  await meera.getByRole("button", { name: "Prepare a new brief" }).click();
+  await expect(page.getByText("Pre-visit lab summary")).toBeVisible();
+});
+
 test("a new account can sign up and add the samples", async ({ page }) => {
   await page.goto("/signup");
   await page.getByLabel("Your name").fill("Test Person");
   await page.getByLabel("Email").fill(`e2e-${Date.now()}-${Math.random().toString(36).slice(2)}@example.com`);
   await page.getByLabel("Password").fill("a long test passphrase");
   await page.getByRole("button", { name: "Create account" }).click();
-  await expect(page.getByRole("heading", { name: "Whose reports?" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Test Person", level: 1 })).toBeVisible();
   await expect(page.getByText("No reports yet")).toBeVisible();
 
   await page.getByRole("button", { name: "Add sample reports" }).click();
@@ -485,14 +521,14 @@ test("the service worker keeps only readable shared files", async ({ page }) => 
   });
 });
 
-test("a website can't slip a file into the shared-report box", async ({ page }) => {
+test("a website can't slip a file into the shared-report box", async ({ page, baseURL }) => {
   await startDemo(page);
   await page.evaluate(() => navigator.serviceWorker.ready.then(() => undefined));
   // Another site that quietly posts a file to the app's share address.
   await page.route("http://evil.example/**", (route) =>
     route.fulfill({
       contentType: "text/html",
-      body: `<form method="post" enctype="multipart/form-data" action="http://localhost:3000/share-target">
+      body: `<form method="post" enctype="multipart/form-data" action="${baseURL}/share-target">
         <input type="file" name="file"></form>
         <script>
           const files = new DataTransfer();
@@ -546,7 +582,7 @@ test("a shared report is added to the person picked", async ({ page }) => {
   await page.getByLabel("Email").fill(`e2e-${Date.now()}-${Math.random().toString(36).slice(2)}@example.com`);
   await page.getByLabel("Password").fill("a long test passphrase");
   await page.getByRole("button", { name: "Create account" }).click();
-  await expect(page.getByRole("heading", { name: "Whose reports?" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Asha Patil", level: 1 })).toBeVisible();
 
   await shareFile(page, "thyroid.jpg", "image/jpeg", 1_500_000);
   await expect(page.getByRole("region", { name: "Shared file" }).getByText("Photo · 1.5 MB")).toBeVisible();
@@ -650,6 +686,15 @@ test("unknown pages show a friendly 404", async ({ page }) => {
 test("the page never scrolls sideways on a phone", async ({ page, isMobile }) => {
   test.skip(!isMobile, "phone layout only");
   await startDemo(page);
-  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
-  expect(overflow).toBeLessThanOrEqual(0);
+  for (const path of ["/", "/reports", "/briefs"]) {
+    await page.goto(path);
+    await page.waitForLoadState("networkidle");
+    // A too-wide page also widens the phone's layout viewport, so check it against the screen too.
+    const { overflow, width } = await page.evaluate(() => ({
+      overflow: document.documentElement.scrollWidth - window.innerWidth,
+      width: window.innerWidth,
+    }));
+    expect(overflow).toBeLessThanOrEqual(0);
+    expect(width).toBe(page.viewportSize()!.width);
+  }
 });

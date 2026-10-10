@@ -5,6 +5,7 @@ const PUBLIC = new Set([
   "/",
   "/login",
   "/signup",
+  "/about",
   "/accuracy",
   "/privacy",
   // A brief shared with a doctor: the token after "#" is the permission, and the API checks it.

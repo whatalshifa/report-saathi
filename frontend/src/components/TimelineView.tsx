@@ -7,6 +7,7 @@ import { useCallback, useState } from "react";
 
 import { FlagBadge } from "@/components/FlagBadge";
 import { PageHeader } from "@/components/PageHeader";
+import { useSelectPerson } from "@/components/shell/ShellContext";
 import { ErrorNote, SkeletonPage } from "@/components/Skeleton";
 import { StatCard, StatRow } from "@/components/StatCard";
 import { LoadError } from "@/components/StatusPanel";
@@ -22,10 +23,12 @@ import {
   type TrendSeries,
 } from "@/lib/api";
 import { formatAge, formatDate, formatNumber, formatRange, formatSex, possessive } from "@/lib/format";
+import { direction, type Direction } from "@/lib/trends";
 import { usePoll } from "@/lib/usePoll";
 
 export function TimelineView({ profileId }: { profileId: string }) {
   const router = useRouter();
+  useSelectPerson(profileId);
   const load = useCallback(() => getTrends(profileId), [profileId]);
   const { data: trends, error } = usePoll(load, () => false);
   const [briefError, setBriefError] = useState<string | null>(null);
@@ -258,27 +261,6 @@ function RecheckCard({ person, due }: { person: TimelineSummary; due: RecheckDue
       </div>
     </section>
   );
-}
-
-type Direction = "better" | "back" | "worse" | "steady-in" | "steady-out";
-
-/** How far a value sits outside its normal range (0 when inside it). */
-function distanceOutside(value: number, low: number | null, high: number | null): number {
-  if (low !== null && value < low) return low - value;
-  if (high !== null && value > high) return value - high;
-  return 0;
-}
-
-/** Whether the latest reading moved towards or away from the normal range. */
-function direction(series: TrendSeries): Direction | null {
-  const n = series.points.length;
-  if (n < 2 || (series.ref_low === null && series.ref_high === null)) return null;
-  const before = distanceOutside(series.points[n - 2].value, series.ref_low, series.ref_high);
-  const now = distanceOutside(series.points[n - 1].value, series.ref_low, series.ref_high);
-  if (now === 0) return before > 0 ? "back" : "steady-in";
-  if (now < before) return "better";
-  if (now > before) return "worse";
-  return "steady-out";
 }
 
 const DIRECTION_TEXT: Record<Direction, { text: string; className: string }> = {

@@ -9,6 +9,7 @@ import { ExplanationPanel } from "@/components/ExplanationPanel";
 import { FlagBadge } from "@/components/FlagBadge";
 import { MoreMenu, MoreMenuItem } from "@/components/MoreMenu";
 import { BackLink, PageHeader } from "@/components/PageHeader";
+import { useSelectPerson } from "@/components/shell/ShellContext";
 import { RangeBar } from "@/components/RangeBar";
 import { SkeletonPage } from "@/components/Skeleton";
 import { SourceButton, SourceDialog } from "@/components/SourceView";
@@ -41,6 +42,7 @@ export function ReportView({ id }: { id: string }) {
   // The value whose source is showing, and the button that opened it (focus goes back there).
   const [source, setSource] = useState<{ result: TestResult; trigger: HTMLElement } | null>(null);
   const showsPdf = usePdfViewer();
+  useSelectPerson(report?.profile_id);
 
   // Reading a report takes a little while, so ask the server again until it is done.
   useEffect(() => {

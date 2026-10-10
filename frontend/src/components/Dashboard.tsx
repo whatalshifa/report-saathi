@@ -1,165 +1,205 @@
 "use client";
 
-import { ArrowRight, Lock, Plus } from "lucide-react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
-import { ReportList } from "@/components/ReportList";
+import { DashboardView, PrivateNote, type DashboardData, type ReportGlance } from "@/components/DashboardView";
 import { SampleCard } from "@/components/SampleCard";
-import { PageHeader } from "@/components/PageHeader";
-import { SkeletonList } from "@/components/Skeleton";
-import { LoadError } from "@/components/StatusPanel";
-import { UploadCard } from "@/components/UploadCard";
-import { getFeatures, listProfiles, type Profile } from "@/lib/api";
-import { formatDate, possessive, RELATION_LABEL } from "@/lib/format";
+import { SampleDashboard } from "@/components/SampleDashboard";
+import { LoadError, StatusPanel } from "@/components/StatusPanel";
+import { ReadingPaused, UploadCard } from "@/components/UploadCard";
+import { pickProfile, useSelectPerson, useShell } from "@/components/shell/ShellContext";
+import {
+  ApiError,
+  getFeatures,
+  getReport,
+  getTrends,
+  isOutOfRange,
+  listReports,
+  type Profile,
+  type ReportDetail,
+  type ReportSummary,
+  type Trends,
+} from "@/lib/api";
 import { usePoll } from "@/lib/usePoll";
 
 const noRepeat = () => false;
+// The dashboard counts flags on the newest few reports; the reports page lists the rest.
+const GLANCES = 5;
 
-/** With no person picked, open on someone who has reports rather than an empty page. */
-function pickProfile(profiles: Profile[], profileId?: string): Profile {
-  return (
-    profiles.find((p) => p.id === profileId) ??
-    profiles.find((p) => p.relation === "self" && p.report_count > 0) ??
-    profiles.find((p) => p.report_count > 0) ??
-    profiles[0]
-  );
+export function glance(report: ReportDetail): ReportGlance {
+  return {
+    out_of_range: report.out_of_range,
+    total: report.results.length,
+    flagged: report.results
+      .filter((r) => isOutOfRange(r.flag))
+      .map(({ name, value_text, unit, flag, reference_text, ref_low, ref_high }) => ({
+        name,
+        value_text,
+        unit,
+        flag,
+        reference_text,
+        ref_low,
+        ref_high,
+      })),
+  };
+}
+
+type Loaded = {
+  key: string;
+  reports?: ReportSummary[];
+  trends?: Trends | null;
+  glances?: Record<string, ReportGlance>;
+  error?: string;
+};
+
+/** Loads one person's reports, trends and the flags on their newest reports. */
+function usePersonData(person: Profile | null) {
+  const key = person ? `${person.id}:${person.report_count}` : "";
+  const [loaded, setLoaded] = useState<Loaded>({ key: "" });
+
+  useEffect(() => {
+    if (!person) return;
+    let cancelled = false;
+    const id = person.id;
+    const count = person.report_count;
+    const thisKey = `${id}:${count}`;
+    (async () => {
+      try {
+        const reportsPromise = listReports(id);
+        const trendsPromise =
+          count > 0
+            ? getTrends(id).catch((err) => {
+                // No finished report yet: no trends to draw, which isn't an error.
+                if (err instanceof ApiError && err.status === 404) return null;
+                throw err;
+              })
+            : Promise.resolve(null);
+        const reports = await reportsPromise;
+        if (cancelled) return;
+        setLoaded((prev) => ({ ...(prev.key === thisKey ? prev : {}), key: thisKey, reports }));
+        const [trends, details] = await Promise.all([
+          trendsPromise,
+          Promise.all(
+            reports
+              .filter((r) => r.status === "done")
+              .slice(0, GLANCES)
+              .map((r) => getReport(r.id)),
+          ),
+        ]);
+        if (cancelled) return;
+        setLoaded({
+          key: thisKey,
+          reports,
+          trends,
+          glances: Object.fromEntries(details.map((d) => [d.id, glance(d)])),
+        });
+      } catch (err) {
+        if (!cancelled) setLoaded({ key: thisKey, error: err instanceof Error ? err.message : "Could not load" });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [person]);
+
+  return loaded.key === key ? loaded : { key };
 }
 
 export function Dashboard({ profileId }: { profileId?: string }) {
   const router = useRouter();
-  const { data: profiles, error, reload } = usePoll(listProfiles, noRepeat);
+  const shell = useShell();
   const { data: features } = usePoll(getFeatures, noRepeat);
+  const person = shell.mode === "live" && shell.profiles?.length ? pickProfile(shell.profiles, profileId ?? shell.person?.id) : null;
+  useSelectPerson(person?.id);
+  const data = usePersonData(person);
 
-  if (error) return <LoadError message={error} onRetry={reload} />;
-  if (!profiles || !features) return <DashboardSkeleton />;
+  // A sign-in that has run out shows the sample family until the person signs in again.
+  if (shell.mode === "sample") return <SampleDashboard />;
+  if (!shell.profiles || shell.mode === "loading") return <DashboardSkeleton />;
+  if (!person) {
+    return (
+      <StatusPanel tone="empty" title="Nobody here yet" heading="h1">
+        Add a family member on the Family page to start keeping their reports.
+      </StatusPanel>
+    );
+  }
+  if (data.error) return <LoadError message={data.error} />;
 
-  const selected = pickProfile(profiles, profileId);
-  const hasSamples = profiles.some((p) => p.is_sample);
-
-  return (
-    <div className="space-y-8">
-      <section>
-        <PageHeader title="Whose reports?" description="Each person in the family has their own reports and timeline." />
-        <ul className="mt-6 flex flex-wrap gap-2" aria-label="Family members">
-          {profiles.map((p) => {
-            const active = p.id === selected.id;
-            return (
-              <li key={p.id}>
-                <Link
-                  href={`/?profile=${p.id}`}
-                  aria-current={active ? "page" : undefined}
-                  className={`flex h-10 items-center gap-2 rounded-ctl border py-1 pr-3 pl-1.5 text-sm transition-colors ${
-                    active
-                      ? "border-brand-600 bg-brand-50 text-brand-900 ring-1 ring-brand-600 ring-inset dark:border-brand-400 dark:bg-brand-950/60 dark:text-brand-50 dark:ring-brand-400"
-                      : "border-line bg-surface hover:bg-stone-50 dark:hover:bg-stone-800/60"
-                  }`}
-                >
-                  <span
-                    aria-hidden
-                    className={`grid h-7 w-7 place-items-center rounded-full text-xs font-semibold ${
-                      active
-                        ? "bg-brand-700 text-white"
-                        : "bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-200"
-                    }`}
-                  >
-                    {p.name.trim().charAt(0).toUpperCase()}
-                  </span>
-                  <span className="font-medium">{p.name}</span>
-                  <span className={active ? "text-brand-700 dark:text-brand-200" : "text-muted"}>
-                    {p.is_sample ? "Sample" : RELATION_LABEL[p.relation]}
-                  </span>
-                </Link>
-              </li>
-            );
-          })}
-          <li>
-            <Link
-              href="/family"
-              className="flex h-10 items-center gap-1.5 rounded-ctl px-3 text-sm font-medium text-muted transition-colors hover:bg-stone-100 hover:text-foreground dark:hover:bg-stone-800"
-            >
-              <Plus aria-hidden className="h-4 w-4" />
-              Add family member
-            </Link>
-          </li>
-        </ul>
-      </section>
-
-      <div className="grid gap-8 lg:grid-cols-[1fr_18rem] lg:gap-10">
-        <div className="min-w-0 space-y-8">
-          <UploadCard key={selected.id} profile={selected} reading={features.reading} />
-          <section>
-            <h2 className="section-title mb-3">{possessive(selected.name)} reports</h2>
-            <ReportList key={selected.id} profileId={selected.id} />
-          </section>
-        </div>
-
-        <aside className="space-y-6">
-          {selected.report_count > 0 && (
-            <Link
-              href={`/profiles/${selected.id}`}
-              className="card group block p-5 transition-colors hover:border-brand-300 dark:hover:border-brand-800"
-            >
-              <p className="text-[13px] text-muted">Timeline</p>
-              <p className="mt-0.5 font-semibold">{possessive(selected.name)} results over time</p>
-              <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-line pt-4 text-sm">
-                <div>
-                  <dt className="text-muted">Reports</dt>
-                  <dd className="mt-0.5 font-medium tabular-nums">{selected.report_count}</dd>
-                </div>
-                {selected.last_report_date && (
-                  <div>
-                    <dt className="text-muted">Latest</dt>
-                    <dd className="mt-0.5 font-medium tabular-nums">{formatDate(selected.last_report_date)}</dd>
-                  </div>
-                )}
-              </dl>
-              <p className="mt-4 flex items-center gap-1 text-sm font-medium text-brand-700 dark:text-brand-300">
-                See trends and a doctor brief
-                <ArrowRight aria-hidden className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-              </p>
-            </Link>
-          )}
-
-          {!hasSamples && (
-            <SampleCard
-              onAdded={(sample) => {
-                reload();
-                router.push(`/?profile=${sample.id}`);
-              }}
-            />
-          )}
-
-          <div className="flex gap-2.5 px-1 text-[13px] text-muted">
-            <Lock aria-hidden className="mt-0.5 h-4 w-4 shrink-0" />
-            <p>
-              <span className="font-medium text-foreground">Private by design.</span> Files are encrypted before
-              they&apos;re stored, and only your account can open them.
-            </p>
-          </div>
-        </aside>
-      </div>
-    </div>
+  const hasSamples = shell.profiles.some((p) => p.is_sample);
+  const upload = features ? (
+    features.reading ? (
+      <UploadCard key={person.id} profile={person} reading compact />
+    ) : (
+      <ReadingPaused />
+    )
+  ) : (
+    <div className="skeleton h-20 rounded-xl" aria-hidden />
   );
+  const samples = !hasSamples && (
+    <SampleCard
+      onAdded={(sample) => {
+        shell.reloadProfiles();
+        router.push(`/?profile=${sample.id}`);
+      }}
+    />
+  );
+
+  const view: DashboardData = {
+    person,
+    profiles: shell.profiles,
+    reports: data.reports ?? null,
+    trends: data.trends ?? null,
+    glances: data.glances ?? {},
+  };
+
+  const side =
+    person.report_count === 0 ? (
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_19rem] lg:gap-7">
+        <div className="space-y-4">
+          <StatusPanel tone="empty" title="No reports yet" heading="p">
+            Add {person.name}&apos;s first lab report: a PDF or a phone photo of the printout. Every value is read,
+            checked against the lab&apos;s range and lined up with later reports.
+          </StatusPanel>
+          {upload}
+        </div>
+        <div className="space-y-4">
+          {samples}
+          <PrivateNote />
+        </div>
+      </div>
+    ) : (
+      <div className="space-y-4">
+        {upload}
+        {samples}
+        <PrivateNote />
+      </div>
+    );
+
+  return <DashboardView data={view} side={side} />;
 }
 
-function DashboardSkeleton() {
+export function DashboardSkeleton() {
   return (
-    <div className="space-y-8" role="status" aria-label="Loading">
-      <div className="space-y-3">
-        <div className="skeleton h-8 w-56" />
-        <div className="skeleton h-4 w-80 max-w-full" />
-        <div className="flex gap-2 pt-2">
-          <div className="skeleton h-10 w-36" />
-          <div className="skeleton h-10 w-36" />
+    <div className="space-y-6" role="status" aria-label="Loading">
+      <div className="flex items-center gap-3.5">
+        <div className="skeleton h-11 w-11 rounded-full" />
+        <div className="space-y-2">
+          <div className="skeleton h-3 w-24" />
+          <div className="skeleton h-6 w-48" />
         </div>
       </div>
-      <div className="grid gap-6 lg:grid-cols-[1fr_20rem]">
-        <div className="space-y-6">
-          <div className="skeleton h-40 rounded-card" />
-          <SkeletonList />
+      <div className="grid gap-3 lg:grid-cols-[1.5fr_1fr]">
+        <div className="skeleton h-32 rounded-xl" />
+        <div className="skeleton h-32 rounded-xl" />
+      </div>
+      <div className="grid gap-6 lg:grid-cols-[1fr_19rem]">
+        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+          {Array.from({ length: 6 }, (_, i) => (
+            <div key={i} className="skeleton h-[134px] rounded-xl" />
+          ))}
         </div>
-        <div className="skeleton h-48 rounded-card" />
+        <div className="skeleton h-64 rounded-xl" />
       </div>
     </div>
   );
