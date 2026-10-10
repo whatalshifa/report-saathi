@@ -11,7 +11,8 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "ReportSaathi",
     short_name: "ReportSaathi",
     description: "Understand your family's lab reports, in English, Hindi or Marathi.",
-    start_url: "/",
+    // Installed, it opens straight into the app rather than the landing page.
+    start_url: "/dashboard",
     scope: "/",
     display: "standalone",
     // --background in globals.css, so the splash screen matches the first page.

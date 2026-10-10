@@ -24,12 +24,12 @@ const POINTS = [
  * would, against a stand-in origin, and kept only if it stays there.
  */
 function safeNext(next: string | undefined) {
-  if (!next?.startsWith("/")) return "/";
+  if (!next?.startsWith("/")) return "/dashboard";
   try {
     const url = new URL(next, HERE);
-    return url.origin === HERE ? url.pathname + url.search + url.hash : "/";
+    return url.origin === HERE ? url.pathname + url.search + url.hash : "/dashboard";
   } catch {
-    return "/";
+    return "/dashboard";
   }
 }
 

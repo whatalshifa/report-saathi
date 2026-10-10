@@ -81,7 +81,7 @@ export function ReportView({ id }: { id: string }) {
   async function handleDelete() {
     if (!confirm("Delete this report and its file? Any doctor links for this person will stop working.")) return;
     await deleteReport(id);
-    router.push(`/?profile=${report?.profile_id ?? ""}`);
+    router.push(`/dashboard?profile=${report?.profile_id ?? ""}`);
   }
 
   if (error) {
@@ -128,7 +128,7 @@ export function ReportView({ id }: { id: string }) {
   return (
     <div className="space-y-8">
       <PageHeader
-        back={{ href: `/?profile=${report.profile.id}`, label: `${possessive(report.profile.name)} reports` }}
+        back={{ href: `/dashboard?profile=${report.profile.id}`, label: `${possessive(report.profile.name)} reports` }}
         title={report.lab_name ?? report.filename}
         description={
           <>
@@ -447,7 +447,7 @@ function Notice({
   body?: string;
 }) {
   return (
-    <StatusPanel tone={tone} title={title} heading="h1" actions={<BackLink href="/">Back to all reports</BackLink>}>
+    <StatusPanel tone={tone} title={title} heading="h1" actions={<BackLink href="/dashboard">Back to all reports</BackLink>}>
       {body}
     </StatusPanel>
   );

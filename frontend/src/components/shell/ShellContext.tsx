@@ -139,7 +139,7 @@ export function ShellProvider({ signedIn, children }: { signedIn: boolean; child
           key === "meera" ? real.id : (reports.find((r) => r.report_date === key)?.id ?? real.id),
         );
         // A report that can't be matched falls back to the person's dashboard.
-        if (target.startsWith("/reports/") && target.endsWith(real.id)) target = `/?profile=${real.id}`;
+        if (target.startsWith("/reports/") && target.endsWith(real.id)) target = `/dashboard?profile=${real.id}`;
       }
       // A full page load, so every part of the page sees the new sign-in.
       // eslint-disable-next-line @next/next/no-location-assign-relative-destination
@@ -171,11 +171,12 @@ export function ShellProvider({ signedIn, children }: { signedIn: boolean; child
 }
 
 // Pages that read the same signed in or out. Everything else, in the sample, needs the demo account.
-const OPEN_PATHS = ["/about", "/privacy", "/accuracy", "/login", "/signup"];
+const OPEN_PATHS = ["/privacy", "/accuracy", "/login", "/signup"];
 
 function needsAccount(href: string): boolean {
   if (!href.startsWith("/")) return false;
-  if (href === "/") return false;
+  // The landing page and the sample dashboard itself are open to everyone; a person's dashboard opens the demo.
+  if (href === "/" || href === "/dashboard") return false;
   const path = href.split(/[?#]/)[0];
   return !OPEN_PATHS.includes(path);
 }

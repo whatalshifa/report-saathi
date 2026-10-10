@@ -16,7 +16,7 @@ export function WakeServer() {
  * `next`: where to go once the demo is open (from the sign-in page, the page that asked for it).
  * `full`: as wide as its column on phones, its own width from tablets up.
  */
-export function DemoButton({ className = "btn btn-primary", label = "Try the demo", next = "/", full = false }) {
+export function DemoButton({ className = "btn btn-primary", label = "Try the demo", next = "/dashboard", full = false }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

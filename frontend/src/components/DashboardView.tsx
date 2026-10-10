@@ -147,7 +147,7 @@ function PersonSwitcher({ profiles, selected }: { profiles: Profile[]; selected:
           return (
             <li key={p.id}>
               <AppLink
-                href={`/?profile=${p.id}`}
+                href={`/dashboard?profile=${p.id}`}
                 aria-current={active ? "page" : undefined}
                 className={`flex h-10 items-center gap-2 rounded-full border py-1 pr-3.5 pl-1.5 text-[13px] transition-colors ${
                   active
@@ -240,7 +240,7 @@ function rangeWords(low: number | null, high: number | null, unit: string): stri
   return "No normal range printed";
 }
 
-function AttentionPanel({
+export function AttentionPanel({
   person,
   attention,
   rechecks,
@@ -355,7 +355,7 @@ function AttentionPanel({
   );
 }
 
-function ImprovedPanel({ person, improved, loading }: { person: Profile; improved: TrendSeries[]; loading: boolean }) {
+export function ImprovedPanel({ person, improved, loading }: { person: Profile; improved: TrendSeries[]; loading: boolean }) {
   return (
     <section aria-labelledby="improved-heading" className="rounded-xl border border-line bg-surface p-4 sm:p-5">
       <div className="flex items-center justify-between gap-3">
@@ -401,7 +401,7 @@ const STATUS_TEXT: Record<Flag, { word: string; dot: string; text: string }> = {
   unknown: { word: "No range", dot: "bg-stone-400", text: "text-muted" },
 };
 
-function MarkerTile({ series, href }: { series: TrendSeries; href: string }) {
+export function MarkerTile({ series, href }: { series: TrendSeries; href: string }) {
   const latest = series.points[series.points.length - 1];
   const previous = series.points[series.points.length - 2];
   const status = STATUS_TEXT[series.latest_flag];
@@ -450,7 +450,7 @@ function monthOf(date: string, latest: string): string {
   return d.toLocaleDateString("en-IN", sameYear ? { month: "short" } : { month: "short", year: "numeric" });
 }
 
-function LatestReport({ report, glance }: { report: ReportSummary; glance?: ReportGlance }) {
+export function LatestReport({ report, glance }: { report: ReportSummary; glance?: ReportGlance }) {
   return (
     <section aria-labelledby="latest-heading" className="rounded-xl border border-line bg-surface">
       <div className="border-b border-line px-4 py-3.5">

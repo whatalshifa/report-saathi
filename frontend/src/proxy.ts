@@ -3,8 +3,11 @@ import { NextResponse, type NextRequest } from "next/server";
 // Pages anyone can open. Everything else needs a sign-in cookie.
 const PUBLIC = new Set([
   "/",
+  // The app home: signed out, it shows the sample family.
+  "/dashboard",
   "/login",
   "/signup",
+  // Moved into the landing page; next.config redirects it there.
   "/about",
   "/accuracy",
   "/privacy",

@@ -9,6 +9,10 @@ const nextConfig: NextConfig = {
     // Forwarded requests are buffered up to this size; reports can be 20 MB plus form overhead.
     proxyClientMaxBodySize: "25mb",
   },
+  // The old about page now lives on the landing page.
+  async redirects() {
+    return [{ source: "/about", destination: "/", permanent: true }];
+  },
   async headers() {
     return [
       {

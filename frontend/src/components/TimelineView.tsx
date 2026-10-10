@@ -58,7 +58,7 @@ export function TimelineView({ profileId }: { profileId: string }) {
   return (
     <div className="space-y-8">
       <PageHeader
-        back={{ href: `/?profile=${profileId}`, label: `${possessive(person.name)} reports` }}
+        back={{ href: `/dashboard?profile=${profileId}`, label: `${possessive(person.name)} reports` }}
         eyebrow="Health timeline"
         title={person.name}
         description={

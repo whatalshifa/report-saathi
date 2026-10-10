@@ -32,6 +32,9 @@ const BARE_PAGES = ["/login", "/signup"];
 export function AppShell({ signedIn, children }: { signedIn: boolean; children: ReactNode }) {
   const pathname = usePathname();
 
+  // The landing page brings its own header and footer.
+  if (pathname === "/") return children;
+
   if (pathname === "/shared") {
     return (
       <>
@@ -81,8 +84,8 @@ export function AppShell({ signedIn, children }: { signedIn: boolean; children: 
             <nav aria-label="About ReportSaathi">
               <ul className="flex flex-wrap gap-x-5 gap-y-1">
                 <li>
-                  <Link href="/about" className="hover:text-foreground">
-                    About
+                  <Link href="/" className="hover:text-foreground">
+                    About ReportSaathi
                   </Link>
                 </li>
                 <li>
@@ -121,8 +124,8 @@ function useNav(): NavItem[] {
     {
       label: "Dashboard",
       short: "Home",
-      href: id && mode === "live" ? `/?profile=${id}` : "/",
-      active: pathname === "/",
+      href: id && mode === "live" ? `/dashboard?profile=${id}` : "/dashboard",
+      active: pathname === "/dashboard",
       Icon: LayoutDashboard,
     },
     { label: "Reports", short: "Reports", href: "/reports", active: pathname.startsWith("/reports"), Icon: FileText },
@@ -155,7 +158,7 @@ function Sidebar() {
       className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-line bg-sidebar lg:flex print:hidden"
     >
       <div className="flex h-14 shrink-0 items-center px-4">
-        <Link href="/" aria-label="ReportSaathi home" className="rounded-ctl">
+        <Link href="/dashboard" aria-label="ReportSaathi dashboard" className="rounded-ctl">
           <Logo size="sm" />
         </Link>
       </div>
@@ -205,8 +208,8 @@ function Sidebar() {
               return (
                 <li key={p.id}>
                   <AppLink
-                    href={`/?profile=${p.id}`}
-                    aria-current={selected && pathname === "/" ? "page" : undefined}
+                    href={`/dashboard?profile=${p.id}`}
+                    aria-current={selected && pathname === "/dashboard" ? "page" : undefined}
                     className={`flex items-center gap-2.5 rounded-lg px-2 py-1.5 transition-colors ${
                       selected ? "bg-sidebar-active shadow-[0_0_0_1px_var(--border)]" : "hover:bg-sidebar-hover"
                     }`}
@@ -228,7 +231,7 @@ function Sidebar() {
       </section>
 
       <div className="shrink-0 space-y-2 border-t border-line p-2.5">
-        <SideLink label="About ReportSaathi" short="About" href="/about" active={pathname === "/about"} Icon={Info} />
+        <SideLink label="About ReportSaathi" short="About" href="/" active={false} Icon={Info} />
         <div className="flex items-center gap-1">
           {mode === "live" && user ? (
             <Link
@@ -322,7 +325,7 @@ function PhoneBar() {
   return (
     <header className="sticky top-0 z-30 border-b border-line bg-background/90 backdrop-blur-md lg:hidden print:hidden">
       <div className="flex h-12 items-center justify-between gap-3 px-4 sm:px-6">
-        <Link href="/" aria-label="ReportSaathi home" className="flex items-center gap-2 rounded-ctl">
+        <Link href="/dashboard" aria-label="ReportSaathi dashboard" className="flex items-center gap-2 rounded-ctl">
           <LogoMark className="h-6 w-6" />
           <span className="text-[15px] font-semibold tracking-[-0.01em]">ReportSaathi</span>
         </Link>
@@ -390,7 +393,7 @@ function PhoneTabs() {
   );
 }
 
-function OpeningToast() {
+export function OpeningToast() {
   const { opening, openError } = useShell();
   if (!opening && !openError) return null;
   return (

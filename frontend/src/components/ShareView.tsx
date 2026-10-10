@@ -60,7 +60,7 @@ export function ShareView({ error: shareError }: { error?: string }) {
 
   return (
     <div className="mx-auto max-w-xl space-y-6">
-      <PageHeader back={{ href: "/", label: "Your reports" }} title="Add a shared report" />
+      <PageHeader back={{ href: "/dashboard", label: "Your reports" }} title="Add a shared report" />
 
       {problem && <ErrorNote message={problem} />}
       {error && <ErrorNote message={error} />}
@@ -72,7 +72,7 @@ export function ShareView({ error: shareError }: { error?: string }) {
           tone="empty"
           title="Nothing is waiting to be added"
           actions={
-            <Link href="/" className="btn btn-secondary">
+            <Link href="/dashboard" className="btn btn-secondary">
               Go to your reports
             </Link>
           }

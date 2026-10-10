@@ -21,7 +21,7 @@ export default function Error({ error, retry }: { error: Error & { digest?: stri
           <button type="button" onClick={retry} className="btn btn-primary">
             Try again
           </button>
-          <Link href="/" className="btn btn-secondary">
+          <Link href="/dashboard" className="btn btn-secondary">
             Go home
           </Link>
         </>
