@@ -1,5 +1,6 @@
 "use client";
 
+import { PauseCircle, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
@@ -54,18 +55,11 @@ export function useReportUpload(onUploaded: (report: ReportDetail) => void) {
 /** Shown instead of the upload box when the server has no AI key (demo mode). */
 export function ReadingPaused() {
   return (
-    <div className="card flex gap-4 p-5">
-      <span
-        aria-hidden
-        className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300"
-      >
-        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8}>
-          <path strokeLinecap="round" d="M10 9v6m4-6v6M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-        </svg>
-      </span>
+    <div className="flex gap-3 rounded-ctl border border-line bg-surface px-4 py-3 text-sm">
+      <PauseCircle aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-muted" />
       <div>
-        <p className="font-semibold">Reading new reports is paused on this demo</p>
-        <p className="mt-1 text-sm text-muted">
+        <p className="font-medium">Reading new reports is paused on this demo</p>
+        <p className="mt-0.5 text-[13px] text-muted">
           This copy of ReportSaathi runs without an AI key, so it can&apos;t read new uploads yet. The sample reports
           show everything it does once a report is read.
         </p>
@@ -102,24 +96,22 @@ export function UploadCard({ profile, reading }: { profile: Profile; reading: bo
           handleFile(e.dataTransfer.files[0]);
         }}
         disabled={uploading}
-        className={`flex w-full flex-col items-center gap-3 rounded-2xl border-2 border-dashed px-6 py-10 text-center transition-colors sm:py-12 ${
+        className={`flex w-full flex-col items-center gap-2 rounded-card border border-dashed px-6 py-8 text-center transition-colors sm:py-10 ${
           dragging
             ? "border-brand-600 bg-brand-50 dark:bg-brand-950/40"
-            : "border-line bg-surface hover:border-brand-500 hover:bg-brand-50/40 dark:hover:bg-brand-950/20"
+            : "border-stone-300 bg-surface hover:border-brand-500 hover:bg-brand-50/40 dark:border-stone-700 dark:hover:bg-brand-950/20"
         } disabled:cursor-wait disabled:opacity-70`}
       >
         <span
           aria-hidden
-          className="grid h-12 w-12 place-items-center rounded-full bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300"
+          className="grid h-10 w-10 place-items-center rounded-ctl bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300"
         >
-          <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor">
-            <path strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" d="M12 16V4m0 0-4 4m4-4 4 4M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
-          </svg>
+          <Upload className="h-5 w-5" strokeWidth={1.75} />
         </span>
-        <span className="text-lg font-semibold">
+        <span className="mt-1 font-semibold">
           {uploading ? "Uploading…" : `Upload a report for ${profile.name}`}
         </span>
-        <span className="max-w-md text-sm text-pretty text-muted">
+        <span className="max-w-md text-[13px] text-pretty text-muted">
           Drop a PDF or a photo here, or tap to choose one. Up to 20 MB. Files are stored encrypted.
         </span>
       </button>

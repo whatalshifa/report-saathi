@@ -47,23 +47,23 @@ export function StatusPanel({
   return (
     <div
       role={tone === "error" ? "alert" : tone === "working" ? "status" : undefined}
-      className={`flex flex-col items-center px-6 text-center ${bare ? "py-16 sm:py-20" : "card py-12"}`}
+      className={`flex flex-col items-center px-6 text-center ${bare ? "py-16 sm:py-20" : "card py-10"}`}
     >
-      <span aria-hidden className={`grid h-12 w-12 place-items-center rounded-full ${TONE_STYLE[tone]}`}>
+      <span aria-hidden className={`grid h-10 w-10 place-items-center rounded-ctl ${TONE_STYLE[tone]}`}>
         {tone === "working" ? (
           <span className="h-5 w-5 animate-spin rounded-full border-2 border-current border-r-transparent" />
         ) : (
-          <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.6}>
+          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.6}>
             <path strokeLinecap="round" strokeLinejoin="round" d={ICONS[tone]} />
           </svg>
         )}
       </span>
       <Heading
-        className={`mt-4 font-semibold tracking-tight text-balance ${bare ? "text-2xl sm:text-3xl" : "text-lg"}`}
+        className={`mt-4 font-semibold tracking-tight text-balance ${bare ? "text-[26px] sm:text-[30px]" : "text-[17px]"}`}
       >
         {title}
       </Heading>
-      {children && <div className="mt-2 max-w-md text-sm text-pretty text-muted sm:text-base">{children}</div>}
+      {children && <div className="mt-1.5 max-w-md text-sm text-pretty text-muted">{children}</div>}
       {actions && <div className="mt-6 flex flex-wrap justify-center gap-3">{actions}</div>}
     </div>
   );

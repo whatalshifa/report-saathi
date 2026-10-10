@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowDown, ArrowUp, CalendarClock, FileText, Minus } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
@@ -7,7 +8,7 @@ import { useCallback, useState } from "react";
 import { FlagBadge } from "@/components/FlagBadge";
 import { PageHeader } from "@/components/PageHeader";
 import { ErrorNote, SkeletonPage } from "@/components/Skeleton";
-import { StatCard } from "@/components/StatCard";
+import { StatCard, StatRow } from "@/components/StatCard";
 import { LoadError } from "@/components/StatusPanel";
 import { TrendChart } from "@/components/TrendChart";
 import { TypicalRangeNote } from "@/components/TypicalRangeNote";
@@ -67,29 +68,25 @@ export function TimelineView({ profileId }: { profileId: string }) {
         }
         actions={
           <button onClick={startBrief} disabled={starting} className="btn btn-primary">
-            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden>
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2Z"
-              />
-            </svg>
+            <FileText aria-hidden className="h-4 w-4" />
             {starting ? "Starting…" : "Prepare doctor brief"}
           </button>
         }
       />
       {briefError && <ErrorNote message={briefError} />}
 
-      <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard label="Tests tracked" value={series.length} />
-        <StatCard label="Outside range now" value={flagged} tone={flagged > 0 ? "warn" : undefined} />
-        <StatCard label="Improving" value={improving} tone={improving > 0 ? "good" : undefined} />
-        <StatCard label="Reports" value={person.report_count} />
-      </section>
-      <p className="-mt-4 text-sm text-muted">
+      <div>
+        <StatRow>
+          <StatCard label="Tests tracked" value={series.length} />
+          <StatCard label="Outside range now" value={flagged} tone={flagged > 0 ? "warn" : undefined} />
+          <StatCard label="Improving" value={improving} tone={improving > 0 ? "good" : undefined} />
+          <StatCard label="Reports" value={person.report_count} />
+        </StatRow>
+        <p className="mt-3 text-[13px] text-muted">
         &ldquo;Now&rdquo; means each test&apos;s latest reading. Values from different labs are converted to one unit
         so they can be compared.
-      </p>
+        </p>
+      </div>
 
       {trends.rechecks && trends.rechecks.length > 0 && <RecheckCard person={person} due={trends.rechecks} />}
 
@@ -107,7 +104,7 @@ export function TimelineView({ profileId }: { profileId: string }) {
           <p className="mb-3 text-sm text-muted">A trend appears once a test shows up in a second report.</p>
           <div className="card overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="border-b border-line bg-stone-50/80 text-left text-xs text-muted dark:bg-stone-800/40">
+              <thead className="border-b border-line text-left text-xs text-muted">
                 <tr>
                   <th className="px-4 py-2.5 font-medium">Test</th>
                   <th className="px-4 py-2.5 font-medium">Value</th>
@@ -148,26 +145,41 @@ function TrendCard({ series }: { series: TrendSeries }) {
   return (
     <article className="card p-5">
       <div className="flex items-start justify-between gap-2">
-        <h3 className="font-semibold">{series.name}</h3>
+        <h3 className="text-base">{series.name}</h3>
         <FlagBadge flag={series.latest_flag} />
       </div>
       <p className="mt-1 flex flex-wrap items-baseline gap-x-2">
-        <span className="text-2xl font-semibold tabular-nums">{formatNumber(latest.value)}</span>
+        <span className="text-xl font-semibold tabular-nums">{formatNumber(latest.value)}</span>
         <span className="text-sm text-muted">{series.unit}</span>
         {series.change !== null && series.change_pct !== null && (
-          <span className="text-sm text-muted">
-            {series.change > 0 ? "▲" : series.change < 0 ? "▼" : "■"} {Math.abs(series.change_pct)}% since{" "}
-            {formatDate(previous.date)}
+          <span className="inline-flex items-center gap-1 text-[13px] text-muted">
+            {series.change > 0 ? (
+              <>
+                <ArrowUp aria-hidden className="h-3.5 w-3.5" />
+                <span className="sr-only">Up</span>
+              </>
+            ) : series.change < 0 ? (
+              <>
+                <ArrowDown aria-hidden className="h-3.5 w-3.5" />
+                <span className="sr-only">Down</span>
+              </>
+            ) : (
+              <>
+                <Minus aria-hidden className="h-3.5 w-3.5" />
+                <span className="sr-only">No change</span>
+              </>
+            )}
+            {Math.abs(series.change_pct)}% since {formatDate(previous.date)}
           </span>
         )}
       </p>
       <DirectionNote series={series} />
-      <p className="mb-3 text-sm text-muted">
+      <p className="mb-3 text-[13px] text-muted">
         Normal <span className="tabular-nums">{formatRange(series.ref_low, series.ref_high, null)}</span> {series.unit}
         <TypicalRangeNote rangeSource={series.range_source} />
       </p>
       <TrendChart series={series} />
-      <details className="mt-2 text-sm">
+      <details className="mt-3 text-sm">
         <summary className="w-fit cursor-pointer rounded-md font-medium text-muted hover:text-foreground">
           Show as table
         </summary>
@@ -219,24 +231,17 @@ function RecheckCard({ person, due }: { person: TimelineSummary; due: RecheckDue
   return (
     <section
       aria-labelledby="recheck-heading"
-      className="flex gap-4 rounded-2xl border border-amber-300 bg-amber-50 p-5 dark:border-amber-800 dark:bg-amber-950/40"
+      className="flex gap-3 rounded-card border border-amber-200 bg-amber-50/70 p-5 dark:border-amber-900 dark:bg-amber-950/30"
     >
-      <span
-        aria-hidden
-        className="hidden h-10 w-10 shrink-0 place-items-center rounded-xl bg-amber-100 text-amber-800 sm:grid dark:bg-amber-900/60 dark:text-amber-200"
-      >
-        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.7}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
-        </svg>
-      </span>
+      <CalendarClock aria-hidden className="mt-0.5 h-5 w-5 shrink-0 text-amber-800 dark:text-amber-300" />
       <div className="min-w-0">
       <h2 id="recheck-heading" className="section-title text-amber-950 dark:text-amber-100">
         Due for a recheck
       </h2>
-      <ul className="mt-3 space-y-3">
+      <ul className="mt-2 space-y-3">
         {due.map((d) => (
           <li key={d.key}>
-            <p className="text-amber-950 dark:text-amber-100">
+            <p className="text-[15px] text-amber-950 dark:text-amber-100">
               {whose} {d.name} was {FLAG_WORD[d.flag] ?? "outside the normal range"} on {formatDate(d.last_date)}.
               Doctors often recheck it after {interval(d.months)}. Ask your doctor whether it&apos;s time.
             </p>
@@ -288,5 +293,5 @@ function DirectionNote({ series }: { series: TrendSeries }) {
   const d = direction(series);
   if (!d) return null;
   const { text, className } = DIRECTION_TEXT[d];
-  return <p className={`mt-1 text-sm font-medium ${className}`}>{text}</p>;
+  return <p className={`mt-1 text-[13px] font-medium ${className}`}>{text}</p>;
 }

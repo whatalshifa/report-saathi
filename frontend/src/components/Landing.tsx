@@ -1,3 +1,4 @@
+import { BadgeCheck, FileText, Languages, LineChart, Lock, Users, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 
 import { DemoButton, WakeServer } from "@/components/DemoButton";
@@ -28,52 +29,45 @@ const STEPS = [
   },
 ];
 
-const FEATURES = [
+const FEATURES: { title: string; text: string; Icon: LucideIcon }[] = [
   {
     title: "Flags you can trust",
     text: "The AI only transcribes. Whether a value is high or low is decided by tested code, using the lab's own printed range.",
-    icon: "M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z",
+    Icon: BadgeCheck,
   },
   {
     title: "English, हिन्दी and मराठी",
     text: "Explanations written for a person, not a doctor: what each test measures, what the result means and what to ask.",
-    icon: "M10.5 21l5.25-11.25L21 21m-9-3h7.5M3 5.621a48.474 48.474 0 0 1 6-.371m0 0c1.12 0 2.233.038 3.334.114M9 5.25V3m3.334 2.364C11.176 10.658 7.69 15.08 3 17.502m9.334-12.138c.896.061 1.785.147 2.666.257m-4.589 8.495a18.023 18.023 0 0 1-3.827-5.802",
+    Icon: Languages,
   },
   {
     title: "One timeline across labs",
     text: "Units are converted, so a value from one lab lines up with the next. See whether things are getting better.",
-    icon: "M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z",
+    Icon: LineChart,
   },
   {
     title: "A brief for the doctor",
     text: "One printable page with what changed, what's out of range, and the questions worth asking at the next visit.",
-    icon: "M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z",
+    Icon: FileText,
   },
   {
     title: "The whole family",
     text: "Keep reports for parents, children and yourself apart, and get a warning if a report lands in the wrong person's file.",
-    icon: "M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z",
+    Icon: Users,
   },
   {
     title: "Private by design",
     text: "Each file is encrypted with its own key, passwords are hashed with Argon2, and nobody else can open your reports.",
-    icon: "M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z",
+    Icon: Lock,
   },
 ];
 
 const STACK = [
-  "Next.js 16",
-  "React 19",
-  "TypeScript",
-  "Tailwind CSS",
-  "FastAPI",
-  "SQLAlchemy",
-  "PostgreSQL",
-  "Claude vision",
-  "Envelope encryption",
-  "Docker",
-  "GitHub Actions",
-  "Playwright",
+  { area: "Web app", items: "Next.js 16, React 19, TypeScript, Tailwind CSS" },
+  { area: "API", items: "FastAPI, SQLAlchemy, PostgreSQL, background jobs" },
+  { area: "Reading", items: "Claude vision, checked by tested range code" },
+  { area: "Security", items: "Envelope encryption, Argon2, rate limits" },
+  { area: "Delivery", items: "Docker, GitHub Actions, Playwright" },
 ];
 
 const FAQ = [
@@ -91,39 +85,19 @@ const FAQ = [
   },
 ];
 
-function Icon({ d }: { d: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} className="h-5 w-5" aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" d={d} />
-    </svg>
-  );
-}
-
 export function Landing() {
   return (
-    <div className="space-y-24 pb-8 sm:space-y-32">
+    <div className="space-y-20 sm:space-y-28">
       <WakeServer />
 
       {/* Hero */}
-      <section className="grid items-center gap-12 pt-4 lg:grid-cols-[1.05fr_1fr] lg:pt-10">
+      <section className="grid items-center gap-12 pt-4 lg:grid-cols-[1fr_1fr] lg:gap-16 lg:pt-12">
         <div>
-          <p className="eyebrow">Lab reports, made clear</p>
-          <h1 className="mt-4 text-4xl leading-[1.05] font-extrabold text-balance sm:text-6xl">
-            Understand every lab report your{" "}
-            <span className="relative whitespace-nowrap text-brand-700 dark:text-brand-300">
-              family
-              <svg
-                aria-hidden
-                viewBox="0 0 200 12"
-                preserveAspectRatio="none"
-                className="absolute -bottom-1 left-0 h-3 w-full text-coral-400"
-              >
-                <path d="M2 9C50 3 150 3 198 7" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
-              </svg>
-            </span>{" "}
-            gets.
+          <p className="eyebrow">For families in India · English, हिन्दी, मराठी</p>
+          <h1 className="mt-3 text-[34px] leading-[1.12] font-semibold tracking-[-0.025em] text-balance sm:text-[44px] lg:text-[48px]">
+            Understand every lab report your family gets.
           </h1>
-          <p className="mt-5 max-w-xl text-lg text-pretty text-muted">
+          <p className="mt-5 max-w-xl text-[17px] leading-relaxed text-pretty text-muted">
             Upload a photo or PDF. ReportSaathi reads every value, flags what&apos;s out of range, explains it in
             English, Hindi or Marathi, and tracks results across labs over time.
           </p>
@@ -140,18 +114,13 @@ export function Landing() {
 
       {/* How it works */}
       <section aria-labelledby="how">
-        <p className="eyebrow">How it works</p>
-        <h2 id="how" className="mt-3 text-3xl font-bold">
-          From a crumpled printout to a clear answer
-        </h2>
-        <ol className="mt-10 grid gap-6 md:grid-cols-3">
+        <SectionHeading id="how" eyebrow="How it works" title="From a crumpled printout to a clear answer" />
+        <ol className="mt-10 grid gap-8 md:grid-cols-3 md:gap-10">
           {STEPS.map((step, i) => (
-            <li key={step.title} className="card p-6">
-              <span className="font-display grid h-10 w-10 place-items-center rounded-full bg-highlight text-lg font-bold text-brand-800 dark:text-brand-100">
-                {i + 1}
-              </span>
-              <h3 className="mt-4 font-semibold">{step.title}</h3>
-              <p className="mt-2 text-sm text-muted">{step.text}</p>
+            <li key={step.title} className="border-t border-line pt-5">
+              <span className="text-sm font-medium text-brand-700 tabular-nums dark:text-brand-300">Step {i + 1}</span>
+              <h3 className="mt-2 text-[17px]">{step.title}</h3>
+              <p className="mt-2 text-[15px] text-muted">{step.text}</p>
             </li>
           ))}
         </ol>
@@ -159,136 +128,140 @@ export function Landing() {
 
       {/* Features */}
       <section aria-labelledby="features">
-        <p className="eyebrow">What you get</p>
-        <h2 id="features" className="mt-3 max-w-2xl text-3xl font-bold">
-          Built for families who look after each other&apos;s health
-        </h2>
-        <div className="mt-10 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
-          {FEATURES.map((f) => (
-            <div key={f.title}>
-              <span className="grid h-11 w-11 place-items-center rounded-full bg-brand-100 text-brand-700 dark:bg-brand-900 dark:text-brand-200">
-                <Icon d={f.icon} />
-              </span>
-              <h3 className="mt-4 font-semibold">{f.title}</h3>
-              <p className="mt-2 text-sm text-muted">{f.text}</p>
+        <SectionHeading
+          id="features"
+          eyebrow="What you get"
+          title="Built for families who look after each other’s health"
+        />
+        <div className="mt-10 grid gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+          {FEATURES.map(({ title, text, Icon }) => (
+            <div key={title}>
+              <Icon aria-hidden className="h-5 w-5 text-brand-700 dark:text-brand-300" strokeWidth={1.75} />
+              <h3 className="mt-3 text-[17px]">{title}</h3>
+              <p className="mt-1.5 text-[15px] text-muted">{text}</p>
             </div>
           ))}
         </div>
       </section>
 
       {/* Under the hood */}
-      <section aria-labelledby="stack" className="card overflow-hidden">
-        <div className="grid gap-8 p-6 sm:p-10 lg:grid-cols-2">
-          <div>
-            <p className="eyebrow">Under the hood</p>
-            <h2 id="stack" className="mt-3 text-2xl font-bold">
-              Production engineering, not a weekend demo
-            </h2>
-            <p className="mt-3 text-muted">
-              A FastAPI service and a Next.js app, with background jobs, envelope-encrypted file storage, rate limits,
-              database migrations, error tracking, and over 360 automated tests running on every change.
-            </p>
-            <a
-              href="https://github.com/whatalshifa/report-saathi"
-              className="btn btn-secondary mt-6"
-              rel="noopener noreferrer"
-            >
-              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" aria-hidden>
-                <path d="M12 .5a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2.2c-3.3.7-4-1.4-4-1.4-.6-1.4-1.4-1.8-1.4-1.8-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.7-1.6-2.7-.3-5.5-1.3-5.5-6 0-1.2.5-2.3 1.2-3.1-.1-.4-.5-1.6.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.3 4.6 18.3 5 18.3 5c.6 1.6.2 2.8.1 3.2.8.8 1.2 1.9 1.2 3.1 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .5Z" />
-              </svg>
-              Read the source on GitHub
-            </a>
-          </div>
-          <ul className="flex flex-wrap content-start gap-2">
-            {STACK.map((item) => (
-              <li
-                key={item}
-                className="rounded-full border border-line bg-background px-3 py-1.5 text-sm text-muted"
-              >
-                {item}
-              </li>
-            ))}
-          </ul>
+      <section aria-labelledby="stack" className="grid gap-10 border-t border-line pt-12 lg:grid-cols-2 lg:gap-16">
+        <div>
+          <SectionHeading id="stack" eyebrow="Under the hood" title="Production engineering, not a weekend demo" />
+          <p className="mt-4 max-w-xl text-[15px] text-muted">
+            A FastAPI service and a Next.js app, with background jobs, envelope-encrypted file storage, rate limits,
+            database migrations, error tracking, and over 360 automated tests running on every change.
+          </p>
+          <a
+            href="https://github.com/whatalshifa/report-saathi"
+            className="btn btn-secondary mt-6"
+            rel="noopener noreferrer"
+          >
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" aria-hidden>
+              <path d="M12 .5a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2.2c-3.3.7-4-1.4-4-1.4-.6-1.4-1.4-1.8-1.4-1.8-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.7-1.6-2.7-.3-5.5-1.3-5.5-6 0-1.2.5-2.3 1.2-3.1-.1-.4-.5-1.6.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.3 4.6 18.3 5 18.3 5c.6 1.6.2 2.8.1 3.2.8.8 1.2 1.9 1.2 3.1 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .5Z" />
+            </svg>
+            Read the source on GitHub
+          </a>
         </div>
+        <dl className="divide-y divide-line border-y border-line text-[15px] lg:mt-8">
+          {STACK.map((row) => (
+            <div key={row.area} className="grid grid-cols-[7rem_1fr] gap-4 py-3">
+              <dt className="font-medium">{row.area}</dt>
+              <dd className="text-muted">{row.items}</dd>
+            </div>
+          ))}
+        </dl>
       </section>
 
       {/* FAQ */}
-      <section aria-labelledby="faq" className="grid gap-10 lg:grid-cols-[1fr_2fr]">
-        <div>
-          <p className="eyebrow">Questions</p>
-          <h2 id="faq" className="mt-3 text-3xl font-bold">
-            Good to know
-          </h2>
-        </div>
+      <section aria-labelledby="faq" className="grid gap-8 lg:grid-cols-[1fr_2fr] lg:gap-16">
+        <SectionHeading id="faq" eyebrow="Questions" title="Good to know" />
         <dl className="divide-y divide-line border-y border-line">
           {FAQ.map((item) => (
             <div key={item.q} className="py-5">
-              <dt className="font-semibold">{item.q}</dt>
-              <dd className="mt-2 text-muted">{item.a}</dd>
+              <dt className="font-medium">{item.q}</dt>
+              <dd className="mt-1.5 text-[15px] text-muted">{item.a}</dd>
             </div>
           ))}
         </dl>
       </section>
 
       {/* Closing call to action */}
-      <section className="relative overflow-hidden rounded-[2rem] bg-brand-800 px-6 py-12 text-center text-white sm:px-12 dark:bg-brand-900">
-        <div aria-hidden className="absolute -top-16 -right-16 h-48 w-48 rounded-full bg-coral-400/25" />
-        <div aria-hidden className="absolute -bottom-20 -left-10 h-48 w-48 rounded-full bg-brand-500/30" />
-        <h2 className="relative text-3xl font-bold text-balance">See it with a real-looking report</h2>
-        <p className="relative mx-auto mt-3 max-w-xl text-brand-100">
-          The demo has three reports from two labs, explanations in three languages and a doctor brief.
-        </p>
-        <div className="relative mt-8 flex justify-center">
-          <DemoButton className="btn btn-lg bg-white text-brand-900 shadow-sm hover:bg-brand-50" />
+      <section className="flex flex-col gap-6 rounded-card bg-brand-800 px-6 py-10 text-white sm:flex-row sm:items-center sm:justify-between sm:px-10 dark:bg-brand-900">
+        <div>
+          <h2 className="text-2xl text-balance">See it with a real-looking report</h2>
+          <p className="mt-2 max-w-xl text-[15px] text-brand-100">
+            The demo has three reports from two labs, explanations in three languages and a doctor brief.
+          </p>
         </div>
+        <DemoButton className="btn btn-lg shrink-0 bg-white text-brand-900 hover:bg-brand-50" />
       </section>
     </div>
   );
 }
 
+function SectionHeading({ id, eyebrow, title }: { id: string; eyebrow: string; title: string }) {
+  return (
+    <div className="max-w-2xl">
+      <p className="eyebrow">{eyebrow}</p>
+      <h2 id={id} className="mt-2 text-[26px] leading-tight tracking-[-0.02em] text-balance sm:text-[28px]">
+        {title}
+      </h2>
+    </div>
+  );
+}
+
 /**
- * A still picture of what ReportSaathi does: a lab report sheet, the values it read marked with a
- * highlighter where they're out of range, and a note in plain words pinned on top. Built from the same
- * badge the app uses.
+ * A still picture of what ReportSaathi does: a lab report sheet with the values it read, flagged where
+ * they're out of range, and the plain-words summary underneath. Built from the same badge the app uses.
  */
 function Preview() {
   return (
-    <div className="relative pb-36 sm:pb-28" aria-label="Preview of a read report" role="img">
-      <div className="rotate-[0.6deg] rounded-[1.75rem] border border-line bg-surface p-5 shadow-xl shadow-brand-900/10 sm:p-7">
-        <div className="flex items-start justify-between gap-3 border-b-2 border-dashed border-line pb-4">
-          <div>
-            <p className="font-display text-lg font-bold">Sample Pathology Lab, Pune</p>
-            <p className="text-sm text-muted">Meera Joshi · 12 Jan 2026</p>
-          </div>
-          <span className="badge shrink-0 bg-rose-50 text-rose-800 ring-1 ring-rose-600/20 ring-inset dark:bg-rose-950/60 dark:text-rose-200 dark:ring-rose-400/25">
-            10 outside range
-          </span>
+    <div
+      className="overflow-hidden rounded-card border border-line bg-surface shadow-[0_1px_2px_rgb(42_29_40/0.04),0_12px_32px_-12px_rgb(42_29_40/0.14)]"
+      aria-label="Preview of a read report"
+      role="img"
+    >
+      <div className="flex items-start justify-between gap-3 border-b border-line px-5 py-4">
+        <div className="min-w-0">
+          <p className="font-semibold">Sample Pathology Lab, Pune</p>
+          <p className="text-[13px] text-muted">Meera Joshi · 12 Jan 2026</p>
         </div>
-        <ul className="mt-2">
-          {PREVIEW.map((row) => (
-            <li
-              key={row.name}
-              className="flex items-center justify-between gap-3 border-b border-line/70 py-2.5 text-sm last:border-0"
-            >
-              <span className="min-w-0">
-                <span className="block truncate font-semibold">{row.name}</span>
-                <span className="text-xs text-muted">Normal {row.range}</span>
-              </span>
-              <span className="flex shrink-0 items-center gap-3">
-                <span
-                  className={`rounded-md px-1.5 tabular-nums ${row.flag === "normal" ? "" : "-rotate-1 bg-highlight"}`}
-                >
-                  <span className="font-bold">{row.value}</span> <span className="text-muted">{row.unit}</span>
-                </span>
-                <FlagBadge flag={row.flag} />
-              </span>
-            </li>
-          ))}
-        </ul>
+        <span className="text-[13px] whitespace-nowrap text-muted">
+          <span className="font-semibold text-rose-700 dark:text-rose-300">10</span> outside range
+        </span>
       </div>
-      <div className="absolute right-2 -bottom-2 left-8 -rotate-2 rounded-2xl bg-brand-800 p-4 text-sm text-white shadow-lg sm:left-16 dark:bg-brand-900">
-        <p className="font-display text-base font-bold">In plain words</p>
-        <p className="mt-1 text-brand-50">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="text-left text-xs text-muted">
+            <th className="px-5 pt-3 pb-2 font-medium">Test</th>
+            <th className="px-2 pt-3 pb-2 text-right font-medium">Result</th>
+            <th className="hidden px-2 pt-3 pb-2 font-medium sm:table-cell">Normal</th>
+            <th className="px-5 pt-3 pb-2 text-right font-medium">
+              <span className="sr-only">Status</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-line">
+          {PREVIEW.map((row) => (
+            <tr key={row.name}>
+              <td className="px-5 py-2.5 font-medium">{row.name}</td>
+              <td className="px-2 py-2.5 text-right whitespace-nowrap tabular-nums">
+                <span className="font-semibold">{row.value}</span> <span className="text-muted">{row.unit}</span>
+              </td>
+              <td className="hidden px-2 py-2.5 whitespace-nowrap text-muted tabular-nums sm:table-cell">
+                {row.range}
+              </td>
+              <td className="px-5 py-2.5 text-right">
+                <FlagBadge flag={row.flag} />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div className="border-t border-line bg-brand-50/70 px-5 py-4 dark:bg-brand-950/40">
+        <p className="text-[13px] font-medium text-brand-800 dark:text-brand-200">In plain words</p>
+        <p className="mt-1 text-sm text-foreground">
           A few values are outside their normal ranges, mostly linked to low iron and blood sugar on the higher side.
           None is at a dangerous level, but together they are worth a calm talk with your doctor.
         </p>

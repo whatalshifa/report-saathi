@@ -34,8 +34,8 @@
   --color-muted: var(--muted);
   --color-line: var(--border);
   --color-highlight: var(--highlight);
-  --font-sans: var(--font-mukta), var(--font-baloo), system-ui, sans-serif;
-  --font-display: var(--font-baloo), var(--font-mukta), system-ui, sans-serif;
+  /* Inter for Latin; Devanagari letters fall through to Noto Sans Devanagari, drawn to match it. */
+  --font-sans: var(--font-inter), var(--font-devanagari), ui-sans-serif, system-ui, sans-serif;
 }
 
 /* Plum: white text on brand-700 is 8.9:1, and brand-400 text on the dark background is 6.9:1. */
@@ -54,22 +54,28 @@
   --color-coral-300: #ffb39a;
   --color-coral-400: #fb8f6f;
   --color-coral-500: #f06a48;
+
+  /* One radius scale: controls 10px, cards 16px, full pills only for small status badges. */
+  --radius-ctl: 10px;
+  --radius-card: 16px;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
-  font-size: 1.0625rem;
+  font-size: 1rem;
+  line-height: 1.6;
   text-rendering: optimizeLegibility;
+  font-feature-settings: "cv11", "ss01";
 }
 
-/* Headings use Baloo 2: rounded and friendly, and it has matching Devanagari for Hindi and Marathi. */
 h1,
 h2,
 h3 {
-  font-family: var(--font-display);
-  letter-spacing: -0.01em;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.011em;
 }
 
 /* One visible focus ring for everything you can tab to, in both themes. Elements that draw their own
@@ -96,63 +102,62 @@ h3 {
 /* The few building blocks every page shares, so buttons and cards look the same everywhere. */
 @layer components {
   .card {
-    @apply rounded-3xl border border-line bg-surface shadow-[0_1px_2px_rgb(42_29_40/0.04)];
+    @apply rounded-card border border-line bg-surface;
   }
 
   /* Buttons: one height per size, so buttons side by side always line up. */
   .btn {
-    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-transparent px-4 py-2 text-sm
-      font-semibold whitespace-nowrap transition-colors select-none
+    @apply inline-flex h-10 items-center justify-center gap-2 rounded-ctl border border-transparent px-4 text-sm
+      font-medium whitespace-nowrap transition-colors select-none
       disabled:cursor-not-allowed disabled:opacity-60;
   }
   /* White on brand-700 is 8.9:1, in both themes. */
   .btn-primary {
-    @apply bg-brand-700 text-white shadow-sm hover:bg-brand-800 dark:hover:bg-brand-800;
+    @apply bg-brand-700 text-white hover:bg-brand-800;
   }
   .btn-secondary {
-    @apply border-line bg-surface text-foreground shadow-[0_1px_1px_rgb(42_29_40/0.04)] hover:border-stone-300
-      hover:bg-stone-50 dark:hover:border-stone-600 dark:hover:bg-stone-800/60;
+    @apply border-line bg-surface text-foreground hover:bg-stone-50 dark:hover:bg-stone-800/60;
   }
   .btn-ghost {
     @apply text-muted hover:bg-stone-100 hover:text-foreground dark:hover:bg-stone-800;
   }
+  /* Only in a confirm step: the destructive action itself. */
   .btn-danger {
-    @apply bg-rose-700 text-white shadow-sm hover:bg-rose-800;
+    @apply bg-rose-700 text-white hover:bg-rose-800;
   }
-  /* A quiet button for a destructive action that isn't the point of the page. */
+  /* A quiet destructive action that isn't the point of the page: muted until hovered. */
   .btn-danger-quiet {
-    @apply border-line bg-surface text-rose-700 hover:border-rose-300 hover:bg-rose-50 dark:text-rose-300
-      dark:hover:border-rose-900 dark:hover:bg-rose-950/40;
+    @apply text-muted hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/40 dark:hover:text-rose-300;
   }
   .btn-sm {
-    @apply min-h-8 rounded-full px-3.5 py-1;
+    @apply h-8 px-3 text-[13px];
   }
   .btn-lg {
-    @apply min-h-12 px-6 text-base;
+    @apply h-11 px-5 text-[15px];
   }
 
   /* Square buttons that hold only an icon (theme switch, pencil, page icon, close). */
   .icon-btn {
-    @apply inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted transition-colors
+    @apply inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-ctl text-muted transition-colors
       hover:bg-stone-100 hover:text-foreground dark:hover:bg-stone-800;
   }
 
   /* Small rounded labels: flags, statuses, "Sample". Colour comes from the caller. */
   .badge {
-    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap;
+    @apply inline-flex items-center rounded-full px-2 py-px text-xs leading-5 font-medium whitespace-nowrap;
   }
 
   .input {
-    @apply mt-1.5 block min-h-11 w-full rounded-xl border border-line bg-surface px-3 py-2 text-foreground
-      shadow-[inset_0_1px_1px_rgb(42_29_40/0.03)] outline-none transition placeholder:text-stone-400
-      focus:border-brand-600 focus:ring-4 focus:ring-brand-600/15 focus-visible:outline-none dark:focus:border-brand-400
+    @apply mt-1.5 block h-11 w-full rounded-ctl border border-line bg-surface px-3 text-[15px] text-foreground
+      outline-none transition placeholder:text-stone-400
+      focus:border-brand-600 focus:ring-3 focus:ring-brand-600/15 focus-visible:outline-none dark:focus:border-brand-400
       dark:focus:ring-brand-400/20;
   }
   .label {
     @apply block text-sm font-medium;
   }
   .hint {
-    @apply mt-1.5 block text-sm font-normal text-muted;
+    @apply mt-1.5 block text-[13px] font-normal text-muted;
   }
 
   .link {
@@ -160,28 +165,27 @@ h3 {
   }
 
   .back-link {
-    @apply inline-flex items-center gap-1 text-sm font-medium text-brand-700 hover:underline dark:text-brand-400;
+    @apply inline-flex items-center gap-1 text-sm font-medium text-muted hover:text-foreground;
   }
 
   /* Every page title, and the line under it, share one size and rhythm. */
   .page-title {
-    @apply font-display text-3xl leading-tight font-bold text-balance sm:text-4xl;
+    @apply text-[26px] leading-tight font-semibold tracking-[-0.015em] text-balance sm:text-[32px];
   }
   .page-lead {
-    @apply mt-2 max-w-2xl text-pretty text-muted;
+    @apply mt-2 max-w-2xl text-[15px] text-pretty text-muted;
   }
   .section-title {
-    @apply font-display text-xl font-semibold;
+    @apply text-lg leading-snug font-semibold tracking-[-0.01em];
   }
 
-  /* A short label above a heading, marked with a coral highlighter stroke instead of capitals. */
+  /* A short label above a heading. Plain, small and used sparingly. */
   .eyebrow {
-    @apply inline-block -rotate-1 rounded-md bg-highlight px-2 py-0.5 text-sm font-semibold text-brand-800
-      dark:text-brand-100;
+    @apply text-[13px] font-medium text-brand-700 dark:text-brand-300;
   }
 
   .skeleton {
-    @apply animate-pulse rounded-lg bg-stone-200/80 dark:bg-stone-800/80;
+    @apply animate-pulse rounded-ctl bg-stone-200/80 dark:bg-stone-800/80;
   }
 }
 

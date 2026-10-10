@@ -60,7 +60,7 @@ export function FamilyManager() {
 
       <ul className="card divide-y divide-line">
         {profiles.map((p) => (
-          <li key={p.id} className="px-4 py-4 sm:px-5">
+          <li key={p.id} className="px-4 py-3.5 sm:px-5">
             {editing === p.id ? (
               <ProfileForm
                 initial={p}
@@ -78,36 +78,33 @@ export function FamilyManager() {
                 <div className="flex min-w-0 items-center gap-3">
                   <span
                     aria-hidden
-                    className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-brand-50 text-sm font-semibold text-brand-800 dark:bg-brand-950 dark:text-brand-200"
+                    className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-stone-100 text-sm font-semibold text-stone-700 dark:bg-stone-800 dark:text-stone-200"
                   >
                     {p.name.trim().charAt(0).toUpperCase()}
                   </span>
                   <div className="min-w-0">
-                  <p className="flex flex-wrap items-center gap-x-2 font-medium">
-                    {p.name}
-                    <span className="badge bg-stone-100 font-medium text-stone-600 dark:bg-stone-800 dark:text-stone-300">
-                      {p.is_sample ? "Sample" : RELATION_LABEL[p.relation]}
-                    </span>
-                  </p>
-                  <p className="mt-0.5 text-sm text-muted">
-                    {[p.birth_year && `Born ${p.birth_year}`, `${p.report_count} report${p.report_count === 1 ? "" : "s"}`]
-                      .filter(Boolean)
-                      .join(" · ")}
-                  </p>
+                    <p className="flex flex-wrap items-center gap-x-2 text-[15px] font-medium">
+                      {p.name}
+                      <span className="badge bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-300">
+                        {p.is_sample ? "Sample" : RELATION_LABEL[p.relation]}
+                      </span>
+                    </p>
+                    <p className="mt-0.5 text-[13px] text-muted">
+                      {[
+                        p.birth_year && `Born ${p.birth_year}`,
+                        `${p.report_count} report${p.report_count === 1 ? "" : "s"}`,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </p>
                   </div>
                 </div>
-                <div className="flex gap-2 text-sm">
-                  <button
-                    onClick={() => setEditing(p.id)}
-                    className="btn btn-secondary btn-sm"
-                  >
+                <div className="flex items-center gap-1">
+                  <button onClick={() => setEditing(p.id)} className="btn btn-secondary btn-sm">
                     Edit
                   </button>
                   {p.relation !== "self" && (
-                    <button
-                      onClick={() => remove(p)}
-                      className="btn btn-danger-quiet btn-sm"
-                    >
+                    <button onClick={() => remove(p)} className="btn btn-danger-quiet btn-sm">
                       Delete
                     </button>
                   )}
@@ -120,7 +117,7 @@ export function FamilyManager() {
 
       <section className="card p-5 sm:p-6">
         <h2 className="section-title">Add a family member</h2>
-        <p className="mt-1 mb-5 text-sm text-muted">
+        <p className="mt-1 mb-5 max-w-2xl text-sm text-muted">
           Use the name as their lab reports print it. Then ReportSaathi can tell you if a report lands in the wrong
           person’s profile.
         </p>
@@ -222,10 +219,7 @@ function ProfileForm({
         </div>
       )}
       <div className="flex gap-2 pt-1 sm:col-span-2">
-        <button
-          disabled={busy}
-          className="btn btn-primary"
-        >
+        <button disabled={busy} className="btn btn-primary">
           {busy ? "Saving…" : submitLabel}
         </button>
         {onCancel && (

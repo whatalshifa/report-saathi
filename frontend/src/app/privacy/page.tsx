@@ -35,7 +35,7 @@ export default function PrivacyPage() {
       />
 
       <Section title="What we keep">
-        <ul className="list-disc space-y-1.5 pl-5 marker:text-brand-600">
+        <ul className="list-disc space-y-1.5 pl-5 marker:text-stone-400">
           <li>Your name, email and password. The password is kept only as a scrambled hash, never as text.</li>
           <li>The family members you add: name, relation, and, if you give them, birth year and sex.</li>
           <li>
@@ -68,7 +68,7 @@ export default function PrivacyPage() {
       </Section>
 
       <Section title="Who else handles it">
-        <ul className="list-disc space-y-1.5 pl-5 marker:text-brand-600">
+        <ul className="list-disc space-y-1.5 pl-5 marker:text-stone-400">
           <li>
             <strong>Anthropic</strong>, when reading is switched on: each report is sent to Claude, Anthropic&apos;s
             AI, to be read and explained. Anthropic does not use it to train its models. On the public demo the AI is
@@ -82,7 +82,7 @@ export default function PrivacyPage() {
       </Section>
 
       <Section title="How long we keep it">
-        <ul className="list-disc space-y-1.5 pl-5 marker:text-brand-600">
+        <ul className="list-disc space-y-1.5 pl-5 marker:text-stone-400">
           <li>Demo accounts, and everything in them, are deleted after 24 hours.</li>
           <li>
             Your own account is kept until you delete it. Deleting a report, a family member or the whole account

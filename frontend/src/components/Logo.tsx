@@ -1,8 +1,8 @@
-/** The ReportSaathi mark: a report sheet with a coral pulse line, on a plum circle. */
-export function LogoMark({ className = "h-8 w-8" }: { className?: string }) {
+/** The ReportSaathi mark: a report sheet with a coral pulse line, on a plum rounded square. */
+export function LogoMark({ className = "h-7 w-7" }: { className?: string }) {
   return (
     <svg viewBox="0 0 32 32" aria-hidden className={className}>
-      <circle cx="16" cy="16" r="16" className="fill-brand-700 dark:fill-brand-600" />
+      <rect width="32" height="32" rx="8" className="fill-brand-700 dark:fill-brand-600" />
       <path d="M10 7.5h8.5L23 12v12.5a1 1 0 0 1-1 1H10a1 1 0 0 1-1-1v-16a1 1 0 0 1 1-1Z" fill="white" />
       <path d="M18.5 7.5V12H23" fill="none" stroke="#e7cfe4" strokeWidth="1.5" strokeLinejoin="round" />
       <path
@@ -18,12 +18,16 @@ export function LogoMark({ className = "h-8 w-8" }: { className?: string }) {
 }
 
 /** `compact` hides the name on phones, where a signed-in header needs the room for its links. */
-export function Logo({ compact = false }: { compact?: boolean }) {
+export function Logo({ compact = false, size = "md" }: { compact?: boolean; size?: "sm" | "md" }) {
   return (
-    <span className="flex items-center gap-2.5">
-      <LogoMark />
-      <span className={`font-display text-xl font-bold ${compact ? "hidden sm:inline" : ""}`}>
-        Report<span className="text-brand-700 dark:text-brand-300">Saathi</span>
+    <span className="flex items-center gap-2">
+      <LogoMark className={size === "sm" ? "h-6 w-6" : "h-7 w-7"} />
+      <span
+        className={`${size === "sm" ? "text-[15px]" : "text-[17px]"} font-semibold tracking-[-0.01em] ${
+          compact ? "hidden sm:inline" : ""
+        }`}
+      >
+        ReportSaathi
       </span>
     </span>
   );

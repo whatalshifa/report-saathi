@@ -1,5 +1,6 @@
 "use client";
 
+import { Pencil } from "lucide-react";
 import { useId, useState, type FormEvent, type Ref } from "react";
 
 import { correctResult, type TestResult } from "@/lib/api";
@@ -31,9 +32,7 @@ export function FixButton({
       title="Read wrongly? Fix it"
       className="icon-btn -my-1 h-8 w-8 align-middle hover:text-brand-700 dark:hover:text-brand-300"
     >
-      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M4 20h4L19 9l-4-4L4 16v4ZM13.5 6.5l4 4" />
-      </svg>
+      <Pencil aria-hidden className="h-4 w-4" strokeWidth={1.75} />
     </button>
   );
 }
@@ -101,7 +100,7 @@ export function ValueEditor({
         if (e.key === "Escape") onClose();
       }}
       aria-label={`Fix ${result.name}`}
-      className="space-y-2 rounded-xl border border-line bg-background p-3 text-sm sm:p-4"
+      className="space-y-2 rounded-ctl border border-line bg-background p-3 text-sm sm:p-4"
     >
       <p className="text-muted">Type it exactly as printed on the report.</p>
       <div className="flex flex-wrap items-end gap-2">
@@ -118,7 +117,7 @@ export function ValueEditor({
             maxLength={255}
             aria-invalid={error ? true : undefined}
             aria-describedby={error ? `${id}-error` : undefined}
-            className="input mt-1 min-h-9 w-28 px-2.5 py-1 text-sm"
+            className="input mt-1 h-9 w-28 px-2.5 text-sm"
           />
         </label>
         <label className="text-xs font-medium text-muted" htmlFor={`${id}-unit`}>
@@ -129,14 +128,14 @@ export function ValueEditor({
             onChange={(e) => setUnit(e.target.value)}
             autoComplete="off"
             maxLength={50}
-            className="input mt-1 min-h-9 w-28 px-2.5 py-1 text-sm"
+            className="input mt-1 h-9 w-28 px-2.5 text-sm"
           />
         </label>
         <div className="flex gap-2">
-          <button type="submit" disabled={saving} className="btn btn-primary btn-sm min-h-9">
+          <button type="submit" disabled={saving} className="btn btn-primary btn-sm h-9">
             {saving ? "Saving…" : "Save"}
           </button>
-          <button type="button" onClick={onClose} className="btn btn-ghost btn-sm min-h-9">
+          <button type="button" onClick={onClose} className="btn btn-ghost btn-sm h-9">
             Cancel
           </button>
         </div>

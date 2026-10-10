@@ -1,5 +1,6 @@
 "use client";
 
+import { FileSearch, X } from "lucide-react";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 import { CorrectedChip } from "@/components/ValueFix";
@@ -19,15 +20,7 @@ export function SourceButton({ name, onClick }: { name: string; onClick: (trigge
       title="Where did this number come from?"
       className="icon-btn -my-1 h-8 w-8 align-middle hover:text-brand-700 dark:hover:text-brand-300"
     >
-      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden>
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M11 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l4 4v3M14 3v4h4M9 9h3M9 13h2"
-        />
-        <circle cx="16" cy="16" r="3" />
-        <path strokeLinecap="round" d="m18.2 18.2 2.3 2.3" />
-      </svg>
+      <FileSearch aria-hidden className="h-4 w-4" strokeWidth={1.75} />
     </button>
   );
 }
@@ -88,7 +81,7 @@ export function SourceDialog({
       onClick={(e) => {
         if (e.target === e.currentTarget) e.currentTarget.close();
       }}
-      className="m-auto w-[calc(100%-2rem)] max-w-3xl overflow-hidden rounded-2xl border border-line bg-surface p-0 text-foreground shadow-xl backdrop:bg-stone-950/60"
+      className="m-auto w-[calc(100%-2rem)] max-w-3xl overflow-hidden rounded-card border border-line bg-surface p-0 text-foreground shadow-xl backdrop:bg-stone-950/60"
     >
       <div className="flex max-h-[calc(100dvh-2rem)] flex-col gap-3 p-4 sm:p-5">
         <div className="flex items-start justify-between gap-3">
@@ -107,14 +100,12 @@ export function SourceDialog({
             aria-label="Close"
             className="icon-btn -mr-1"
           >
-            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
-              <path strokeLinecap="round" d="M6 6l12 12M18 6 6 18" />
-            </svg>
+            <X aria-hidden className="h-5 w-5" />
           </button>
         </div>
 
         {isPdf && failed ? (
-          <div className="rounded-xl border border-line bg-background p-6 text-center">
+          <div className="rounded-ctl border border-line bg-background p-6 text-center">
             <p className="font-semibold">Page {box.page} of the original PDF</p>
             <p className="mt-1 text-sm text-muted">
               {showsPdf
@@ -131,12 +122,12 @@ export function SourceDialog({
             </a>
           </div>
         ) : failed ? (
-          <p role="alert" className="rounded-xl border border-line bg-background p-6 text-center text-sm text-muted">
+          <p role="alert" className="rounded-ctl border border-line bg-background p-6 text-center text-sm text-muted">
             The original report couldn&apos;t be loaded. Please try again in a moment.
           </p>
         ) : (
           <figure className="flex min-h-0 flex-col gap-2">
-            <div ref={scroller} className="min-h-0 overflow-auto rounded-xl border border-line bg-white">
+            <div ref={scroller} className="min-h-0 overflow-auto rounded-ctl border border-line bg-white">
               {/* The highlight sits on the page in fractions of its size, so it stays put at any zoom. */}
               <div className="relative" style={{ width: zoomed ? "max(160%, 640px)" : "100%" }}>
                 {/* A private file behind the sign-in cookie, so not one for Next's image optimiser. */}
