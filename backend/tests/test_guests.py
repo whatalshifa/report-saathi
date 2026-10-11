@@ -44,10 +44,25 @@ def test_demo_session_ends_with_the_demo(visitor):
     assert "HttpOnly" in cookie
 
 
-def test_each_demo_is_a_separate_account(visitor):
+def test_each_visitor_gets_a_separate_demo(visitor):
     first = start_demo(visitor).json()["id"]
+    visitor.cookies.clear()
     second = start_demo(visitor).json()["id"]
     assert first != second
+
+
+def test_a_browser_already_in_a_demo_keeps_it_without_using_up_the_limit(visitor):
+    first = start_demo(visitor).json()["id"]
+    for _ in range(get_settings().demo_per_ip_per_hour + 2):
+        response = start_demo(visitor)
+        assert response.status_code == 201
+        assert response.json()["id"] == first
+
+
+def test_a_signed_in_person_who_opens_the_demo_gets_a_demo_account(client):
+    response = start_demo(client)
+    assert response.status_code == 201
+    assert response.json()["is_guest"] is True
 
 
 def test_real_accounts_are_not_guests(client):
@@ -56,7 +71,9 @@ def test_real_accounts_are_not_guests(client):
 
 def test_one_address_can_start_only_a_few_demos(visitor):
     for _ in range(get_settings().demo_per_ip_per_hour):
+        visitor.cookies.clear()  # a new browser each time, as a demo already open is reused
         assert start_demo(visitor).status_code == 201
+    visitor.cookies.clear()
     assert start_demo(visitor).status_code == 429
     # Someone else is unaffected.
     assert start_demo(visitor, ip="198.51.100.4").status_code == 201
@@ -66,7 +83,9 @@ def test_total_demos_are_capped(visitor):
     limiters = Limiters(Settings(demo_per_hour=2))
     app.dependency_overrides[get_limiters] = lambda: limiters
     assert start_demo(visitor, ip="198.51.100.1").status_code == 201
+    visitor.cookies.clear()
     assert start_demo(visitor, ip="198.51.100.2").status_code == 201
+    visitor.cookies.clear()
     response = start_demo(visitor, ip="198.51.100.3")
     assert response.status_code == 429
     assert "busy" in response.json()["detail"]

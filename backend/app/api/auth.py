@@ -17,6 +17,7 @@ from app.services.auth import (
     CurrentUser,
     SettingsDep,
     authenticate,
+    current_user,
     end_session,
     hash_password,
     start_session,
@@ -99,8 +100,17 @@ def start_demo(
     storage: StorageDep,
     settings: SettingsDep,
     limiters: LimitersDep,
+    rs_session: Annotated[str | None, Cookie()] = None,
 ) -> User:
-    """Signs the visitor in to a fresh demo account that already holds the sample reports."""
+    """Signs the visitor in to a fresh demo account that already holds the sample reports. A browser
+    that is already in a demo keeps it, so opening one section after another never uses up the limit."""
+    if rs_session:
+        try:
+            user = current_user(session, rs_session)
+        except HTTPException:
+            user = None
+        if user is not None and user.is_guest:
+            return user
     busy = "The demo is busy right now. Please try again in a little while."
     limiters.demo_per_ip.check(client_ip(request), "You've started several demos already. Try again later.")
     limiters.demo_total.check("all", busy)
