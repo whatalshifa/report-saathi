@@ -138,9 +138,10 @@ export function ReportsIndex() {
                       >
                         {STATUS[r.status]}
                       </span>
+                      {/* On phones the chevron is placed first, so the lab and the date stack in the wide column. */}
                       <IconChevronRight
                         aria-hidden
-                        className="order-3 row-span-2 h-4 w-4 text-stone-400 md:order-none md:row-span-1 dark:text-stone-500"
+                        className="col-start-2 row-span-2 row-start-1 h-4 w-4 text-stone-400 md:col-start-auto md:row-span-1 md:row-start-auto dark:text-stone-500"
                       />
                     </AppLink>
                   </li>

@@ -105,7 +105,7 @@ The README gives the short version. This page lists every feature in the order i
 
 | Whose report is it? | Name on report doesn't match |
 |---|---|
-| ![Dashboard](screenshots/family-dashboard.png) | ![Wrong person warning](screenshots/wrong-person.png) |
+| ![Dashboard](screenshots/dashboard.png) | ![Wrong person warning](screenshots/wrong-person.png) |
 
 ## Phase 2: trends, explanations, doctor brief
 
@@ -125,7 +125,7 @@ The README gives the short version. This page lists every feature in the order i
 
 ## Phase 1: read a report and flag values
 
-![Results page](screenshots/desktop-result.png)
+![All results on a report](screenshots/all-results.png)
 
 - Upload a PDF, JPG, PNG or WEBP report (up to 20 MB). Large phone photos are shrunk automatically.
 - Claude reads every page and returns each test as structured data: name, value, unit, printed range.

@@ -1,16 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { checkHealth, startDemo } from "@/lib/api";
-
-/** Wakes the free server as soon as the page opens, so the demo button is quick when clicked. */
-export function WakeServer() {
-  useEffect(() => {
-    checkHealth().catch(() => {});
-  }, []);
-  return null;
-}
 
 /**
  * `next`: where to go once the demo is open (from the sign-in page, the page that asked for it).

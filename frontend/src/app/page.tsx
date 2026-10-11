@@ -16,10 +16,17 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { formatDate } from "@/lib/format";
 import { IconArrowRight, IconLock, IconPlus, IconReport, IconSpeaker, IconStethoscope, IconTimeline } from "@/components/icons";
 
+const TITLE = "ReportSaathi: your family's lab reports, explained";
+const DESCRIPTION =
+  "Add a photo or PDF of any lab report. ReportSaathi reads every value, flags what's out of range, explains it in English, Hindi or Marathi, and follows your family's results across labs.";
+
 export const metadata: Metadata = {
-  title: { absolute: "ReportSaathi: your family's lab reports, explained" },
-  description:
-    "Add a photo or PDF of any lab report. ReportSaathi reads every value, flags what's out of range, explains it in English, Hindi or Marathi, and follows your family's results across labs.",
+  title: { absolute: TITLE },
+  description: DESCRIPTION,
+  alternates: { canonical: "/" },
+  // A page's openGraph replaces the layout's whole object, so the shared fields are repeated here.
+  openGraph: { type: "website", siteName: "ReportSaathi", locale: "en_IN", title: TITLE, description: DESCRIPTION, url: "/" },
+  twitter: { title: TITLE, description: DESCRIPTION },
 };
 
 const NAV = [

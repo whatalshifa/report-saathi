@@ -7,7 +7,8 @@ import type { ReactNode } from "react";
 import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { PersonAvatar } from "@/components/shell/PersonAvatar";
-import { AppLink, ShellProvider, useShell } from "@/components/shell/ShellContext";
+import { StatusPanel } from "@/components/StatusPanel";
+import { AppLink, OPEN_PATHS, ShellProvider, useShell } from "@/components/shell/ShellContext";
 import { RELATION_LABEL } from "@/lib/format";
 import { IconBadge, IconDashboard, IconFamily, IconHome, IconInfo, IconPlus, IconReport, IconStethoscope, IconTimeline, type IconComponent } from "@/components/icons";
 
@@ -18,7 +19,16 @@ const BARE_PAGES = ["/login", "/signup"];
  * reading pages) sits in a sidebar shell on computers and a top bar plus tab bar on phones. Sign-in
  * pages get a plain frame, and a doctor's shared brief gets the logo alone.
  */
-export function AppShell({ signedIn, children }: { signedIn: boolean; children: ReactNode }) {
+export function AppShell({
+  signedIn,
+  demoHint,
+  children,
+}: {
+  signedIn: boolean;
+  /** A demo account was opened in this browser: show its notice from the first paint (see lib/api.ts). */
+  demoHint: boolean;
+  children: ReactNode;
+}) {
   const pathname = usePathname();
 
   // The landing page brings its own header and footer.
@@ -62,10 +72,10 @@ export function AppShell({ signedIn, children }: { signedIn: boolean; children: 
     <ShellProvider signedIn={signedIn}>
       <Sidebar />
       <div className="flex min-h-screen min-w-0 flex-1 flex-col lg:pl-[272px] print:pl-0">
-        <Notice />
+        <Notice demoHint={demoHint} />
         <PhoneBar />
         <main id="main" className="mx-auto w-full max-w-[1100px] flex-1 px-4 pt-5 pb-10 sm:px-6 lg:px-10 lg:pt-8 print:p-0">
-          {children}
+          <ShellContent>{children}</ShellContent>
         </main>
         <footer className="px-3 pb-3 print:hidden">
           <div className="mx-auto flex max-w-[1100px] flex-col gap-3 rounded-card bg-tint px-5 py-4 text-[13px] text-muted sm:px-6 lg:flex-row lg:items-center lg:justify-between">
@@ -100,6 +110,34 @@ export function AppShell({ signedIn, children }: { signedIn: boolean; children: 
       </div>
       <OpeningToast />
     </ShellProvider>
+  );
+}
+
+/** The page, or, when the API can't be reached, a calm note in its place (pages that need no API still show). */
+function ShellContent({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  const { mode, retry } = useShell();
+  if (mode !== "offline" || OPEN_PATHS.includes(pathname)) return children;
+  return (
+    <StatusPanel
+      tone="offline"
+      title="The server is taking a nap"
+      heading="h1"
+      bare
+      actions={
+        <>
+          <button type="button" onClick={retry} className="btn btn-primary">
+            Try again
+          </button>
+          <Link href="/" className="btn btn-secondary">
+            About ReportSaathi
+          </Link>
+        </>
+      }
+    >
+      ReportSaathi&apos;s server runs on a free plan that sleeps when nobody is using it, and it didn&apos;t answer
+      this time. Your reports are safe. Give it a moment, then try again.
+    </StatusPanel>
   );
 }
 
@@ -187,10 +225,12 @@ function Sidebar() {
           </AppLink>
         </div>
         {profiles === null ? (
-          <div className="space-y-2 px-1 pt-1" aria-hidden>
-            <div className="skeleton h-11 rounded-full" />
-            <div className="skeleton h-11 rounded-full" />
-          </div>
+          mode !== "offline" && (
+            <div className="space-y-2 px-1 pt-1" aria-hidden>
+              <div className="skeleton h-11 rounded-full" />
+              <div className="skeleton h-11 rounded-full" />
+            </div>
+          )
         ) : (
           <ul className="space-y-1">
             {profiles.map((p) => {
@@ -238,6 +278,9 @@ function Sidebar() {
                 <span className="block truncate text-xs text-muted">Account and data</span>
               </span>
             </Link>
+          ) : mode === "loading" ? (
+            // Keeps the account's place while it loads, so the links above it don't move.
+            <div aria-hidden className="h-10 flex-1" />
           ) : mode === "sample" ? (
             <div className="flex flex-1 gap-1">
               <Link href="/signup" className="btn btn-primary btn-sm flex-1 px-3">
@@ -279,7 +322,7 @@ function SideLink({ label, href, active, Icon }: NavItem) {
   );
 }
 
-function Notice() {
+function Notice({ demoHint }: { demoHint: boolean }) {
   const { mode, user } = useShell();
   const linkClass =
     "font-bold text-coral-800 underline decoration-2 underline-offset-2 hover:text-brand-950 dark:text-coral-200 dark:hover:text-white";
@@ -296,7 +339,9 @@ function Notice() {
       </p>
     );
   }
-  if (mode === "live" && user?.is_guest) {
+  // While the API is asked who is signed in, a demo account's notice is already shown, so the page
+  // doesn't jump down when the answer comes (a run-out demo swaps it for the same-sized sample notice).
+  if ((mode === "live" && user?.is_guest) || (mode === "loading" && demoHint)) {
     return (
       <p className={boxClass}>
         You&apos;re exploring a demo account.

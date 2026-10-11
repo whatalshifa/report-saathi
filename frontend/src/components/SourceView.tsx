@@ -130,8 +130,7 @@ export function SourceDialog({
             <div ref={scroller} className="min-h-0 overflow-auto rounded-ctl border border-line bg-white">
               {/* The highlight sits on the page in fractions of its size, so it stays put at any zoom. */}
               <div className="relative" style={{ width: zoomed ? "max(160%, 640px)" : "100%" }}>
-                {/* A private file behind the sign-in cookie, so not one for Next's image optimiser. */}
-                {/* eslint-disable-next-line @next/next/no-img-element */}
+                {/* eslint-disable-next-line @next/next/no-img-element -- a private file behind the sign-in cookie, so not one for Next's image optimiser */}
                 <img
                   ref={image}
                   src={isPdf ? reportPageUrl(reportId, box.page) : reportFileUrl(reportId)}

@@ -83,7 +83,12 @@ export function ReportView({ id }: { id: string }) {
 
   async function handleDelete() {
     if (!confirm("Delete this report and its file? Any doctor links for this person will stop working.")) return;
-    await deleteReport(id);
+    try {
+      await deleteReport(id);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "The report couldn't be deleted. Please try again.");
+      return;
+    }
     router.push(`/dashboard?profile=${report?.profile_id ?? ""}`);
   }
 

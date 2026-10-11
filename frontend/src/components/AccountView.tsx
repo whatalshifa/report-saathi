@@ -5,7 +5,9 @@ import Link from "next/link";
 
 import { PageHeader } from "@/components/PageHeader";
 import { ErrorNote } from "@/components/Skeleton";
-import { deleteAccount, downloadExport, getFeatures, getMe, logout, type User } from "@/lib/api";
+import { StatusPanel } from "@/components/StatusPanel";
+import { useShell } from "@/components/shell/ShellContext";
+import { deleteAccount, downloadExport, getFeatures, logout } from "@/lib/api";
 import { clearSharedFile } from "@/lib/sharedFile";
 import { IconDownload } from "@/components/icons";
 
@@ -86,24 +88,30 @@ function YourData() {
 }
 
 export function AccountView() {
-  const [user, setUser] = useState<User | null>(null);
+  // The shell has already asked the API who is signed in.
+  const { mode, user } = useShell();
   const [reading, setReading] = useState(true);
   const [confirmText, setConfirmText] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [signOutError, setSignOutError] = useState<string | null>(null);
 
   useEffect(() => {
-    getMe().then(setUser);
     getFeatures()
       .then((f) => setReading(f.reading))
       .catch(() => {});
   }, []);
 
   async function signOut() {
-    await logout();
+    setSignOutError(null);
+    try {
+      await logout();
+    } catch (err) {
+      setSignOutError(err instanceof Error ? err.message : "Could not sign out");
+      return;
+    }
     // A report shared from WhatsApp but not yet added shouldn't wait for the next person on this device.
     await clearSharedFile().catch(() => {});
-    // Full page loads after signing out, so nothing from the old session stays in memory.
-    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- a full page load after signing out, so nothing from the old session stays in memory
     window.location.assign("/");
   }
 
@@ -111,11 +119,30 @@ export function AccountView() {
     try {
       await deleteAccount();
       await clearSharedFile().catch(() => {});
-      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- a full page load, so nothing from the deleted account stays in memory
       window.location.assign("/signup");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not delete the account");
     }
+  }
+
+  if (mode === "sample") {
+    // The sign-in cookie was there but has run out (a demo account is deleted after a day).
+    return (
+      <StatusPanel
+        tone="missing"
+        title="You're signed out"
+        heading="h1"
+        bare
+        actions={
+          <Link href="/login?next=/account" className="btn btn-primary">
+            Sign in
+          </Link>
+        }
+      >
+        Sign in again to see your account. Demo accounts are deleted after 24 hours.
+      </StatusPanel>
+    );
   }
 
   if (!user) {
@@ -139,11 +166,16 @@ export function AccountView() {
           title={user.is_guest ? "Demo account" : user.name}
           description={user.is_guest ? "Temporary, deleted after 24 hours" : user.email}
           actions={
-            <button onClick={signOut} className="btn btn-secondary">
+            <button type="button" onClick={signOut} className="btn btn-secondary">
               Sign out
             </button>
           }
         />
+        {signOutError && (
+          <div className="mt-3">
+            <ErrorNote message={signOutError} />
+          </div>
+        )}
       </div>
 
       <section className="card p-5 text-sm sm:p-6">

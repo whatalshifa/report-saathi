@@ -1,14 +1,15 @@
 import type { ReactNode } from "react";
 
-import { IconAlert, IconFileSearch, IconLink, IconUpload, type IconComponent } from "@/components/icons";
+import { IconAlert, IconFileSearch, IconLink, IconMoon, IconUpload, type IconComponent } from "@/components/icons";
 
-type Tone = "empty" | "error" | "missing" | "working" | "link";
+type Tone = "empty" | "error" | "missing" | "working" | "link" | "offline";
 
 const ICONS: Record<Exclude<Tone, "working">, IconComponent> = {
   empty: IconUpload, // nothing here yet: add something
   error: IconAlert,
   missing: IconFileSearch, // looked, found nothing
   link: IconLink,
+  offline: IconMoon, // the free server is asleep: nothing is wrong, it needs a moment
 };
 
 const TONE_STYLE: Record<Tone, string> = {
@@ -17,6 +18,7 @@ const TONE_STYLE: Record<Tone, string> = {
   link: "bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-300",
   error: "bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300",
   working: "bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300",
+  offline: "bg-tint-coral text-coral-700 [--duo:var(--duo-coral)] dark:text-coral-300",
 };
 
 /**
@@ -42,7 +44,7 @@ export function StatusPanel({
   const Heading = heading;
   return (
     <div
-      role={tone === "error" ? "alert" : tone === "working" ? "status" : undefined}
+      role={tone === "error" ? "alert" : tone === "working" || tone === "offline" ? "status" : undefined}
       className={`flex flex-col items-center px-6 text-center ${bare ? "py-16 sm:py-20" : "card py-10"}`}
     >
       <span aria-hidden className={`grid h-14 w-14 place-items-center rounded-full ${TONE_STYLE[tone]}`}>
@@ -66,12 +68,13 @@ export function StatusPanel({
   );
 }
 
-/** A page's main data didn't load: say so plainly and offer to try again. */
+/** A page's main data didn't load: say so plainly and offer to try again. It stands in for the page, so it is the h1. */
 export function LoadError({ message, onRetry }: { message: string; onRetry?: () => void }) {
   return (
     <StatusPanel
       tone="error"
       title="This didn’t load"
+      heading="h1"
       actions={
         <button type="button" onClick={onRetry ?? (() => window.location.reload())} className="btn btn-primary">
           Try again

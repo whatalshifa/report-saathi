@@ -6,11 +6,11 @@ import { Fragment, useCallback, useEffect, useId, useRef, useState } from "react
 
 import { FlagBadge } from "@/components/FlagBadge";
 import { Sparkline } from "@/components/Sparkline";
-import { PageHeader } from "@/components/PageHeader";
+import { BackLink, PageHeader } from "@/components/PageHeader";
 import { useSelectPerson } from "@/components/shell/ShellContext";
 import { ErrorNote, SkeletonPage } from "@/components/Skeleton";
 import { StatCard, StatRow } from "@/components/StatCard";
-import { LoadError } from "@/components/StatusPanel";
+import { LoadError, StatusPanel } from "@/components/StatusPanel";
 import { TrendChart } from "@/components/TrendChart";
 import { TypicalRangeNote } from "@/components/TypicalRangeNote";
 import {
@@ -31,7 +31,7 @@ export function TimelineView({ profileId }: { profileId: string }) {
   const router = useRouter();
   useSelectPerson(profileId);
   const load = useCallback(() => getTrends(profileId), [profileId]);
-  const { data: trends, error } = usePoll(load, () => false);
+  const { data: trends, error, notFound, reload } = usePoll(load, () => false);
   const [briefError, setBriefError] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
   // The test whose chart is open, kept in the address (?test=ldl) so it can be linked to and gone back to.
@@ -51,7 +51,19 @@ export function TimelineView({ profileId }: { profileId: string }) {
     }
   }
 
-  if (error) return <LoadError message={error} />;
+  if (notFound) {
+    return (
+      <StatusPanel
+        tone="missing"
+        title="We couldn’t find this timeline"
+        heading="h1"
+        actions={<BackLink href="/family">Back to your family</BackLink>}
+      >
+        The person may have been removed, or the link is from another account.
+      </StatusPanel>
+    );
+  }
+  if (error) return <LoadError message={error} onRetry={reload} />;
   if (!trends) return <SkeletonPage cards={4} />;
 
   const { profile: person, series } = trends;

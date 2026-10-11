@@ -48,6 +48,46 @@ export function SkeletonPage({ cards = 2 }: { cards?: number }) {
   );
 }
 
+/** A page heading over a list, for the reports, briefs, family and account pages. */
+export function SkeletonListPage({ rows = 3 }: { rows?: number }) {
+  return (
+    <div className="space-y-6" role="status" aria-label="Loading">
+      <div className="space-y-3">
+        <div className="skeleton h-8 w-48" />
+        <div className="skeleton h-4 w-80 max-w-full" />
+      </div>
+      <SkeletonList rows={rows} />
+    </div>
+  );
+}
+
+/** The dashboard's shape: the person, two summary cards, the key markers and the side column. */
+export function DashboardSkeleton() {
+  return (
+    <div className="space-y-6" role="status" aria-label="Loading">
+      <div className="flex items-center gap-3.5">
+        <div className="skeleton h-11 w-11 rounded-full" />
+        <div className="space-y-2">
+          <div className="skeleton h-3 w-24" />
+          <div className="skeleton h-6 w-48" />
+        </div>
+      </div>
+      <div className="grid gap-3 lg:grid-cols-[1.5fr_1fr]">
+        <div className="skeleton h-32 rounded-xl" />
+        <div className="skeleton h-32 rounded-xl" />
+      </div>
+      <div className="grid gap-6 lg:grid-cols-[1fr_19rem]">
+        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+          {Array.from({ length: 6 }, (_, i) => (
+            <div key={i} className="skeleton h-[134px] rounded-xl" />
+          ))}
+        </div>
+        <div className="skeleton h-64 rounded-xl" />
+      </div>
+    </div>
+  );
+}
+
 export function ErrorNote({ message }: { message: string }) {
   return (
     <p

@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { DashboardView, PrivateNote, type DashboardData, type ReportGlance } from "@/components/DashboardView";
 import { SampleCard } from "@/components/SampleCard";
 import { SampleDashboard } from "@/components/SampleDashboard";
+import { DashboardSkeleton } from "@/components/Skeleton";
 import { LoadError, StatusPanel } from "@/components/StatusPanel";
 import { ReadingPaused, UploadCard } from "@/components/UploadCard";
 import { pickProfile, useSelectPerson, useShell } from "@/components/shell/ShellContext";
@@ -125,6 +126,8 @@ export function Dashboard({ profileId }: { profileId?: string }) {
     );
   }
   if (data.error) return <LoadError message={data.error} />;
+  // Drawn once everything has arrived, so the page doesn't grow piece by piece and jump as it loads.
+  if (!data.glances) return <DashboardSkeleton />;
 
   const hasSamples = shell.profiles.some((p) => p.is_sample);
   const upload = features ? (
@@ -177,30 +180,4 @@ export function Dashboard({ profileId }: { profileId?: string }) {
     );
 
   return <DashboardView data={view} side={side} />;
-}
-
-export function DashboardSkeleton() {
-  return (
-    <div className="space-y-6" role="status" aria-label="Loading">
-      <div className="flex items-center gap-3.5">
-        <div className="skeleton h-11 w-11 rounded-full" />
-        <div className="space-y-2">
-          <div className="skeleton h-3 w-24" />
-          <div className="skeleton h-6 w-48" />
-        </div>
-      </div>
-      <div className="grid gap-3 lg:grid-cols-[1.5fr_1fr]">
-        <div className="skeleton h-32 rounded-xl" />
-        <div className="skeleton h-32 rounded-xl" />
-      </div>
-      <div className="grid gap-6 lg:grid-cols-[1fr_19rem]">
-        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-          {Array.from({ length: 6 }, (_, i) => (
-            <div key={i} className="skeleton h-[134px] rounded-xl" />
-          ))}
-        </div>
-        <div className="skeleton h-64 rounded-xl" />
-      </div>
-    </div>
-  );
 }

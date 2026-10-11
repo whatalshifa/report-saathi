@@ -780,6 +780,122 @@ test("unknown pages show a friendly 404", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "This page doesn't exist" })).toBeVisible();
 });
 
+test("a mistyped address shows the 404 to signed-out visitors too", async ({ page }) => {
+  const response = await page.goto("/nothing-here");
+  expect(response?.status()).toBe(404);
+  await expect(page).toHaveURL(/\/nothing-here$/);
+  await expect(page.getByRole("heading", { name: "This page doesn't exist" })).toBeVisible();
+});
+
+test("a deleted or someone else's timeline or brief says it can't be found", async ({ page }) => {
+  await startDemo(page);
+  const missing = "00000000-0000-0000-0000-000000000000";
+  await page.goto(`/profiles/${missing}`);
+  await expect(page.getByRole("heading", { name: "We couldn’t find this timeline", level: 1 })).toBeVisible();
+  await page.goto(`/briefs/${missing}`);
+  await expect(page.getByRole("heading", { name: "We couldn’t find this brief", level: 1 })).toBeVisible();
+});
+
+test("when the API doesn't answer, the app says so calmly and can try again", async ({ page }) => {
+  await startDemo(page);
+  // A server that is down answers nothing useful; 503 skips the minute of retries meant for a waking one.
+  await page.route("**/api/auth/me", (route) => route.fulfill({ status: 503, body: "" }));
+  await page.goto("/reports");
+  await expect(page.getByRole("heading", { name: "The server is taking a nap", level: 1 })).toBeVisible();
+  // Pages that need no API still open.
+  await page.getByRole("contentinfo").getByRole("link", { name: "Privacy" }).click();
+  await expect(page.getByRole("heading", { name: "How we look after your reports", level: 1 })).toBeVisible();
+  await page.goBack();
+  await page.unroute("**/api/auth/me");
+  await page.getByRole("button", { name: "Try again" }).click();
+  await expect(page.getByRole("heading", { name: "Reports", level: 1 })).toBeVisible();
+});
+
+test("every page has its own title, and public pages a description and canonical link", async ({ page }) => {
+  const publicPages: [string, RegExp][] = [
+    ["/", /^ReportSaathi: your family's lab reports, explained$/],
+    ["/dashboard", /^Dashboard · ReportSaathi$/],
+    ["/accuracy", /^How accurate is it\? · ReportSaathi$/],
+    ["/privacy", /^Privacy · ReportSaathi$/],
+    ["/login", /^Sign in · ReportSaathi$/],
+    ["/signup", /^Create a free account · ReportSaathi$/],
+  ];
+  for (const [path, title] of publicPages) {
+    await page.goto(path);
+    await expect(page).toHaveTitle(title);
+    await expect(page.locator('meta[name="description"]')).toHaveAttribute("content", /.{60,}/);
+    const canonical = await page.locator('link[rel="canonical"]').getAttribute("href");
+    expect(new URL(canonical!).pathname).toBe(path);
+    await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", /\/opengraph-image/);
+  }
+  await startDemo(page);
+  for (const [path, title] of [
+    ["/reports", "Reports"],
+    ["/family", "Family"],
+    ["/account", "Account"],
+    ["/briefs", "Doctor briefs"],
+  ]) {
+    await page.goto(path);
+    await expect(page).toHaveTitle(`${title} · ReportSaathi`);
+  }
+});
+
+test("the share preview, icons, robots.txt and sitemap are in place", async ({ page }) => {
+  await page.goto("/");
+  for (const selector of ['meta[property="og:image"]', 'link[rel="apple-touch-icon"]', 'link[rel="icon"][type="image/svg+xml"]']) {
+    const url = (await page.locator(selector).first().getAttribute(selector.startsWith("meta") ? "content" : "href"))!;
+    // The share image's address is the live site's; fetch the same path from this server.
+    const response = await page.request.get(new URL(url, "http://x").pathname);
+    expect(response.status(), url).toBe(200);
+  }
+  const og = await page.request.get("/opengraph-image");
+  const png = await og.body();
+  expect(`${png.readUInt32BE(16)}x${png.readUInt32BE(20)}`).toBe("1200x630");
+  expect((await page.request.get("/favicon.ico")).status()).toBe(200);
+
+  const robots = await (await page.request.get("/robots.txt")).text();
+  const sitemap = await (await page.request.get("/sitemap.xml")).text();
+  // Every page in the sitemap may be crawled.
+  for (const path of ["/dashboard", "/accuracy", "/privacy", "/signup", "/login"]) {
+    expect(sitemap).toContain(`${path}</loc>`);
+    expect(robots).toContain(`Allow: ${path}`);
+  }
+});
+
+test("on a phone, each report in the list shows its lab with the date beneath", async ({ page, isMobile }) => {
+  test.skip(!isMobile, "phone layout only");
+  await startDemo(page);
+  await page.goto("/reports");
+  const row = page.getByRole("main").getByRole("link", { name: /12 Jan 2026/ });
+  const lab = await row.getByText("Sample Pathology Lab, Pune").boundingBox();
+  const date = await row.getByText(/12 Jan 2026/).boundingBox();
+  expect(date!.y).toBeGreaterThan(lab!.y + lab!.height - 2);
+  expect(Math.abs(date!.x - lab!.x)).toBeLessThan(2);
+  expect(date!.width).toBeGreaterThan(80);
+});
+
+test("app pages don't jump while they load", async ({ page }) => {
+  // Adds up every layout shift the visitor didn't cause (the browser's CLS), from the first paint.
+  await page.addInitScript(() => {
+    const w = window as unknown as { shifted: number };
+    w.shifted = 0;
+    new PerformanceObserver((list) => {
+      for (const entry of list.getEntries() as unknown as { value: number; hadRecentInput: boolean }[]) {
+        if (!entry.hadRecentInput) w.shifted += entry.value;
+      }
+    }).observe({ type: "layout-shift", buffered: true });
+  });
+  await startDemo(page);
+  const [person] = await (await page.request.get("/api/profiles")).json();
+  for (const path of ["/dashboard", "/reports", `/profiles/${person.id}`, "/family", "/privacy"]) {
+    await page.goto(path);
+    await page.waitForLoadState("networkidle");
+    const shifted = await page.evaluate(() => (window as unknown as { shifted: number }).shifted);
+    // Google counts under 0.1 as good.
+    expect(shifted, `${path} shifted ${shifted.toFixed(3)}`).toBeLessThan(0.1);
+  }
+});
+
 test("the page never scrolls sideways on a phone", async ({ page, isMobile }) => {
   test.skip(!isMobile, "phone layout only");
   await startDemo(page);

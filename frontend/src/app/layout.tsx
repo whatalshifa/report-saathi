@@ -6,15 +6,18 @@ import { ServerWaking } from "@/components/ServerWaking";
 import { ServiceWorker } from "@/components/ServiceWorker";
 import { AppShell } from "@/components/shell/AppShell";
 import { THEME_SCRIPT } from "@/components/ThemeToggle";
+import { DEMO_HINT_COOKIE } from "@/lib/api";
 import "./globals.css";
 
 // Figtree, a warm and rounded sans, for everything. It has no Devanagari, so Hindi and Marathi fall
-// through to Noto Sans Devanagari.
+// through to Noto Sans Devanagari. That file is six times Figtree's size and most pages show no Hindi or
+// Marathi, so it isn't preloaded: the browser fetches it only when Devanagari text is on screen.
 const figtree = Figtree({ variable: "--font-figtree", subsets: ["latin"] });
 const devanagari = Noto_Sans_Devanagari({
   variable: "--font-devanagari",
   subsets: ["devanagari"],
   weight: ["400", "500", "600", "700"],
+  preload: false,
 });
 
 const DESCRIPTION =
@@ -43,7 +46,8 @@ export const viewport: Viewport = {
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
-  const signedIn = (await cookies()).has("rs_session");
+  const jar = await cookies();
+  const signedIn = jar.has("rs_session");
   return (
     <html lang="en" className={`${figtree.variable} ${devanagari.variable} h-full antialiased`} suppressHydrationWarning>
       <head>
@@ -56,7 +60,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         >
           Skip to content
         </a>
-        <AppShell signedIn={signedIn}>{children}</AppShell>
+        <AppShell signedIn={signedIn} demoHint={signedIn && jar.has(DEMO_HINT_COOKIE)}>{children}</AppShell>
         <ServerWaking />
         <ServiceWorker />
       </body>

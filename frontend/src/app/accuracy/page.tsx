@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
 import { PageHeader } from "@/components/PageHeader";
@@ -5,7 +6,11 @@ import { StatCard, StatRow } from "@/components/StatCard";
 import { StatusPanel } from "@/components/StatusPanel";
 import results from "@/data/accuracy.json";
 
-export const metadata = { title: "How accurate is it? · ReportSaathi" };
+export const metadata: Metadata = {
+  title: "How accurate is it?",
+  description: "How ReportSaathi's reading of lab reports is tested: real reports from Indian labs, typed in by hand and compared value by value.",
+  alternates: { canonical: "/accuracy" },
+};
 
 type Block = Record<string, number | null>;
 type Results = {

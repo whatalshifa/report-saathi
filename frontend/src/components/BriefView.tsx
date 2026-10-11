@@ -11,8 +11,15 @@ import { usePoll } from "@/lib/usePoll";
 
 export function BriefView({ id }: { id: string }) {
   const load = useCallback(() => getBrief(id), [id]);
-  const { data: job, error } = usePoll(load, (j) => isPending(j.status));
+  const { data: job, error, notFound } = usePoll(load, (j) => isPending(j.status));
 
+  if (notFound) {
+    return (
+      <StatusPanel tone="missing" title="We couldn’t find this brief" heading="h1" actions={<BackLink href="/briefs">All doctor briefs</BackLink>}>
+        It may have been deleted, or the link is from another account.
+      </StatusPanel>
+    );
+  }
   if (error) {
     return (
       <StatusPanel tone="error" title="This brief didn’t load" heading="h1" actions={<BackLink href="/dashboard">Back to all reports</BackLink>}>

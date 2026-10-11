@@ -234,8 +234,7 @@ function ShareQr({ url }: { url: string }) {
           {/* Always black on a white tile: scanners need the contrast, in dark mode too. */}
           <div className="h-48 w-48 shrink-0 rounded-ctl border border-stone-200 bg-white p-1 shadow-sm">
             {svg ? (
-              // A data URL made here, not a remote image, so not one for Next's image optimiser.
-              // eslint-disable-next-line @next/next/no-img-element
+              // eslint-disable-next-line @next/next/no-img-element -- a data URL made here, not a remote image, so not one for Next's image optimiser
               <img src={image} alt="QR code for your link" className="h-full w-full [image-rendering:pixelated]" />
             ) : (
               <div role="status" className="h-full w-full animate-pulse rounded-lg bg-stone-100">

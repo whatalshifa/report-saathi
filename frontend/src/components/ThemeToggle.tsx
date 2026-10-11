@@ -27,6 +27,11 @@ function readTheme(): Theme {
   }
 }
 
+/** Applies the saved theme now: for pages drawn without the root layout's script (global-error). */
+export function applySavedTheme() {
+  apply(readTheme());
+}
+
 const KNOB: Record<Theme, string> = {
   light: "left-1",
   system: "left-[calc(50%-14px)]",
@@ -41,8 +46,7 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
   const [theme, setTheme] = useState<Theme | null>(null);
 
   useEffect(() => {
-    // Read after mounting: the server can't know what the browser saved.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- read after mounting: the server can't know what the browser saved
     setTheme(readTheme());
     const media = matchMedia("(prefers-color-scheme: dark)");
     const follow = () => readTheme() === "system" && apply("system");

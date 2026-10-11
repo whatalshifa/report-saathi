@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/PageHeader";
 export const metadata: Metadata = {
   title: "Privacy",
   description: "What ReportSaathi keeps, why, where, for how long, and your rights under India's DPDP Act 2023.",
+  alternates: { canonical: "/privacy" },
 };
 
 const ISSUES = "https://github.com/whatalshifa/report-saathi/issues";
