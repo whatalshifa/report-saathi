@@ -206,6 +206,27 @@ test("a value can be traced back to the original report", async ({ page }) => {
   await expect(dialog).toBeHidden();
 });
 
+test("the original report keeps loading while the server wakes up, instead of giving up", async ({ page }) => {
+  await startDemo(page);
+  // The first answers are the gateway errors the website gives while the free API server wakes.
+  let failures = 3;
+  await page.route(/\/api\/reports\/[\w-]+\/file(\?.*)?$/, (route) =>
+    failures-- > 0 ? route.fulfill({ status: 502, body: "" }) : route.continue(),
+  );
+  await page.getByRole("link", { name: /Sample Pathology Lab, Pune.*12 Jan 2026/ }).click();
+  await page
+    .getByRole("region", { name: "Needs attention" })
+    .getByRole("button", { name: "See Haemoglobin (Hb) on the original report" })
+    .click();
+  const dialog = page.getByRole("dialog", { name: "Where this number came from" });
+  const original = dialog.getByRole("img", { name: "Page 1 of the original report, with Haemoglobin (Hb) highlighted" });
+  await expect(dialog.getByText(/Waking up the server/)).toBeVisible();
+  await expect(original).toBeVisible({ timeout: 20_000 });
+  await expect.poll(() => original.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
+  await expect(dialog.getByTestId("source-highlight")).toBeInViewport();
+  await expect(dialog.getByText("The original report couldn't be loaded.")).toBeHidden();
+});
+
 test("a value on a PDF is shown marked on its page, drawn by the API", async ({ page }) => {
   await startDemo(page);
   // The demo can't read uploads, so a sample report stands in for a PDF: its page comes from the
