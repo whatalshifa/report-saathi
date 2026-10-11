@@ -441,7 +441,7 @@ function ReportStack() {
           className={`relative -mx-8 w-[44%] shrink-0 overflow-hidden rounded-md bg-white shadow-[0_20px_40px_-18px_rgb(44_18_42/0.5)] ring-1 ring-black/5 sm:-mx-10 ${tilt[i]}`}
           style={{ zIndex: i === 1 ? 2 : 1 }}
         >
-          <Image src={`/landing/${r.filename}`} alt="" width={1240} height={1754} className="h-auto w-full dark:brightness-[0.88]" />
+          <Image src={`/landing/${r.filename}`} alt="" width={1240} height={1754} sizes="(min-width: 640px) 200px, 44vw" className="h-auto w-full dark:brightness-[0.88]" />
         </div>
       ))}
     </div>

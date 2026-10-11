@@ -5,6 +5,7 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { CorrectedChip } from "@/components/ValueFix";
 import { reportFileUrl, reportPageUrl, type SourceBox, type TestResult } from "@/lib/api";
 import { usePdfViewer } from "@/lib/usePdfViewer";
+import { useRetryingImage } from "@/lib/useRetryingImage";
 import { IconClose, IconFileSearch } from "@/components/icons";
 
 // "Where did this number come from?": a page icon beside a value opens the original report
@@ -47,8 +48,10 @@ export function SourceDialog({
   const scroller = useRef<HTMLDivElement>(null);
   const image = useRef<HTMLImageElement>(null);
   const [zoomed, setZoomed] = useState(true);
-  const [failed, setFailed] = useState(false);
   const isPdf = contentType === "application/pdf";
+  // The API may still be waking up, so the page keeps trying for about a minute before it gives up.
+  const original = useRetryingImage([isPdf ? reportPageUrl(reportId, box.page) : reportFileUrl(reportId)]);
+  const failed = original.state === "failed";
   const showsPdf = usePdfViewer();
   const value = [result.value_text, result.unit].filter(Boolean).join(" ");
 
@@ -70,7 +73,7 @@ export function SourceDialog({
       top: ((box.y0 + box.y1) / 2) * page.clientHeight - view.clientHeight / 2,
     });
   }, [box]);
-  useEffect(() => centreOnBox(), [centreOnBox, zoomed]);
+  useEffect(() => centreOnBox(), [centreOnBox, zoomed, original.state]);
 
   return (
     <dialog
@@ -129,14 +132,24 @@ export function SourceDialog({
           <figure className="flex min-h-0 flex-col gap-2">
             <div ref={scroller} className="min-h-0 overflow-auto rounded-ctl border border-line bg-white">
               {/* The highlight sits on the page in fractions of its size, so it stays put at any zoom. */}
-              <div className="relative" style={{ width: zoomed ? "max(160%, 640px)" : "100%" }}>
+              {original.state !== "ready" && (
+                <p role="status" className="flex aspect-[1/1.41] w-full items-center justify-center px-6 text-center text-sm text-muted">
+                  {original.state === "waiting"
+                    ? "Waking up the server. On the free plan it sleeps when nobody is using it, so this can take up to a minute."
+                    : "Loading the original report…"}
+                </p>
+              )}
+              <div
+                className={original.state === "ready" ? "relative" : "hidden"}
+                style={{ width: zoomed ? "max(160%, 640px)" : "100%" }}
+              >
                 {/* eslint-disable-next-line @next/next/no-img-element -- a private file behind the sign-in cookie, so not one for Next's image optimiser */}
                 <img
                   ref={image}
-                  src={isPdf ? reportPageUrl(reportId, box.page) : reportFileUrl(reportId)}
+                  src={original.src}
                   alt={`Page ${box.page} of the original report, with ${result.name} highlighted`}
-                  onLoad={centreOnBox}
-                  onError={() => setFailed(true)}
+                  onLoad={original.onLoad}
+                  onError={original.onError}
                   className="block h-auto w-full"
                 />
                 <div
