@@ -1,0 +1,42 @@
+NAV https://report-saathi-six.vercel.app/dashboard
+NAV https://report-saathi-six.vercel.app/dashboard
+200 GET https://report-saathi-six.vercel.app/api/health
+link count 1
+200 GET https://report-saathi-six.vercel.app/api/health
+201 POST https://report-saathi-six.vercel.app/api/auth/demo
+NAV https://report-saathi-six.vercel.app/family
+NAV https://report-saathi-six.vercel.app/family
+200 GET https://report-saathi-six.vercel.app/api/auth/me
+200 GET https://report-saathi-six.vercel.app/api/profiles
+200 GET https://report-saathi-six.vercel.app/api/profiles
+FINAL https://report-saathi-six.vercel.app/family
+TEXT Family
+Add the people whose reports you look after. Each person gets their own reports and timeline.
+MJ
+
+Meera Joshi
+Sample
+
+Born 1972 · 3 reports
+
+Edit
+Delete
+Add a family member
+
+Use the name as their lab reports print it. Then ReportSaathi can tell you if a report lands in the wrong person’s profile.
+
+Name
+Relation to you
+Spouse
+Parent
+Child
+Sibling
+Grandparent
+Family
+Year of birth (optional)
+Sex (optional, some ranges depend on it)
+Prefer not to say
+Female
+Male
+Other
+Add
