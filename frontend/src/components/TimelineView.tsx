@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Fragment, useCallback, useEffect, useId, useRef, useState } from "react";
 
 import { FlagBadge } from "@/components/FlagBadge";
+import { Sparkline } from "@/components/Sparkline";
 import { PageHeader } from "@/components/PageHeader";
 import { useSelectPerson } from "@/components/shell/ShellContext";
 import { ErrorNote, SkeletonPage } from "@/components/Skeleton";
@@ -33,6 +34,10 @@ export function TimelineView({ profileId }: { profileId: string }) {
   const { data: trends, error } = usePoll(load, () => false);
   const [briefError, setBriefError] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
+  // The test whose chart is open, kept in the address (?test=ldl) so it can be linked to and gone back to.
+  const asked = useSearchParams().get("test");
+  // Set when a row is tapped, so a phone can bring that row into view once its chart opens under it.
+  const pickedRef = useRef(false);
 
   async function startBrief() {
     setStarting(true);
@@ -54,6 +59,8 @@ export function TimelineView({ profileId }: { profileId: string }) {
   const single = series.filter((s) => s.points.length === 1);
   const flagged = series.filter((s) => isOutOfRange(s.latest_flag)).length;
   const improving = charted.filter((s) => direction(s) === "better" || direction(s) === "back").length;
+  const selected =
+    charted.find((s) => s.key === asked) ?? charted.find((s) => isOutOfRange(s.latest_flag)) ?? charted[0];
 
   return (
     <div className="space-y-8">
@@ -93,11 +100,38 @@ export function TimelineView({ profileId }: { profileId: string }) {
 
       {trends.rechecks && trends.rechecks.length > 0 && <RecheckCard person={person} due={trends.rechecks} />}
 
-      {charted.length > 0 && (
-        <section className="grid gap-4 md:grid-cols-2">
-          {charted.map((s) => (
-            <TrendCard key={s.key} series={s} />
-          ))}
+      {charted.length > 0 && selected && (
+        <section aria-labelledby="trends-heading">
+          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+            <h2 id="trends-heading" className="section-title">
+              Trends
+            </h2>
+            <p className="text-sm text-muted">Pick a test to see its chart and every reading.</p>
+          </div>
+          {/* Computers: the list on the left, the picked test's chart beside it. Phones: the chart opens under its row. */}
+          <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:items-start lg:gap-6">
+            <div className="card divide-y divide-line overflow-hidden">
+              {charted.map((s) => (
+                <Fragment key={s.key}>
+                  <TrendRow
+                    series={s}
+                    href={`/profiles/${profileId}?test=${s.key}`}
+                    selected={s.key === selected.key}
+                    onPick={() => (pickedRef.current = true)}
+                  />
+                  {s.key === selected.key && (
+                    <div className="bg-tint/60 px-4 pt-1 pb-4 lg:hidden">
+                      <TrendDetail series={s} />
+                    </div>
+                  )}
+                </Fragment>
+              ))}
+            </div>
+            <div className="card hidden p-5 lg:sticky lg:top-6 lg:block">
+              <TrendDetail series={selected} />
+            </div>
+          </div>
+          <ScrollToPicked pickedRef={pickedRef} rowId={`trend-row-${selected.key}`} />
         </section>
       )}
 
@@ -141,14 +175,77 @@ export function TimelineView({ profileId }: { profileId: string }) {
   );
 }
 
-function TrendCard({ series }: { series: TrendSeries }) {
+/** On a phone, a tapped row's chart opens under it and the one above closes: bring the row back into view. */
+function ScrollToPicked({ pickedRef, rowId }: { pickedRef: { current: boolean }; rowId: string }) {
+  useEffect(() => {
+    if (!pickedRef.current) return;
+    pickedRef.current = false;
+    if (window.matchMedia("(min-width: 1024px)").matches) return;
+    document.getElementById(rowId)?.scrollIntoView({ block: "start" });
+  }, [pickedRef, rowId]);
+  return null;
+}
+
+/** One test in the list: its name, latest value and which way it is heading, with a small trend line. */
+function TrendRow({
+  series,
+  href,
+  selected,
+  onPick,
+}: {
+  series: TrendSeries;
+  href: string;
+  selected: boolean;
+  onPick: () => void;
+}) {
+  const latest = series.points[series.points.length - 1];
+  return (
+    <article
+      id={`trend-row-${series.key}`}
+      className={`relative grid grid-cols-[minmax(0,1fr)_4.5rem_auto] items-center gap-x-4 px-4 py-2.5 transition-colors sm:px-5 ${
+        selected ? "bg-tint" : "hover:bg-tint/60"
+      }`}
+    >
+      <div className="min-w-0">
+        <h3 className="text-[15px] leading-snug font-semibold">
+          {/* The whole row is the link; the name gives it its words. */}
+          <Link
+            href={href}
+            scroll={false}
+            onClick={onPick}
+            aria-current={selected ? "true" : undefined}
+            className="rounded-sm after:absolute after:inset-0 after:content-['']"
+          >
+            {series.name}
+          </Link>
+        </h3>
+        <p className="flex flex-wrap items-baseline gap-x-2 text-[13px]">
+          <span className="font-semibold tabular-nums">
+            {formatNumber(latest.value)} <span className="font-normal text-muted">{series.unit}</span>
+          </span>
+          <DirectionNote series={series} />
+        </p>
+      </div>
+      <Sparkline series={series} className="h-8" />
+      <span className="flex w-[4.25rem] justify-end">
+        <FlagBadge flag={series.latest_flag} />
+      </span>
+    </article>
+  );
+}
+
+/** The picked test in full: the change since last time, its normal range, the chart and every reading as a table. */
+function TrendDetail({ series }: { series: TrendSeries }) {
+  const headingId = useId();
   const latest = series.points[series.points.length - 1];
   const previous = series.points[series.points.length - 2];
 
   return (
-    <article className="card p-5">
+    <section aria-labelledby={headingId}>
       <div className="flex items-start justify-between gap-2">
-        <h3 className="text-base">{series.name}</h3>
+        <h3 id={headingId} className="text-base">
+          {series.name} over time
+        </h3>
         <FlagBadge flag={series.latest_flag} />
       </div>
       <p className="mt-1 flex flex-wrap items-baseline gap-x-2">
@@ -176,7 +273,6 @@ function TrendCard({ series }: { series: TrendSeries }) {
           </span>
         )}
       </p>
-      <DirectionNote series={series} />
       <p className="mb-3 text-[13px] text-muted">
         Normal <span className="tabular-nums">{formatRange(series.ref_low, series.ref_high, null)}</span> {series.unit}
         <TypicalRangeNote rangeSource={series.range_source} />
@@ -213,7 +309,7 @@ function TrendCard({ series }: { series: TrendSeries }) {
           </tbody>
         </table>
       </details>
-    </article>
+    </section>
   );
 }
 
@@ -275,5 +371,5 @@ function DirectionNote({ series }: { series: TrendSeries }) {
   const d = direction(series);
   if (!d) return null;
   const { text, className } = DIRECTION_TEXT[d];
-  return <p className={`mt-1 text-[13px] font-medium ${className}`}>{text}</p>;
+  return <span className={`font-medium ${className}`}>{text}</span>;
 }

@@ -132,6 +132,10 @@ test("a misread value can be fixed, and its flag follows the fix", async ({ page
   await page.getByRole("link", { name: /Sample Pathology Lab, Pune.*12 Jan 2026/ }).click();
   const attention = page.getByRole("region", { name: "Needs attention" });
   await expect(attention.getByText("Haemoglobin (Hb)")).toBeVisible();
+  // Every value sits on the "All results" view of the report.
+  const views = page.getByRole("navigation", { name: "Report views" });
+  await views.getByRole("link", { name: /All results/ }).click();
+  await expect(page).toHaveURL(/\?tab=results$/);
   // The table on a computer, the stacked list on a phone: whichever is showing.
   const row = page
     .getByRole("region", { name: "All results" })
@@ -157,6 +161,9 @@ test("a misread value can be fixed, and its flag follows the fix", async ({ page
   await expect(form).toBeHidden();
   await expect(row.getByText("Normal", { exact: true })).toBeVisible();
   await expect(row.getByTitle("You corrected this; it was read as 10.6 g/dL")).toBeVisible();
+  // Back on the summary, the value has left "Needs attention" and the explanation says it is out of date.
+  await views.getByRole("link", { name: "Summary" }).click();
+  await expect(attention.getByText("MCV")).toBeVisible();
   await expect(attention.getByText("Haemoglobin (Hb)")).toHaveCount(0);
   await expect(page.getByText(/written before you corrected a value/)).toBeVisible();
   // It can be written again from the fixed value; this demo server has no AI key, so it says so.
@@ -165,6 +172,7 @@ test("a misread value can be fixed, and its flag follows the fix", async ({ page
 
   // The fix is saved, not just shown.
   await page.reload();
+  await views.getByRole("link", { name: /All results/ }).click();
   await expect(row.getByText("Normal", { exact: true })).toBeVisible();
 });
 
@@ -251,9 +259,38 @@ test("the timeline shows trends and the doctor brief", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Meera Joshi" })).toBeVisible();
 });
 
+test("picking a test on the timeline opens its chart, and the address keeps it", async ({ page }) => {
+  await startDemo(page);
+  await page.getByRole("link", { name: /results over time/ }).click();
+  // The test outside its range opens first.
+  await expect(page.getByRole("heading", { name: "LDL cholesterol over time" }).filter({ visible: true })).toBeVisible();
+  await page.locator("article", { hasText: "Vitamin D" }).getByRole("link", { name: "Vitamin D", exact: true }).click();
+  await expect(page).toHaveURL(/\?test=vitamin_d$/);
+  const chart = page.getByRole("region", { name: "Vitamin D over time" }).filter({ visible: true });
+  await expect(chart.getByRole("group", { name: /Vitamin D over time: .*14 ng\/mL/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Vitamin D", exact: true })).toHaveAttribute("aria-current", "true");
+  // Back goes to the test open before.
+  await page.goBack();
+  await expect(page.getByRole("heading", { name: "LDL cholesterol over time" }).filter({ visible: true })).toBeVisible();
+});
+
+test("a brief shows the first values and the rest on request, and prints them all", async ({ page }) => {
+  await startDemo(page);
+  await page.getByRole("link", { name: /results over time/ }).click();
+  await page.getByRole("button", { name: "Prepare doctor brief" }).click();
+  const b12 = page.getByRole("row").filter({ hasText: "Vitamin B12" });
+  await expect(b12).toBeHidden();
+  await page.emulateMedia({ media: "print" });
+  await expect(b12).toBeVisible();
+  await page.emulateMedia({ media: "screen" });
+  await page.getByRole("button", { name: "Show all 16 values" }).click();
+  await expect(b12).toBeVisible();
+});
+
 test("a value with no printed range is compared with a typical range, clearly labelled", async ({ page }) => {
   await startDemo(page);
   await page.getByRole("link", { name: /Demo Diagnostics Centre, Pune/ }).click();
+  await page.getByRole("navigation", { name: "Report views" }).getByRole("link", { name: /All results/ }).click();
   const creatinine = page.locator("li, tr").filter({ hasText: "Creatinine, Serum", visible: true });
   await expect(creatinine.getByText("Typical range, not from your lab")).toBeVisible();
   await expect(creatinine.getByText("0.59 – 1.04")).toBeVisible();
@@ -756,5 +793,35 @@ test("the page never scrolls sideways on a phone", async ({ page, isMobile }) =>
     }));
     expect(overflow).toBeLessThanOrEqual(0);
     expect(width).toBe(page.viewportSize()!.width);
+  }
+});
+
+test("the main app pages fit in about two screens on a computer", async ({ page, isMobile }) => {
+  test.skip(isMobile, "computer layout only");
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await startDemo(page);
+  const [person] = await (await page.request.get("/api/profiles")).json();
+  const reports: { id: string }[] = await (await page.request.get(`/api/reports?profile_id=${person.id}`)).json();
+  const brief = await (await page.request.post(`/api/profiles/${person.id}/briefs`)).json();
+  const paths = [
+    `/dashboard?profile=${person.id}`,
+    "/reports",
+    ...reports.flatMap((r) => [`/reports/${r.id}`, `/reports/${r.id}?tab=results`]),
+    `/profiles/${person.id}`,
+    "/briefs",
+    `/briefs/${brief.id}`,
+    "/family",
+    "/account",
+    "/accuracy",
+    "/privacy",
+  ];
+  for (const path of paths) {
+    await page.goto(path);
+    await page.waitForLoadState("networkidle");
+    await expect(page.locator("main h1").first()).toBeVisible();
+    // A brief is written in the background: measure it once it is there.
+    if (path.startsWith("/briefs/")) await expect(page.getByText("Pre-visit lab summary")).toBeVisible();
+    const screens = await page.evaluate(() => document.documentElement.scrollHeight / window.innerHeight);
+    expect(screens, `${path} is ${screens.toFixed(2)} screens tall`).toBeLessThanOrEqual(2.1);
   }
 });

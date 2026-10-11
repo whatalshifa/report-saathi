@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { ExplanationPanel } from "@/components/ExplanationPanel";
@@ -30,12 +30,15 @@ import {
 } from "@/lib/api";
 import { formatAge, formatDate, formatRange, formatSex, possessive, serverTime } from "@/lib/format";
 import { usePdfViewer } from "@/lib/usePdfViewer";
+import { ViewTabs } from "@/components/ViewTabs";
 import { IconArrowRight, IconExternal, IconTrash } from "@/components/icons";
 
 const POLL_MS = 2000;
 
 export function ReportView({ id }: { id: string }) {
   const router = useRouter();
+  // Two views of one report: what matters (flags and the explanation) and every value read.
+  const view = useSearchParams().get("tab") === "results" ? "results" : "summary";
   const [report, setReport] = useState<ReportDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [announcement, setAnnouncement] = useState("");
@@ -126,7 +129,7 @@ export function ReportView({ id }: { id: string }) {
     .at(-1);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       <PageHeader
         back={{ href: `/dashboard?profile=${report.profile.id}`, label: `${possessive(report.profile.name)} reports` }}
         title={report.lab_name ?? report.filename}
@@ -184,39 +187,69 @@ export function ReportView({ id }: { id: string }) {
 
       {report.name_matches_profile === false && <WrongPersonWarning report={report} onMoved={setReport} />}
 
-      <StatRow>
-        <StatCard label="Values read" value={report.results.length} />
-        <StatCard label="Outside normal range" value={flagged.length} tone={flagged.length > 0 ? "warn" : undefined} />
-        <StatCard label="Within range" value={report.results.filter((r) => r.flag === "normal").length} />
-      </StatRow>
+      <div className="flex flex-col gap-3 border-y border-line py-3 md:flex-row md:items-center md:justify-between">
+        <ViewTabs
+          label="Report views"
+          tabs={[
+            { href: `/reports/${report.id}`, label: "Summary", current: view === "summary" },
+            {
+              href: `/reports/${report.id}?tab=results`,
+              label: "All results",
+              count: report.results.length,
+              current: view === "results",
+            },
+          ]}
+        />
+        <StatRow bare>
+          <StatCard label="Values read" value={report.results.length} />
+          <StatCard label="Outside normal range" value={flagged.length} tone={flagged.length > 0 ? "warn" : undefined} />
+          <StatCard label="Within range" value={report.results.filter((r) => r.flag === "normal").length} />
+        </StatRow>
+      </div>
 
-      {flagged.length > 0 && (
+      {view === "summary" && flagged.length === 0 && (
+        <p className="card p-5 text-[15px]">
+          Every value on this report is within its normal range.{" "}
+          <Link href={`/reports/${report.id}?tab=results`} scroll={false} className="link">
+            See all results
+          </Link>
+        </p>
+      )}
+
+      {view === "summary" && flagged.length > 0 && (
         <section aria-labelledby="needs-attention">
           <h2 id="needs-attention" className="section-title mb-3">
             Needs attention
           </h2>
-          {/* One list on phones; two columns of cards from tablets up. */}
-          <ul className="card divide-y divide-line overflow-hidden sm:grid sm:grid-cols-2 sm:gap-3 sm:divide-y-0 sm:overflow-visible sm:rounded-none sm:border-0 sm:bg-transparent">
+          {/* Phones stack each value; wider screens give each value one compact row, two columns on computers. */}
+          <ul className="card grid divide-y divide-line overflow-hidden lg:grid-cols-2 lg:gap-x-6 lg:divide-y-0 lg:px-2">
             {flagged.map((r) => (
-              <li key={r.id} className="p-4 sm:rounded-card sm:bg-surface sm:shadow-soft">
-                <div className="flex items-start justify-between gap-2">
-                  <p className="text-[15px] font-medium">{r.name}</p>
-                  <FlagBadge flag={r.flag} />
+              <li
+                key={r.id}
+                className="px-4 py-3 sm:grid sm:grid-cols-[minmax(0,1fr)_auto_6rem_4.25rem] sm:items-center sm:gap-x-4 sm:gap-y-0.5 sm:py-3 lg:border-b lg:border-line lg:px-3 lg:[&:nth-last-child(-n+2):nth-child(odd)]:border-b-0 lg:last:border-b-0"
+              >
+                <div className="flex items-start justify-between gap-2 sm:contents">
+                  <p className="text-[15px] font-medium sm:col-start-1 sm:row-start-1 sm:leading-snug">{r.name}</p>
+                  <span className="sm:col-start-4 sm:row-span-2 sm:row-start-1 sm:justify-self-end">
+                    <FlagBadge flag={r.flag} />
+                  </span>
                 </div>
-                <div className="mt-1 mb-2.5 flex flex-wrap items-center justify-between gap-x-3">
-                  <p className="flex items-center gap-1.5">
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-x-3 sm:contents">
+                  <p className="flex items-center gap-1.5 sm:col-start-2 sm:row-span-2 sm:row-start-1 sm:justify-self-end">
                     <span className="text-lg font-semibold tracking-tight tabular-nums">{r.value_text}</span>
                     <span className="text-sm text-muted">{r.unit}</span>
                     <SourceToggle name={r.name} onShow={showSource(r)} />
                   </p>
-                  <p className="text-[13px] text-muted">
+                  <p className="text-[13px] text-muted sm:col-start-1 sm:row-start-2">
                     Normal <span className="tabular-nums">{formatRange(r.ref_low, r.ref_high, r.reference_text)}</span>
                     <TypicalRangeNote rangeSource={r.range_source} source={r.typical_range_source} />
                   </p>
                 </div>
-                <RangeBar result={r} />
+                <div className="sm:col-start-3 sm:row-span-2 sm:row-start-1">
+                  <RangeBar result={r} />
+                </div>
                 {r.corrected && (
-                  <div className="mt-3">
+                  <div className="mt-3 sm:col-span-4 sm:mt-1.5">
                     <CorrectedChip result={r} showReading />
                   </div>
                 )}
@@ -226,79 +259,81 @@ export function ReportView({ id }: { id: string }) {
         </section>
       )}
 
-      <ExplanationPanel reportId={report.id} correctedAt={lastCorrection ?? null} />
+      {view === "summary" && <ExplanationPanel reportId={report.id} correctedAt={lastCorrection ?? null} />}
 
-      <section aria-labelledby="all-results" className="space-y-6">
-        <div>
-          <h2 id="all-results" className="section-title">
-            All results
-          </h2>
-          <p className="mt-1 text-sm text-muted">
-            {canShowSource && report.results.some((r) => r.box)
-              ? "Tap the page icon beside a value to see it on the original report. Read wrongly? Use the pencil to fix it."
-              : "Something read wrongly? Use the pencil beside a value to fix it."}
-          </p>
-        </div>
-        {sections.map(([section, results]) => (
-          <div key={section}>
-            <h3 className="mb-2 text-sm font-medium text-muted">{section}</h3>
-            {/* Phones get a stacked list; wider screens get a table. */}
-            <ul className="card divide-y divide-line sm:hidden">
-              {results.map((r) => (
-                <ResultItem
-                  key={r.id}
-                  reportId={report.id}
-                  result={r}
-                  onSaved={handleCorrected}
-                  onShowSource={showSource(r)}
-                />
-              ))}
-            </ul>
-            <div className="card hidden overflow-hidden sm:block">
-              <table className="w-full table-fixed text-sm">
-                <colgroup>
-                  <col className="w-[24%]" />
-                  <col className="w-[22%]" />
-                  <col className="w-[20%]" />
-                  <col className="w-[20%]" />
-                  <col className="w-[14%]" />
-                </colgroup>
-                <thead className="border-b border-line text-left text-xs text-muted">
-                  <tr>
-                    <th className="px-4 py-2.5 font-medium">Test</th>
-                    <th className="px-4 py-2.5 font-medium">Result</th>
-                    <th className="px-4 py-2.5 font-medium">Normal range</th>
-                    <th className="px-4 py-2.5 font-medium">Where it sits</th>
-                    <th className="px-4 py-2.5 text-right font-medium">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-line">
-                  {results.map((r) => (
-                    <ResultRow
-                      key={r.id}
-                      reportId={report.id}
-                      result={r}
-                      onSaved={handleCorrected}
-                      onShowSource={showSource(r)}
-                    />
-                  ))}
-                </tbody>
-              </table>
-            </div>
+      {view === "results" && (
+        <section aria-labelledby="all-results" className="space-y-5">
+          <div>
+            <h2 id="all-results" className="section-title">
+              All results
+            </h2>
+            <p className="mt-1 text-sm text-muted">
+              {canShowSource && report.results.some((r) => r.box)
+                ? "Tap the page icon beside a value to see it on the original report. Read wrongly? Use the pencil to fix it."
+                : "Something read wrongly? Use the pencil beside a value to fix it."}
+            </p>
           </div>
-        ))}
-        {typicalSources.length > 0 && (
-          <p className="text-sm text-muted">
-            Your lab printed no normal range for some values, so we compared them with a typical range for
-            adults instead. Labs and doctors may use a slightly different one, so ask your doctor what is normal
-            for you.
-            {/* Citations are long and technical; keep them small and apart from the plain words above. */}
-            <span className="mt-1 block text-xs">
-              {typicalSources.length === 1 ? "Source" : "Sources"}: {typicalSources.join("; ")}.
-            </span>
-          </p>
-        )}
-      </section>
+          {sections.map(([section, results]) => (
+            <div key={section}>
+              <h3 className="mb-2 text-sm font-medium text-muted">{section}</h3>
+              {/* Phones get a stacked list; wider screens get a table. */}
+              <ul className="card divide-y divide-line sm:hidden">
+                {results.map((r) => (
+                  <ResultItem
+                    key={r.id}
+                    reportId={report.id}
+                    result={r}
+                    onSaved={handleCorrected}
+                    onShowSource={showSource(r)}
+                  />
+                ))}
+              </ul>
+              <div className="card hidden overflow-hidden sm:block">
+                <table className="w-full table-fixed text-sm">
+                  <colgroup>
+                    <col className="w-[24%]" />
+                    <col className="w-[22%]" />
+                    <col className="w-[20%]" />
+                    <col className="w-[20%]" />
+                    <col className="w-[14%]" />
+                  </colgroup>
+                  <thead className="border-b border-line text-left text-xs text-muted">
+                    <tr>
+                      <th className="px-4 py-2.5 font-medium">Test</th>
+                      <th className="px-4 py-2.5 font-medium">Result</th>
+                      <th className="px-4 py-2.5 font-medium">Normal range</th>
+                      <th className="px-4 py-2.5 font-medium">Where it sits</th>
+                      <th className="px-4 py-2.5 text-right font-medium">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-line">
+                    {results.map((r) => (
+                      <ResultRow
+                        key={r.id}
+                        reportId={report.id}
+                        result={r}
+                        onSaved={handleCorrected}
+                        onShowSource={showSource(r)}
+                      />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ))}
+          {typicalSources.length > 0 && (
+            <p className="text-sm text-muted">
+              Your lab printed no normal range for some values, so we compared them with a typical range for
+              adults instead. Labs and doctors may use a slightly different one, so ask your doctor what is normal
+              for you.
+              {/* Citations are long and technical; keep them small and apart from the plain words above. */}
+              <span className="mt-1 block text-xs">
+                {typicalSources.length === 1 ? "Source" : "Sources"}: {typicalSources.join("; ")}.
+              </span>
+            </p>
+          )}
+        </section>
+      )}
 
       <p className="text-xs text-muted">
         ReportSaathi reads your report with AI and can make mistakes. Check values against the original
@@ -393,8 +428,8 @@ function ResultRow({ reportId, result: r, onSaved, onShowSource }: ResultProps) 
   return (
     <>
       <tr className={editing ? "border-b-0" : undefined}>
-        <td className="px-4 py-2.5 font-medium">{r.name}</td>
-        <td className="px-4 py-2.5 font-semibold tabular-nums">
+        <td className="px-4 py-2 font-medium">{r.name}</td>
+        <td className="px-4 py-2 font-semibold tabular-nums">
           {r.value_text} <span className="font-normal text-muted">{r.unit}</span>{" "}
           <span className="inline-flex align-middle">
             <SourceToggle name={r.name} onShow={onShowSource} />
@@ -406,14 +441,14 @@ function ResultRow({ reportId, result: r, onSaved, onShowSource }: ResultProps) 
             </div>
           )}
         </td>
-        <td className="px-4 py-2.5 text-muted tabular-nums">
+        <td className="px-4 py-2 text-muted tabular-nums">
           {formatRange(r.ref_low, r.ref_high, r.reference_text)}
           <TypicalRangeNote rangeSource={r.range_source} source={r.typical_range_source} />
         </td>
-        <td className="px-4 py-2.5">
+        <td className="px-4 py-2">
           <RangeBar result={r} />
         </td>
-        <td className="px-4 py-2.5 text-right">
+        <td className="px-4 py-2 text-right">
           <FlagBadge flag={r.flag} />
         </td>
       </tr>

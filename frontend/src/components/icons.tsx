@@ -74,6 +74,12 @@ export const IconChevronLeft = icon(
   <path d="M14 6.5 8.5 12l5.5 5.5" />,
 );
 
+export const IconChevronDown = icon(
+  "IconChevronDown",
+  <circle cx="13" cy="13.5" r="7" />,
+  <path d="m6.5 9.5 5.5 5.5 5.5-5.5" />,
+);
+
 /* Things in the app */
 export const IconReport = icon(
   "IconReport",

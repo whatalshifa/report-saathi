@@ -4,9 +4,20 @@ import type { ReactNode } from "react";
  * A row of figures at the top of the report and timeline pages: number then label, inline on wider screens and
  * stacked on phones, so labels never wrap. Wrap `StatCard`s in one `StatRow`.
  */
-export function StatRow({ children }: { children: ReactNode }) {
+export function StatRow({
+  children,
+  bare = false,
+}: {
+  children: ReactNode;
+  /** No rules above and below, for a row that sits inside another bar. */
+  bare?: boolean;
+}) {
   return (
-    <dl className="flex flex-wrap justify-between gap-x-4 gap-y-3 border-y border-line py-4 sm:justify-start sm:gap-x-10">
+    <dl
+      className={`flex flex-wrap justify-between gap-x-4 gap-y-3 sm:justify-start sm:gap-x-10 ${
+        bare ? "md:gap-x-7" : "border-y border-line py-4"
+      }`}
+    >
       {children}
     </dl>
   );

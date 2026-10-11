@@ -63,6 +63,7 @@ export function SharedBriefView() {
     <BriefSheet
       content={shared.content}
       createdAt={shared.created_at}
+      rowsShown={8}
       toolbar={
         <>
           <p className="text-sm text-muted">

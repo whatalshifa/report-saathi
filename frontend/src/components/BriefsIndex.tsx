@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { PageHeader } from "@/components/PageHeader";
+import { ShowMoreButton, useShowMore } from "@/components/ShowMore";
 import { ErrorNote } from "@/components/Skeleton";
 import { StatusPanel } from "@/components/StatusPanel";
 import { PersonAvatar } from "@/components/shell/PersonAvatar";
@@ -85,6 +86,8 @@ function PersonBriefs({ person }: { person: Profile }) {
   // One row per brief that went out, newest first.
   const sent = new Map<string, ShareLink>();
   for (const link of links ?? []) if (!sent.has(link.brief_id)) sent.set(link.brief_id, link);
+  // The latest few; older ones are a tap away.
+  const sentList = useShowMore([...sent.values()], 3, 10);
 
   return (
     <section aria-label={person.name} className="card">
@@ -118,7 +121,7 @@ function PersonBriefs({ person }: { person: Profile }) {
           <p className="mt-1 text-[13px] text-muted">No brief shared yet. Open one to make a private link or QR code.</p>
         ) : (
           <ul className="mt-1 divide-y divide-line">
-            {[...sent.values()].map((link) => (
+            {sentList.shown.map((link) => (
               <li key={link.id}>
                 <AppLink
                   href={`/briefs/${link.brief_id}`}
@@ -138,6 +141,7 @@ function PersonBriefs({ person }: { person: Profile }) {
             ))}
           </ul>
         )}
+        <ShowMoreButton {...sentList} noun={["brief", "briefs"]} className="mt-2" />
       </div>
     </section>
   );

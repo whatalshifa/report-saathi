@@ -14,7 +14,7 @@ import {
 import { serverTime } from "@/lib/format";
 import { usePoll } from "@/lib/usePoll";
 import { useSpeech } from "@/lib/useSpeech";
-import { IconAlert, IconSpeaker, IconStop } from "@/components/icons";
+import { IconAlert, IconChevronDown, IconSpeaker, IconStop } from "@/components/icons";
 
 const LANGUAGES = [
   {
@@ -166,26 +166,36 @@ function ExplanationBody({ content, text }: { content: ReportExplanation; text: 
       )}
       <ListenButton content={content} text={text} />
       <p className="max-w-3xl text-pretty">{content.summary}</p>
-      {/* Two columns on wide screens, so a long explanation is quick to scan. */}
+      {/* One line per value, opened for the detail: what it measures, common reasons and what you can do.
+          Two columns on wide screens, so a long explanation is quick to scan. */}
       <div className="grid gap-x-10 lg:grid-cols-2">
         {content.flagged.map((item) => (
-          <div key={item.test_name} className="flex flex-col border-t border-line py-5">
-            <h3 className="text-base">{item.test_name}</h3>
-            <p className="mt-1 text-sm text-muted">{item.what_it_measures}</p>
-            <p className="mt-2 text-[15px]">{item.what_your_result_means}</p>
-            {item.common_reasons.length > 0 && (
-              <ul className="mt-2 list-disc space-y-0.5 pl-5 text-[15px] text-stone-700 marker:text-stone-400 dark:text-stone-300">
-                {item.common_reasons.map((reason) => (
-                  <li key={reason}>{reason}</li>
-                ))}
-              </ul>
-            )}
-            <p className="mt-auto pt-3">
-              <span className="block rounded-r-md border-l-2 border-brand-600 bg-brand-50/70 px-3 py-2 text-[15px] text-brand-950 dark:border-brand-500 dark:bg-brand-950/40 dark:text-brand-50">
-                {item.what_you_can_do}
+          <details key={item.test_name} className="group border-t border-line">
+            <summary className="grid cursor-pointer list-none grid-cols-[minmax(0,1fr)_auto] gap-x-3 rounded-ctl py-3 [&::-webkit-details-marker]:hidden">
+              <h3 className="text-base">{item.test_name}</h3>
+              <span className="col-start-1 mt-0.5 line-clamp-1 text-sm text-muted group-open:line-clamp-none group-open:text-[15px] group-open:text-foreground">
+                {item.what_your_result_means}
               </span>
-            </p>
-          </div>
+              <span className="col-start-2 row-span-2 row-start-1 mt-0.5 grid h-7 w-7 place-items-center rounded-full bg-tint text-muted [--duo:var(--duo-coral)] group-hover:text-foreground">
+                <IconChevronDown aria-hidden className="h-4 w-4 transition-transform group-open:rotate-180" />
+              </span>
+            </summary>
+            <div className="pb-5">
+              <p className="text-sm text-muted">{item.what_it_measures}</p>
+              {item.common_reasons.length > 0 && (
+                <ul className="mt-2 list-disc space-y-0.5 pl-5 text-[15px] text-stone-700 marker:text-stone-400 dark:text-stone-300">
+                  {item.common_reasons.map((reason) => (
+                    <li key={reason}>{reason}</li>
+                  ))}
+                </ul>
+              )}
+              <p className="pt-3">
+                <span className="block rounded-r-md border-l-2 border-brand-600 bg-brand-50/70 px-3 py-2 text-[15px] text-brand-950 dark:border-brand-500 dark:bg-brand-950/40 dark:text-brand-50">
+                  {item.what_you_can_do}
+                </span>
+              </p>
+            </div>
+          </details>
         ))}
       </div>
       <p className="text-stone-700 dark:text-stone-300">{content.normal_summary}</p>
