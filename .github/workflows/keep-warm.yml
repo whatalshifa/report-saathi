@@ -1,12 +1,20 @@
 name: Keep the API awake
 
-# Render's free plan puts the API to sleep after 15 quiet minutes, and waking it takes
-# up to a minute. A visit every 10 minutes keeps it awake for visitors. One always-on
-# service fits inside the free plan's 750 hours a month.
+# Render's free plan puts the API to sleep after 15 quiet minutes, and waking it takes about 50
+# seconds. While recruiters and reviewers are most likely to visit (Monday to Friday, 09:30 to
+# 18:30 IST), a visit every 10 minutes keeps it awake so the site answers at once.
+#
+# Render's free tier allows 750 instance hours a month per workspace, and three apps share it
+# (ReportSaathi, Paper2Lab, CivicLens). This window keeps each one awake for about 200 hours a
+# month, so all three fit.
 on:
   schedule:
-    - cron: "*/10 * * * *"
+    # Every 10 minutes from 04:00 to 12:50 UTC: 09:30 to 18:20 IST, and the last visit keeps it
+    # awake until about 18:35.
+    - cron: "*/10 4-12 * * 1-5"
   workflow_dispatch:
+
+permissions: {}
 
 jobs:
   ping:
@@ -14,6 +22,5 @@ jobs:
     timeout-minutes: 3
     steps:
       - name: Ask the API if it is healthy
-        run: curl --silent --show-error --fail --retry 3 --retry-delay 20 --max-time 90 "${API_HEALTH_URL:-https://report-saathi-api.onrender.com/api/health}"
-        env:
-          API_HEALTH_URL: ${{ vars.API_HEALTH_URL }}
+        # A cold start can take most of a minute; `|| true` keeps a slow wake from failing the run.
+        run: curl -fsS --max-time 90 https://report-saathi-api.onrender.com/api/health || true

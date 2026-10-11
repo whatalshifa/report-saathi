@@ -1,6 +1,5 @@
 "use client";
 
-import { AlertTriangle, Square, Volume2 } from "lucide-react";
 import { useCallback, useId, useState } from "react";
 
 import { SkeletonLines } from "@/components/Skeleton";
@@ -15,6 +14,7 @@ import {
 import { serverTime } from "@/lib/format";
 import { usePoll } from "@/lib/usePoll";
 import { useSpeech } from "@/lib/useSpeech";
+import { IconAlert, IconChevronDown, IconSpeaker, IconStop } from "@/components/icons";
 
 const LANGUAGES = [
   {
@@ -99,16 +99,16 @@ export function ExplanationPanel({ reportId, correctedAt = null }: { reportId: s
         <h2 id={headingId} className="section-title">
           What does this mean?
         </h2>
-        <div role="tablist" aria-label="Language" className="flex rounded-ctl bg-stone-100 p-0.5 dark:bg-stone-800">
+        <div role="tablist" aria-label="Language" className="flex rounded-full bg-tint p-1">
           {LANGUAGES.map((l) => (
             <button
               key={l.code}
               role="tab"
               aria-selected={language === l.code}
               onClick={() => setLanguage(l.code)}
-              className={`h-8 rounded-lg px-3 text-sm transition-colors ${
+              className={`h-9 rounded-full px-3.5 text-sm transition-colors ${
                 language === l.code
-                  ? "bg-surface font-medium text-foreground shadow-[0_1px_2px_rgb(42_29_40/0.12)] dark:bg-stone-950"
+                  ? "bg-surface font-semibold text-foreground shadow-soft dark:bg-brand-800"
                   : "text-muted hover:text-foreground"
               }`}
             >
@@ -160,32 +160,42 @@ function ExplanationBody({ content, text }: { content: ReportExplanation; text: 
           role="alert"
           className="flex gap-2.5 rounded-ctl border border-rose-200 bg-rose-50 p-3 text-rose-900 dark:border-rose-900 dark:bg-rose-950/60 dark:text-rose-100"
         >
-          <AlertTriangle aria-hidden className="mt-1 h-4 w-4 shrink-0" />
+          <IconAlert aria-hidden className="mt-1 h-4 w-4 shrink-0" />
           <span>{content.see_doctor_reason}</span>
         </p>
       )}
       <ListenButton content={content} text={text} />
       <p className="max-w-3xl text-pretty">{content.summary}</p>
-      {/* Two columns on wide screens, so a long explanation is quick to scan. */}
+      {/* One line per value, opened for the detail: what it measures, common reasons and what you can do.
+          Two columns on wide screens, so a long explanation is quick to scan. */}
       <div className="grid gap-x-10 lg:grid-cols-2">
         {content.flagged.map((item) => (
-          <div key={item.test_name} className="flex flex-col border-t border-line py-5">
-            <h3 className="text-base">{item.test_name}</h3>
-            <p className="mt-1 text-sm text-muted">{item.what_it_measures}</p>
-            <p className="mt-2 text-[15px]">{item.what_your_result_means}</p>
-            {item.common_reasons.length > 0 && (
-              <ul className="mt-2 list-disc space-y-0.5 pl-5 text-[15px] text-stone-700 marker:text-stone-400 dark:text-stone-300">
-                {item.common_reasons.map((reason) => (
-                  <li key={reason}>{reason}</li>
-                ))}
-              </ul>
-            )}
-            <p className="mt-auto pt-3">
-              <span className="block rounded-r-md border-l-2 border-brand-600 bg-brand-50/70 px-3 py-2 text-[15px] text-brand-950 dark:border-brand-500 dark:bg-brand-950/40 dark:text-brand-50">
-                {item.what_you_can_do}
+          <details key={item.test_name} className="group border-t border-line">
+            <summary className="grid cursor-pointer list-none grid-cols-[minmax(0,1fr)_auto] gap-x-3 rounded-ctl py-3 [&::-webkit-details-marker]:hidden">
+              <h3 className="text-base">{item.test_name}</h3>
+              <span className="col-start-1 mt-0.5 line-clamp-1 text-sm text-muted group-open:line-clamp-none group-open:text-[15px] group-open:text-foreground">
+                {item.what_your_result_means}
               </span>
-            </p>
-          </div>
+              <span className="col-start-2 row-span-2 row-start-1 mt-0.5 grid h-7 w-7 place-items-center rounded-full bg-tint text-muted [--duo:var(--duo-coral)] group-hover:text-foreground">
+                <IconChevronDown aria-hidden className="h-4 w-4 transition-transform group-open:rotate-180" />
+              </span>
+            </summary>
+            <div className="pb-5">
+              <p className="text-sm text-muted">{item.what_it_measures}</p>
+              {item.common_reasons.length > 0 && (
+                <ul className="mt-2 list-disc space-y-0.5 pl-5 text-[15px] text-stone-700 marker:text-stone-400 dark:text-stone-300">
+                  {item.common_reasons.map((reason) => (
+                    <li key={reason}>{reason}</li>
+                  ))}
+                </ul>
+              )}
+              <p className="pt-3">
+                <span className="block rounded-r-md border-l-2 border-brand-600 bg-brand-50/70 px-3 py-2 text-[15px] text-brand-950 dark:border-brand-500 dark:bg-brand-950/40 dark:text-brand-50">
+                  {item.what_you_can_do}
+                </span>
+              </p>
+            </div>
+          </details>
         ))}
       </div>
       <p className="text-stone-700 dark:text-stone-300">{content.normal_summary}</p>
@@ -235,9 +245,9 @@ function ListenButton({ content, text }: { content: ReportExplanation; text: Tex
       className="btn btn-secondary btn-sm"
     >
       {speaking ? (
-        <Square aria-hidden className="h-3.5 w-3.5" />
+        <IconStop aria-hidden className="h-3.5 w-3.5" />
       ) : (
-        <Volume2 aria-hidden className="h-4 w-4" />
+        <IconSpeaker aria-hidden className="h-4 w-4" />
       )}
       {speaking ? text.stop : text.listen}
     </button>

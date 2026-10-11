@@ -36,8 +36,11 @@ users arrive.
 The website takes `API_URL` (the API's address) and, optionally, `SITE_URL` (its own public address,
 used in share previews and the sitemap) at build time.
 
-`.github/workflows/keep-warm.yml` pings the API every 10 minutes so Render's free plan rarely puts it to
-sleep. Set the repository variable `API_HEALTH_URL` if the API lives at a different address.
+`.github/workflows/keep-warm.yml` pings the API's health check every 10 minutes on weekdays from 09:30
+to 18:30 IST, so Render's free plan doesn't put it to sleep while people are most likely to visit. That
+is about 200 instance hours a month, so three free services fit in one workspace's 750. Change the URL
+in the file if the API lives at a different address. Outside that window the first visit wakes it, and
+the website shows a "waking up" note while it does.
 
 The API answers `GET /api/health` only when the database answers; point the platform's health check at
 it. Run one copy of the API: background jobs run inside it, and a restarted API re-reads any report it

@@ -1,16 +1,17 @@
 "use client";
 
-import { ChevronRight, FileText, Link2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { PageHeader } from "@/components/PageHeader";
+import { ShowMoreButton, useShowMore } from "@/components/ShowMore";
 import { ErrorNote } from "@/components/Skeleton";
 import { StatusPanel } from "@/components/StatusPanel";
 import { PersonAvatar } from "@/components/shell/PersonAvatar";
 import { AppLink, useShell } from "@/components/shell/ShellContext";
 import { listShareLinks, requestBrief, type Profile, type ShareLink } from "@/lib/api";
 import { formatDate, RELATION_LABEL } from "@/lib/format";
+import { IconChevronRight, IconLink, IconReport } from "@/components/icons";
 
 const STATE: Record<ShareLink["state"], string> = { active: "Active", expired: "Expired", revoked: "Turned off" };
 
@@ -38,7 +39,7 @@ export function BriefsIndex({ profileId }: { profileId?: string }) {
           title="No reports to summarise yet"
           heading="p"
           actions={
-            <AppLink href="/" className="btn btn-secondary">
+            <AppLink href="/dashboard" className="btn btn-secondary">
               Add a report
             </AppLink>
           }
@@ -85,9 +86,11 @@ function PersonBriefs({ person }: { person: Profile }) {
   // One row per brief that went out, newest first.
   const sent = new Map<string, ShareLink>();
   for (const link of links ?? []) if (!sent.has(link.brief_id)) sent.set(link.brief_id, link);
+  // The latest few; older ones are a tap away.
+  const sentList = useShowMore([...sent.values()], 3, 10);
 
   return (
-    <section aria-label={person.name} className="rounded-xl border border-line bg-surface">
+    <section aria-label={person.name} className="card">
       <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 items-center gap-3">
           <PersonAvatar name={person.name} />
@@ -101,7 +104,7 @@ function PersonBriefs({ person }: { person: Profile }) {
           </div>
         </div>
         <button type="button" onClick={prepare} disabled={busy} className="btn btn-primary btn-sm">
-          <FileText aria-hidden className="h-3.5 w-3.5" />
+          <IconReport aria-hidden className="h-3.5 w-3.5" />
           {busy ? "Starting…" : "Prepare a new brief"}
         </button>
       </div>
@@ -118,13 +121,13 @@ function PersonBriefs({ person }: { person: Profile }) {
           <p className="mt-1 text-[13px] text-muted">No brief shared yet. Open one to make a private link or QR code.</p>
         ) : (
           <ul className="mt-1 divide-y divide-line">
-            {[...sent.values()].map((link) => (
+            {sentList.shown.map((link) => (
               <li key={link.id}>
                 <AppLink
                   href={`/briefs/${link.brief_id}`}
                   className="flex items-center gap-3 py-2 text-[13px] hover:text-brand-700 dark:hover:text-brand-300"
                 >
-                  <Link2 aria-hidden className="h-3.5 w-3.5 shrink-0 text-muted" />
+                  <IconLink aria-hidden className="h-3.5 w-3.5 shrink-0 text-muted" />
                   <span className="min-w-0 flex-1">
                     Brief shared {formatDate(link.created_at)}
                     <span className="text-muted">
@@ -132,12 +135,13 @@ function PersonBriefs({ person }: { person: Profile }) {
                       {STATE[link.state]} · opened {link.view_count} time{link.view_count === 1 ? "" : "s"}
                     </span>
                   </span>
-                  <ChevronRight aria-hidden className="h-4 w-4 shrink-0 text-stone-400" />
+                  <IconChevronRight aria-hidden className="h-4 w-4 shrink-0 text-stone-400" />
                 </AppLink>
               </li>
             ))}
           </ul>
         )}
+        <ShowMoreButton {...sentList} noun={["brief", "briefs"]} className="mt-2" />
       </div>
     </section>
   );

@@ -1,8 +1,8 @@
 "use client";
 
-import { Check } from "lucide-react";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 
+import { ShowMoreButton, useShowMore } from "@/components/ShowMore";
 import { ErrorNote } from "@/components/Skeleton";
 import {
   createShareLink,
@@ -15,6 +15,9 @@ import {
   type ShareLink,
 } from "@/lib/api";
 import { formatDate } from "@/lib/format";
+import { IconCheck } from "@/components/icons";
+
+const LINKS_SHOWN = 3;
 
 // The phone's own share sheet (WhatsApp, SMS, email...). Most phones have it; many computers don't.
 const noSubscribe = () => () => {};
@@ -39,6 +42,8 @@ export function SharePanel({
   // A demo account's links end with the account, within a day, not after 7 days.
   const [guest, setGuest] = useState(false);
   const canShare = useSyncExternalStore(noSubscribe, hasNativeShare, () => false);
+  // Links pile up over the years; the newest few are the ones worth seeing.
+  const linkList = useShowMore(links ?? [], LINKS_SHOWN, 10);
 
   const reload = useCallback(
     () =>
@@ -106,7 +111,7 @@ export function SharePanel({
   }
 
   return (
-    <section aria-labelledby="share-heading" className="card p-5 sm:p-6 print:hidden">
+    <section aria-labelledby="share-heading" className="@container card p-5 sm:p-6 print:hidden">
       <h2 id="share-heading" className="section-title">
         Share with your doctor
       </h2>
@@ -131,7 +136,7 @@ export function SharePanel({
           <div className="mt-3 flex flex-wrap gap-2">
             <button onClick={copy} className="btn btn-primary btn-sm">
               {copied ? (
-                <Check aria-hidden className="h-4 w-4" />
+                <IconCheck aria-hidden className="h-4 w-4" />
               ) : null}
               {copied ? "Copied" : "Copy link"}
             </button>
@@ -174,10 +179,11 @@ export function SharePanel({
         <div className="mt-6">
           <h3 className="text-sm font-semibold">Links you’ve made</h3>
           <ul className="mt-2 divide-y divide-line border-t border-line">
-            {links.map((link) => (
+            {linkList.shown.map((link) => (
               <ShareRow key={link.id} link={link} current={link.brief_id === briefId} onRevoke={revoke} />
             ))}
           </ul>
+          <ShowMoreButton {...linkList} noun={["link", "links"]} className="mt-2" />
         </div>
       )}
     </section>
@@ -220,7 +226,7 @@ function ShareQr({ url }: { url: string }) {
   }
 
   return (
-    <div id="share-qr" className="mt-4 flex flex-col items-center gap-3 sm:flex-row sm:items-start">
+    <div id="share-qr" className="mt-4 flex flex-col items-center gap-3 @md:flex-row @md:items-start">
       {error ? (
         <ErrorNote message={error} />
       ) : (
@@ -228,8 +234,7 @@ function ShareQr({ url }: { url: string }) {
           {/* Always black on a white tile: scanners need the contrast, in dark mode too. */}
           <div className="h-48 w-48 shrink-0 rounded-ctl border border-stone-200 bg-white p-1 shadow-sm">
             {svg ? (
-              // A data URL made here, not a remote image, so not one for Next's image optimiser.
-              // eslint-disable-next-line @next/next/no-img-element
+              // eslint-disable-next-line @next/next/no-img-element -- a data URL made here, not a remote image, so not one for Next's image optimiser
               <img src={image} alt="QR code for your link" className="h-full w-full [image-rendering:pixelated]" />
             ) : (
               <div role="status" className="h-full w-full animate-pulse rounded-lg bg-stone-100">
@@ -237,7 +242,7 @@ function ShareQr({ url }: { url: string }) {
               </div>
             )}
           </div>
-          <div className="max-w-sm text-sm text-muted sm:pt-1">
+          <div className="max-w-sm text-sm text-muted @md:pt-1">
             <p>Your doctor can scan this with their phone&apos;s camera to open the summary.</p>
             <p className="mt-1">Anyone who scans it can read the summary, so show it only to your doctor.</p>
             <div className="mt-3 flex flex-wrap gap-2">

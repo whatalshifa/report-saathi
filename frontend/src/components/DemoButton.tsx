@@ -1,22 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { checkHealth, startDemo } from "@/lib/api";
-
-/** Wakes the free server as soon as the page opens, so the demo button is quick when clicked. */
-export function WakeServer() {
-  useEffect(() => {
-    checkHealth().catch(() => {});
-  }, []);
-  return null;
-}
 
 /**
  * `next`: where to go once the demo is open (from the sign-in page, the page that asked for it).
  * `full`: as wide as its column on phones, its own width from tablets up.
  */
-export function DemoButton({ className = "btn btn-primary", label = "Try the demo", next = "/", full = false }) {
+export function DemoButton({ className = "btn btn-primary", label = "Try the demo", next = "/dashboard", full = false }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

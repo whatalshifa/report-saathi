@@ -1,11 +1,11 @@
 "use client";
 
-import { Printer } from "lucide-react";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 import { FlagBadge } from "@/components/FlagBadge";
 import type { BriefContent } from "@/lib/api";
 import { formatAge, formatDate, formatNumber, formatRange, formatSex } from "@/lib/format";
+import { IconPrinter } from "@/components/icons";
 
 /**
  * The doctor brief as one printable page. Shared by the owner's brief page and the
@@ -15,18 +15,23 @@ export function BriefSheet({
   content,
   createdAt,
   toolbar,
+  rowsShown,
 }: {
   content: BriefContent;
   createdAt: string;
-  /** Shown above the brief on screen, never on paper. */
-  toolbar: ReactNode;
+  /** Shown above the brief on screen, never on paper. Leave out when the page shows its buttons elsewhere. */
+  toolbar?: ReactNode;
+  /** On screen, show this many latest values and put the rest behind "Show all". Paper always gets every row. */
+  rowsShown?: number;
 }) {
   const { brief, snapshot } = content;
   const { profile: person, series } = snapshot;
+  const [allRows, setAllRows] = useState(false);
+  const folded = !allRows && rowsShown !== undefined && series.length > rowsShown + 2 ? series.length - rowsShown : 0;
 
   return (
     <article className="card space-y-6 p-4 sm:p-8 print:border-0 print:p-0 print:shadow-none">
-      <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">{toolbar}</div>
+      {toolbar && <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">{toolbar}</div>}
 
       <header className="border-b border-line pb-4">
         <p className="eyebrow">Pre-visit lab summary</p>
@@ -71,7 +76,7 @@ export function BriefSheet({
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
-              {series.map((s) => {
+              {series.map((s, i) => {
                 const latest = s.points[s.points.length - 1];
                 const previous = s.points.length > 1 ? s.points[s.points.length - 2] : null;
                 const status = (
@@ -84,7 +89,7 @@ export function BriefSheet({
                   </>
                 );
                 return (
-                  <tr key={s.key}>
+                  <tr key={s.key} className={folded && i >= series.length - folded ? "hidden print:table-row" : undefined}>
                     <td className="py-2 pr-3">
                       {s.name}
                       {s.loinc && <span className="block text-xs text-muted">LOINC {s.loinc}</span>}
@@ -120,6 +125,11 @@ export function BriefSheet({
             </tbody>
           </table>
         </div>
+        {folded > 0 && (
+          <button type="button" onClick={() => setAllRows(true)} className="btn btn-secondary btn-sm mt-3 print:hidden">
+            Show all {series.length} values
+          </button>
+        )}
       </section>
 
       {brief.questions_for_doctor.length > 0 && (
@@ -146,7 +156,7 @@ export function BriefSheet({
 export function PrintButton() {
   return (
     <button onClick={() => window.print()} className="btn btn-primary">
-      <Printer aria-hidden className="h-4 w-4" />
+      <IconPrinter aria-hidden className="h-4 w-4" />
       Print or save as PDF
     </button>
   );

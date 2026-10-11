@@ -116,8 +116,7 @@ async function request<T>(path: string, init?: RequestInit, retry?: boolean): Pr
   const response = await fetchWithWake(path, init, retry);
   if (response.status === 401 && !path.startsWith("/api/auth/") && typeof window !== "undefined") {
     // Signed out (or the session expired): go to sign-in, then come back here.
-    // A full page load on purpose, so no signed-in state survives in memory.
-    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- a full page load on purpose, so no signed-in state survives in memory
     window.location.assign(`/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}`);
   }
   if (!response.ok) {
@@ -155,17 +154,36 @@ export interface User {
   needs_consent: boolean;
 }
 
-export const signup = (name: string, email: string, password: string) =>
-  request<User>("/api/auth/signup", json("POST", { name, email, password }));
-export const login = (email: string, password: string) =>
-  request<User>("/api/auth/login", json("POST", { email, password }));
+/**
+ * A small cookie the website sets itself (the API's sign-in cookie is HttpOnly), so the first paint of
+ * the next page already knows a demo account is open and can show its notice without the page
+ * jumping down when the API answers. It is only a hint for the layout; the API decides everything.
+ */
+export const DEMO_HINT_COOKIE = "rs_demo";
+function setDemoHint(on: boolean) {
+  document.cookie = `${DEMO_HINT_COOKIE}=1; path=/; samesite=lax; max-age=${on ? 60 * 60 * 24 : 0}`;
+}
+const withDemoHint =
+  <A extends unknown[], T>(on: boolean, call: (...args: A) => Promise<T>) =>
+  async (...args: A) => {
+    const result = await call(...args);
+    setDemoHint(on);
+    return result;
+  };
+
+export const signup = withDemoHint(false, (name: string, email: string, password: string) =>
+  request<User>("/api/auth/signup", json("POST", { name, email, password })),
+);
+export const login = withDemoHint(false, (email: string, password: string) =>
+  request<User>("/api/auth/login", json("POST", { email, password })),
+);
 /** Answers once the API (and its database) is up; used to wake the free server early. */
 export const checkHealth = () => request<{ status: string }>("/api/health");
 
 /** Signs in to a fresh demo account that already holds the sample reports. */
-export const startDemo = () => request<User>("/api/auth/demo", { method: "POST" });
-export const logout = () => request<void>("/api/auth/logout", { method: "POST" });
-export const deleteAccount = () => request<void>("/api/auth/me", { method: "DELETE" });
+export const startDemo = withDemoHint(true, () => request<User>("/api/auth/demo", { method: "POST" }));
+export const logout = withDemoHint(false, () => request<void>("/api/auth/logout", { method: "POST" }));
+export const deleteAccount = withDemoHint(false, () => request<void>("/api/auth/me", { method: "DELETE" }));
 /** Records that the person agreed to this version of the data notice (see ConsentDialog). */
 export const giveConsent = (version: string) => request<User>("/api/auth/me/consent", json("POST", { version }));
 

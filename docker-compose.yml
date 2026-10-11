@@ -1,5 +1,5 @@
 # Runs the whole app on your laptop: database, API and website.
-#   1. Copy backend/.env.example to backend/.env and put your key in it
+#   1. Copy backend/.env.example to backend/.env (add an Anthropic key to read real uploads)
 #   2. docker compose up --build
 #   3. Open http://localhost:3000
 services:

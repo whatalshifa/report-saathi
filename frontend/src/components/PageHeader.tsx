@@ -1,6 +1,6 @@
-import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { IconChevronLeft } from "@/components/icons";
 
 /**
  * The top of every page: an optional way back, a small label, the title, a line about the page, and
@@ -42,7 +42,7 @@ export function PageHeader({
 export function BackLink({ href, children }: { href: string; children: ReactNode }) {
   return (
     <Link href={href} className="back-link">
-      <ChevronLeft aria-hidden className="-ml-1 h-4 w-4" />
+      <IconChevronLeft aria-hidden className="-ml-1 h-4 w-4" />
       {children}
     </Link>
   );

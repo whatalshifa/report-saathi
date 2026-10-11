@@ -1,17 +1,18 @@
 import { readFile } from "node:fs/promises";
+import path from "node:path";
 
 import { expect, test, type Page } from "@playwright/test";
 
-/** Opens the sample family on the home page, which turns it into a live demo account. */
+/** Opens the sample family on the dashboard, which turns it into a live demo account. */
 async function startDemo(page: Page) {
-  await page.goto("/");
+  await page.goto("/dashboard");
   await page.getByRole("link", { name: /Meera Joshi\s*Sample/ }).click();
   await expect(page.getByText("You're exploring a demo account")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Meera Joshi", level: 1 })).toBeVisible();
 }
 
-test("signed-out visitors land in the app with the sample family open", async ({ page }) => {
-  await page.goto("/");
+test("signed-out visitors open the app with the sample family", async ({ page }) => {
+  await page.goto("/dashboard");
   await expect(page.getByText("You're exploring a sample family.")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Meera Joshi", level: 1 })).toBeVisible();
   await expect(page.getByRole("region", { name: "Needs attention" }).getByText("LDL cholesterol")).toBeVisible();
@@ -21,20 +22,79 @@ test("signed-out visitors land in the app with the sample family open", async ({
 });
 
 test("opening a sample report starts a demo and lands on that report", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/dashboard");
   await page.getByRole("link", { name: /Sample Pathology Lab, Pune.*12 Jan 2026/ }).click();
   await expect(page).toHaveURL(/\/reports\/[\w-]+$/);
   await expect(page.getByRole("heading", { name: "Needs attention" })).toBeVisible();
   await expect(page.getByText("You're exploring a demo account")).toBeVisible();
 });
 
-test("the about page explains the product", async ({ page }) => {
+/** Runs axe (the accessibility checker the lint rules already use) on the page, against WCAG 2.1 A and AA. */
+async function axeViolations(page: Page) {
+  // axe-core comes with eslint-plugin-jsx-a11y, so nothing extra is installed for it.
+  await page.addScriptTag({ path: path.join(process.cwd(), "node_modules/axe-core/axe.min.js") });
+  return page.evaluate(async () => {
+    // @ts-expect-error axe is added to the page above
+    const result = await window.axe.run(document, { runOnly: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"] });
+    return result.violations.map((v: { id: string; nodes: { target: string[] }[] }) => ({
+      id: v.id,
+      targets: v.nodes.map((n) => n.target.join(" ")),
+    }));
+  });
+}
+
+test("the landing page shows the product and leads into the app", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("contentinfo").getByRole("link", { name: "About" }).click();
-  await expect(page).toHaveURL(/\/about$/);
-  await expect(page.getByRole("heading", { name: "Understand every lab report your family gets." })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Create a free account" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Our privacy promises" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Your family's lab reports, explained.", level: 1 })).toBeVisible();
+  // The explanation demo: the January report's HbA1c, then the same value in Hindi.
+  const how = page.locator("#how");
+  await how.getByRole("button", { name: /Haemoglobin \(Hb\)/ }).first().click();
+  await expect(how.getByRole("heading", { name: /Haemoglobin \(Hb\) \(the iron-rich part of blood\)/ })).toBeVisible();
+  await how.getByRole("button", { name: "हिन्दी" }).click();
+  await expect(how.getByText(/10.6 पर यह सामान्य से थोड़ा कम है/)).toBeVisible();
+  // The trends picker redraws the chart for the test picked.
+  await page.locator("#trends").getByRole("button", { name: /Vitamin D/ }).click();
+  await expect(page.locator("#trends").getByText("14 in Jan 2026")).toBeVisible();
+
+  await page.getByRole("main").getByRole("link", { name: "Try the sample family" }).first().click();
+  await expect(page).toHaveURL(/\/dashboard$/);
+  await expect(page.getByRole("heading", { name: "Meera Joshi", level: 1 })).toBeVisible();
+  // Inside the app, the way back to the landing page is "About ReportSaathi".
+  await page.getByRole("contentinfo").getByRole("link", { name: "About ReportSaathi" }).click();
+  await expect(page).toHaveURL(/\/$/);
+});
+
+test("old addresses lead to the landing page and the dashboard", async ({ page }) => {
+  await page.goto("/about");
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole("heading", { name: "Health reports are personal. They stay yours." })).toBeVisible();
+  await page.goto("/?profile=sample-meera");
+  await expect(page).toHaveURL(/\/dashboard\?profile=sample-meera$/);
+});
+
+for (const scheme of ["light", "dark"] as const) {
+  test(`the landing page passes axe in ${scheme} mode`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: scheme });
+    await page.goto("/");
+    await page.waitForLoadState("networkidle");
+    await expect(page.locator("html")).toHaveClass(scheme === "dark" ? /dark/ : /^(?!.*dark)/);
+    expect(await axeViolations(page)).toEqual([]);
+  });
+}
+
+test("the landing page never scrolls sideways on a phone", async ({ page, isMobile }) => {
+  test.skip(!isMobile, "phone layout only");
+  await page.goto("/");
+  await page.waitForLoadState("networkidle");
+  const { overflow, width } = await page.evaluate(() => ({
+    overflow: document.documentElement.scrollWidth - window.innerWidth,
+    width: window.innerWidth,
+  }));
+  expect(overflow).toBeLessThanOrEqual(0);
+  expect(width).toBe(page.viewportSize()!.width);
+  // The product shot shows up early, not after a long scroll.
+  const shot = await page.getByRole("figure").first().boundingBox();
+  expect(shot!.y).toBeLessThan(900);
 });
 
 test("private pages send signed-out visitors to sign in", async ({ page }) => {
@@ -72,6 +132,10 @@ test("a misread value can be fixed, and its flag follows the fix", async ({ page
   await page.getByRole("link", { name: /Sample Pathology Lab, Pune.*12 Jan 2026/ }).click();
   const attention = page.getByRole("region", { name: "Needs attention" });
   await expect(attention.getByText("Haemoglobin (Hb)")).toBeVisible();
+  // Every value sits on the "All results" view of the report.
+  const views = page.getByRole("navigation", { name: "Report views" });
+  await views.getByRole("link", { name: /All results/ }).click();
+  await expect(page).toHaveURL(/\?tab=results$/);
   // The table on a computer, the stacked list on a phone: whichever is showing.
   const row = page
     .getByRole("region", { name: "All results" })
@@ -97,6 +161,9 @@ test("a misread value can be fixed, and its flag follows the fix", async ({ page
   await expect(form).toBeHidden();
   await expect(row.getByText("Normal", { exact: true })).toBeVisible();
   await expect(row.getByTitle("You corrected this; it was read as 10.6 g/dL")).toBeVisible();
+  // Back on the summary, the value has left "Needs attention" and the explanation says it is out of date.
+  await views.getByRole("link", { name: "Summary" }).click();
+  await expect(attention.getByText("MCV")).toBeVisible();
   await expect(attention.getByText("Haemoglobin (Hb)")).toHaveCount(0);
   await expect(page.getByText(/written before you corrected a value/)).toBeVisible();
   // It can be written again from the fixed value; this demo server has no AI key, so it says so.
@@ -105,6 +172,7 @@ test("a misread value can be fixed, and its flag follows the fix", async ({ page
 
   // The fix is saved, not just shown.
   await page.reload();
+  await views.getByRole("link", { name: /All results/ }).click();
   await expect(row.getByText("Normal", { exact: true })).toBeVisible();
 });
 
@@ -191,9 +259,38 @@ test("the timeline shows trends and the doctor brief", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Meera Joshi" })).toBeVisible();
 });
 
+test("picking a test on the timeline opens its chart, and the address keeps it", async ({ page }) => {
+  await startDemo(page);
+  await page.getByRole("link", { name: /results over time/ }).click();
+  // The test outside its range opens first.
+  await expect(page.getByRole("heading", { name: "LDL cholesterol over time" }).filter({ visible: true })).toBeVisible();
+  await page.locator("article", { hasText: "Vitamin D" }).getByRole("link", { name: "Vitamin D", exact: true }).click();
+  await expect(page).toHaveURL(/\?test=vitamin_d$/);
+  const chart = page.getByRole("region", { name: "Vitamin D over time" }).filter({ visible: true });
+  await expect(chart.getByRole("group", { name: /Vitamin D over time: .*14 ng\/mL/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Vitamin D", exact: true })).toHaveAttribute("aria-current", "true");
+  // Back goes to the test open before.
+  await page.goBack();
+  await expect(page.getByRole("heading", { name: "LDL cholesterol over time" }).filter({ visible: true })).toBeVisible();
+});
+
+test("a brief shows the first values and the rest on request, and prints them all", async ({ page }) => {
+  await startDemo(page);
+  await page.getByRole("link", { name: /results over time/ }).click();
+  await page.getByRole("button", { name: "Prepare doctor brief" }).click();
+  const b12 = page.getByRole("row").filter({ hasText: "Vitamin B12" });
+  await expect(b12).toBeHidden();
+  await page.emulateMedia({ media: "print" });
+  await expect(b12).toBeVisible();
+  await page.emulateMedia({ media: "screen" });
+  await page.getByRole("button", { name: "Show all 16 values" }).click();
+  await expect(b12).toBeVisible();
+});
+
 test("a value with no printed range is compared with a typical range, clearly labelled", async ({ page }) => {
   await startDemo(page);
   await page.getByRole("link", { name: /Demo Diagnostics Centre, Pune/ }).click();
+  await page.getByRole("navigation", { name: "Report views" }).getByRole("link", { name: /All results/ }).click();
   const creatinine = page.locator("li, tr").filter({ hasText: "Creatinine, Serum", visible: true });
   await expect(creatinine.getByText("Typical range, not from your lab")).toBeVisible();
   await expect(creatinine.getByText("0.59 – 1.04")).toBeVisible();
@@ -434,7 +531,7 @@ test("the app can be installed, with icons and WhatsApp share-to", async ({ page
   await page.goto("/");
   const href = await page.locator('link[rel="manifest"]').getAttribute("href");
   const manifest = await (await page.request.get(href!)).json();
-  expect(manifest).toMatchObject({ name: "ReportSaathi", start_url: "/", display: "standalone" });
+  expect(manifest).toMatchObject({ name: "ReportSaathi", start_url: "/dashboard", display: "standalone" });
   expect(manifest.share_target).toMatchObject({
     action: "/share-target",
     method: "POST",
@@ -666,7 +763,7 @@ test("the Listen button is hidden without a voice for the language", async ({ pa
 });
 
 test("the theme switch changes and remembers the theme", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/dashboard");
   const html = page.locator("html");
   await page.getByRole("button", { name: /Theme:/ }).click(); // system -> light
   await expect(html).not.toHaveClass(/dark/);
@@ -683,10 +780,126 @@ test("unknown pages show a friendly 404", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "This page doesn't exist" })).toBeVisible();
 });
 
+test("a mistyped address shows the 404 to signed-out visitors too", async ({ page }) => {
+  const response = await page.goto("/nothing-here");
+  expect(response?.status()).toBe(404);
+  await expect(page).toHaveURL(/\/nothing-here$/);
+  await expect(page.getByRole("heading", { name: "This page doesn't exist" })).toBeVisible();
+});
+
+test("a deleted or someone else's timeline or brief says it can't be found", async ({ page }) => {
+  await startDemo(page);
+  const missing = "00000000-0000-0000-0000-000000000000";
+  await page.goto(`/profiles/${missing}`);
+  await expect(page.getByRole("heading", { name: "We couldn’t find this timeline", level: 1 })).toBeVisible();
+  await page.goto(`/briefs/${missing}`);
+  await expect(page.getByRole("heading", { name: "We couldn’t find this brief", level: 1 })).toBeVisible();
+});
+
+test("when the API doesn't answer, the app says so calmly and can try again", async ({ page }) => {
+  await startDemo(page);
+  // A server that is down answers nothing useful; 503 skips the minute of retries meant for a waking one.
+  await page.route("**/api/auth/me", (route) => route.fulfill({ status: 503, body: "" }));
+  await page.goto("/reports");
+  await expect(page.getByRole("heading", { name: "The server is taking a nap", level: 1 })).toBeVisible();
+  // Pages that need no API still open.
+  await page.getByRole("contentinfo").getByRole("link", { name: "Privacy" }).click();
+  await expect(page.getByRole("heading", { name: "How we look after your reports", level: 1 })).toBeVisible();
+  await page.goBack();
+  await page.unroute("**/api/auth/me");
+  await page.getByRole("button", { name: "Try again" }).click();
+  await expect(page.getByRole("heading", { name: "Reports", level: 1 })).toBeVisible();
+});
+
+test("every page has its own title, and public pages a description and canonical link", async ({ page }) => {
+  const publicPages: [string, RegExp][] = [
+    ["/", /^ReportSaathi: your family's lab reports, explained$/],
+    ["/dashboard", /^Dashboard · ReportSaathi$/],
+    ["/accuracy", /^How accurate is it\? · ReportSaathi$/],
+    ["/privacy", /^Privacy · ReportSaathi$/],
+    ["/login", /^Sign in · ReportSaathi$/],
+    ["/signup", /^Create a free account · ReportSaathi$/],
+  ];
+  for (const [path, title] of publicPages) {
+    await page.goto(path);
+    await expect(page).toHaveTitle(title);
+    await expect(page.locator('meta[name="description"]')).toHaveAttribute("content", /.{60,}/);
+    const canonical = await page.locator('link[rel="canonical"]').getAttribute("href");
+    expect(new URL(canonical!).pathname).toBe(path);
+    await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", /\/opengraph-image/);
+  }
+  await startDemo(page);
+  for (const [path, title] of [
+    ["/reports", "Reports"],
+    ["/family", "Family"],
+    ["/account", "Account"],
+    ["/briefs", "Doctor briefs"],
+  ]) {
+    await page.goto(path);
+    await expect(page).toHaveTitle(`${title} · ReportSaathi`);
+  }
+});
+
+test("the share preview, icons, robots.txt and sitemap are in place", async ({ page }) => {
+  await page.goto("/");
+  for (const selector of ['meta[property="og:image"]', 'link[rel="apple-touch-icon"]', 'link[rel="icon"][type="image/svg+xml"]']) {
+    const url = (await page.locator(selector).first().getAttribute(selector.startsWith("meta") ? "content" : "href"))!;
+    // The share image's address is the live site's; fetch the same path from this server.
+    const response = await page.request.get(new URL(url, "http://x").pathname);
+    expect(response.status(), url).toBe(200);
+  }
+  const og = await page.request.get("/opengraph-image");
+  const png = await og.body();
+  expect(`${png.readUInt32BE(16)}x${png.readUInt32BE(20)}`).toBe("1200x630");
+  expect((await page.request.get("/favicon.ico")).status()).toBe(200);
+
+  const robots = await (await page.request.get("/robots.txt")).text();
+  const sitemap = await (await page.request.get("/sitemap.xml")).text();
+  // Every page in the sitemap may be crawled.
+  for (const path of ["/dashboard", "/accuracy", "/privacy", "/signup", "/login"]) {
+    expect(sitemap).toContain(`${path}</loc>`);
+    expect(robots).toContain(`Allow: ${path}`);
+  }
+});
+
+test("on a phone, each report in the list shows its lab with the date beneath", async ({ page, isMobile }) => {
+  test.skip(!isMobile, "phone layout only");
+  await startDemo(page);
+  await page.goto("/reports");
+  const row = page.getByRole("main").getByRole("link", { name: /12 Jan 2026/ });
+  const lab = await row.getByText("Sample Pathology Lab, Pune").boundingBox();
+  const date = await row.getByText(/12 Jan 2026/).boundingBox();
+  expect(date!.y).toBeGreaterThan(lab!.y + lab!.height - 2);
+  expect(Math.abs(date!.x - lab!.x)).toBeLessThan(2);
+  expect(date!.width).toBeGreaterThan(80);
+});
+
+test("app pages don't jump while they load", async ({ page }) => {
+  // Adds up every layout shift the visitor didn't cause (the browser's CLS), from the first paint.
+  await page.addInitScript(() => {
+    const w = window as unknown as { shifted: number };
+    w.shifted = 0;
+    new PerformanceObserver((list) => {
+      for (const entry of list.getEntries() as unknown as { value: number; hadRecentInput: boolean }[]) {
+        if (!entry.hadRecentInput) w.shifted += entry.value;
+      }
+    }).observe({ type: "layout-shift", buffered: true });
+  });
+  await startDemo(page);
+  const [person] = await (await page.request.get("/api/profiles")).json();
+  for (const path of ["/dashboard", "/reports", `/profiles/${person.id}`, "/family", "/privacy"]) {
+    await page.goto(path);
+    await page.waitForLoadState("networkidle");
+    const shifted = await page.evaluate(() => (window as unknown as { shifted: number }).shifted);
+    // Google counts under 0.1 as good.
+    expect(shifted, `${path} shifted ${shifted.toFixed(3)}`).toBeLessThan(0.1);
+  }
+});
+
 test("the page never scrolls sideways on a phone", async ({ page, isMobile }) => {
   test.skip(!isMobile, "phone layout only");
   await startDemo(page);
-  for (const path of ["/", "/reports", "/briefs"]) {
+  for (const path of ["/dashboard", "/reports", "/briefs"]) {
     await page.goto(path);
     await page.waitForLoadState("networkidle");
     // A too-wide page also widens the phone's layout viewport, so check it against the screen too.
@@ -696,5 +909,35 @@ test("the page never scrolls sideways on a phone", async ({ page, isMobile }) =>
     }));
     expect(overflow).toBeLessThanOrEqual(0);
     expect(width).toBe(page.viewportSize()!.width);
+  }
+});
+
+test("the main app pages fit in about two screens on a computer", async ({ page, isMobile }) => {
+  test.skip(isMobile, "computer layout only");
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await startDemo(page);
+  const [person] = await (await page.request.get("/api/profiles")).json();
+  const reports: { id: string }[] = await (await page.request.get(`/api/reports?profile_id=${person.id}`)).json();
+  const brief = await (await page.request.post(`/api/profiles/${person.id}/briefs`)).json();
+  const paths = [
+    `/dashboard?profile=${person.id}`,
+    "/reports",
+    ...reports.flatMap((r) => [`/reports/${r.id}`, `/reports/${r.id}?tab=results`]),
+    `/profiles/${person.id}`,
+    "/briefs",
+    `/briefs/${brief.id}`,
+    "/family",
+    "/account",
+    "/accuracy",
+    "/privacy",
+  ];
+  for (const path of paths) {
+    await page.goto(path);
+    await page.waitForLoadState("networkidle");
+    await expect(page.locator("main h1").first()).toBeVisible();
+    // A brief is written in the background: measure it once it is there.
+    if (path.startsWith("/briefs/")) await expect(page.getByText("Pre-visit lab summary")).toBeVisible();
+    const screens = await page.evaluate(() => document.documentElement.scrollHeight / window.innerHeight);
+    expect(screens, `${path} is ${screens.toFixed(2)} screens tall`).toBeLessThanOrEqual(2.1);
   }
 });

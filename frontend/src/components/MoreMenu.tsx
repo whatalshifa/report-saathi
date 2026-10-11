@@ -1,7 +1,7 @@
 "use client";
 
-import { MoreHorizontal } from "lucide-react";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { IconMore } from "@/components/icons";
 
 /**
  * A small "More" menu for actions that shouldn't sit beside the main ones (such as Delete). The button
@@ -45,9 +45,9 @@ export function MoreMenu({ label = "More actions", children }: { label?: string;
         aria-expanded={open}
         aria-controls={open ? id : undefined}
         onClick={() => setOpen((o) => !o)}
-        className="icon-btn h-8 w-8 border border-line bg-surface"
+        className="icon-btn h-9 w-9 bg-tint"
       >
-        <MoreHorizontal aria-hidden className="h-4 w-4" />
+        <IconMore aria-hidden className="h-4 w-4" />
       </button>
       {open && (
         <div
@@ -56,7 +56,7 @@ export function MoreMenu({ label = "More actions", children }: { label?: string;
           role="menu"
           aria-label={label}
           onClick={() => setOpen(false)}
-          className="absolute right-0 z-30 mt-1.5 min-w-44 rounded-ctl border border-line bg-surface p-1 shadow-[0_8px_24px_-8px_rgb(42_29_40/0.2)]"
+          className="absolute right-0 z-30 mt-1.5 min-w-44 rounded-2xl bg-surface p-1.5 shadow-lift"
         >
           {children}
         </div>
@@ -82,10 +82,10 @@ export function MoreMenuItem({
       type="button"
       role="menuitem"
       onClick={onSelect}
-      className={`flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm focus-visible:-outline-offset-2 ${
+      className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 font-medium text-left text-sm focus-visible:-outline-offset-2 ${
         danger
           ? "text-rose-700 hover:bg-rose-50 dark:text-rose-300 dark:hover:bg-rose-950/40"
-          : "hover:bg-stone-100 dark:hover:bg-stone-800"
+          : "hover:bg-tint"
       }`}
     >
       {icon}

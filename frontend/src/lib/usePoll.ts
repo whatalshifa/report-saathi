@@ -2,9 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { ApiError } from "@/lib/api";
+
 const POLL_MS = 2000;
 
-type Loaded<T> = { source: unknown; data?: T; error?: string };
+type Loaded<T> = { source: unknown; data?: T; error?: string; notFound?: boolean };
 
 /**
  * Load something, and keep loading it every 2 seconds while `keepGoing` says
@@ -32,7 +34,12 @@ export function usePoll<T>(load: () => Promise<T>, keepGoing: (value: T) => bool
         setState({ source: load, data });
         if (keepGoingRef.current(data)) timer = setTimeout(tick, POLL_MS);
       } catch (err) {
-        if (!cancelled) setState({ source: load, error: err instanceof Error ? err.message : "Something went wrong" });
+        if (cancelled) return;
+        setState({
+          source: load,
+          error: err instanceof Error ? err.message : "Something went wrong",
+          notFound: err instanceof ApiError && err.status === 404,
+        });
       }
     }
     tick();
@@ -44,5 +51,11 @@ export function usePoll<T>(load: () => Promise<T>, keepGoing: (value: T) => bool
 
   const reload = useCallback(() => setRound((r) => r + 1), []);
   const current = state.source === load;
-  return { data: current ? state.data : undefined, error: current ? (state.error ?? null) : null, reload };
+  return {
+    data: current ? state.data : undefined,
+    error: current ? (state.error ?? null) : null,
+    /** The API answered 404: the thing was deleted, or belongs to another account. */
+    notFound: current && state.notFound === true,
+    reload,
+  };
 }

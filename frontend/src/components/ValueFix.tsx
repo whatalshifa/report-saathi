@@ -1,9 +1,9 @@
 "use client";
 
-import { Pencil } from "lucide-react";
 import { useId, useState, type FormEvent, type Ref } from "react";
 
 import { correctResult, type TestResult } from "@/lib/api";
+import { IconPencil } from "@/components/icons";
 
 // Fixing a value the AI misread: a pencil beside each value opens a small form, and a
 // "Corrected" chip says what it was read as. The server re-flags the value after a fix.
@@ -32,7 +32,7 @@ export function FixButton({
       title="Read wrongly? Fix it"
       className="icon-btn -my-1 h-8 w-8 align-middle hover:text-brand-700 dark:hover:text-brand-300"
     >
-      <Pencil aria-hidden className="h-4 w-4" strokeWidth={1.75} />
+      <IconPencil aria-hidden className="h-4 w-4" strokeWidth={1.75} />
     </button>
   );
 }
@@ -100,7 +100,7 @@ export function ValueEditor({
         if (e.key === "Escape") onClose();
       }}
       aria-label={`Fix ${result.name}`}
-      className="space-y-2 rounded-ctl border border-line bg-background p-3 text-sm sm:p-4"
+      className="space-y-2 rounded-2xl bg-tint p-3 text-sm sm:p-4"
     >
       <p className="text-muted">Type it exactly as printed on the report.</p>
       <div className="flex flex-wrap items-end gap-2">

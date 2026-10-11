@@ -11,12 +11,13 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "ReportSaathi",
     short_name: "ReportSaathi",
     description: "Understand your family's lab reports, in English, Hindi or Marathi.",
-    start_url: "/",
+    // Installed, it opens straight into the app rather than the landing page.
+    start_url: "/dashboard",
     scope: "/",
     display: "standalone",
     // --background in globals.css, so the splash screen matches the first page.
-    background_color: "#fbf7f2",
-    theme_color: "#fbf7f2",
+    background_color: "#fff7f3",
+    theme_color: "#fff7f3",
     lang: "en-IN",
     categories: ["health", "medical"],
     icons: [

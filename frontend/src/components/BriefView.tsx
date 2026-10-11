@@ -11,11 +11,18 @@ import { usePoll } from "@/lib/usePoll";
 
 export function BriefView({ id }: { id: string }) {
   const load = useCallback(() => getBrief(id), [id]);
-  const { data: job, error } = usePoll(load, (j) => isPending(j.status));
+  const { data: job, error, notFound } = usePoll(load, (j) => isPending(j.status));
 
+  if (notFound) {
+    return (
+      <StatusPanel tone="missing" title="We couldn’t find this brief" heading="h1" actions={<BackLink href="/briefs">All doctor briefs</BackLink>}>
+        It may have been deleted, or the link is from another account.
+      </StatusPanel>
+    );
+  }
   if (error) {
     return (
-      <StatusPanel tone="error" title="This brief didn’t load" heading="h1" actions={<BackLink href="/">Back to all reports</BackLink>}>
+      <StatusPanel tone="error" title="This brief didn’t load" heading="h1" actions={<BackLink href="/dashboard">Back to all reports</BackLink>}>
         {error}
       </StatusPanel>
     );
@@ -29,25 +36,25 @@ export function BriefView({ id }: { id: string }) {
   }
   if (job.status === "failed" || !job.content) {
     return (
-      <StatusPanel tone="error" title="The brief couldn’t be written" heading="h1" actions={<BackLink href="/">Back to all reports</BackLink>}>
+      <StatusPanel tone="error" title="The brief couldn’t be written" heading="h1" actions={<BackLink href="/dashboard">Back to all reports</BackLink>}>
         {job.error ?? "Please try again from the timeline in a moment."}
       </StatusPanel>
     );
   }
   const profileId = job.content.snapshot.profile.profile_id;
   return (
-    <div className="space-y-6">
-      <BriefSheet
-        content={job.content}
-        createdAt={job.created_at}
-        toolbar={
-          <>
-            <BackLink href={`/profiles/${profileId}`}>Back to timeline</BackLink>
-            <PrintButton />
-          </>
-        }
-      />
-      <SharePanel briefId={job.id} profileId={profileId} personName={job.content.snapshot.profile.name} />
+    // Wide screens keep the buttons and the sharing panel beside the brief, in view while the brief is read.
+    <div className="space-y-4 xl:grid xl:grid-cols-[minmax(0,1fr)_19rem] xl:grid-rows-[auto_1fr] xl:items-start xl:gap-x-6 xl:gap-y-4 xl:space-y-0">
+      <div className="flex flex-wrap items-center justify-between gap-3 print:hidden xl:col-start-2 xl:row-start-1">
+        <BackLink href={`/profiles/${profileId}`}>Back to timeline</BackLink>
+        <PrintButton />
+      </div>
+      <div className="xl:col-start-1 xl:row-span-2 xl:row-start-1">
+        <BriefSheet content={job.content} createdAt={job.created_at} rowsShown={8} />
+      </div>
+      <div className="pt-2 xl:sticky xl:top-6 xl:col-start-2 xl:row-start-2 xl:pt-0">
+        <SharePanel briefId={job.id} profileId={profileId} personName={job.content.snapshot.profile.name} />
+      </div>
     </div>
   );
 }

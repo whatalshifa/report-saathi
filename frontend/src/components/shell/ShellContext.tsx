@@ -19,8 +19,9 @@ import { checkHealth, getMe, listProfiles, listReports, startDemo, type Profile,
  * Signed-out visitors land in the app with a sample family already open (`sample`): the same screens a
  * signed-in person sees, drawn from a saved copy of the demo account. The first click on anything that
  * needs an account opens a real demo account and goes to the same place in it (`openLive`).
+ * `offline`: signed in, but the API didn't answer even after the minute a sleeping server takes to wake.
  */
-export type ShellMode = "loading" | "sample" | "live";
+export type ShellMode = "loading" | "sample" | "live" | "offline";
 
 export const SAMPLE_PROFILES = sample.profiles as Profile[];
 const SAMPLE_ID = /sample-(meera|\d{4}-\d{2}-\d{2})/;
@@ -32,6 +33,8 @@ interface Shell {
   /** Everyone in the family, or null while loading. */
   profiles: Profile[] | null;
   reloadProfiles: () => void;
+  /** After `offline`: asks the API again, from the start. */
+  retry: () => void;
   /** The person the sidebar and the person-scoped links (timeline, briefs) point at. */
   person: Profile | null;
   selectPerson: (id: string) => void;
@@ -82,8 +85,9 @@ export function ShellProvider({ signedIn, children }: { signedIn: boolean; child
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [opening, setOpening] = useState(false);
   const [openError, setOpenError] = useState<string | null>(null);
+  const [unreachable, setUnreachable] = useState(false);
 
-  const mode: ShellMode = user === undefined ? "loading" : user ? "live" : "sample";
+  const mode: ShellMode = unreachable ? "offline" : user === undefined ? "loading" : user ? "live" : "sample";
 
   useEffect(() => {
     if (!signedIn) {
@@ -103,7 +107,8 @@ export function ShellProvider({ signedIn, children }: { signedIn: boolean; child
         }
       })
       .catch(() => {
-        if (!cancelled) setUser(null);
+        // getMe answers null when signed out, so an error means the server itself didn't answer.
+        if (!cancelled) setUnreachable(true);
       });
     return () => {
       cancelled = true;
@@ -111,12 +116,17 @@ export function ShellProvider({ signedIn, children }: { signedIn: boolean; child
   }, [signedIn, round]);
 
   useEffect(() => {
-    // Read after mounting: the server can't know what this browser picked last time.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- read after mounting: the server can't know what this browser picked last time
     setSelectedId((current) => current ?? readSaved());
   }, []);
 
   const reloadProfiles = useCallback(() => setRound((r) => r + 1), []);
+  const retry = useCallback(() => {
+    setUnreachable(false);
+    setUser(signedIn ? undefined : null);
+    setProfiles(signedIn ? null : SAMPLE_PROFILES);
+    setRound((r) => r + 1);
+  }, [signedIn]);
   const selectPerson = useCallback((id: string) => {
     setSelectedId(id);
     try {
@@ -139,10 +149,9 @@ export function ShellProvider({ signedIn, children }: { signedIn: boolean; child
           key === "meera" ? real.id : (reports.find((r) => r.report_date === key)?.id ?? real.id),
         );
         // A report that can't be matched falls back to the person's dashboard.
-        if (target.startsWith("/reports/") && target.endsWith(real.id)) target = `/?profile=${real.id}`;
+        if (target.startsWith("/reports/") && target.endsWith(real.id)) target = `/dashboard?profile=${real.id}`;
       }
-      // A full page load, so every part of the page sees the new sign-in.
-      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- a full page load, so every part of the page sees the new sign-in
       window.location.assign(target);
     } catch (err) {
       setOpenError(err instanceof Error ? err.message : "Could not open the demo");
@@ -158,24 +167,26 @@ export function ShellProvider({ signedIn, children }: { signedIn: boolean; child
       user: user ?? null,
       profiles,
       reloadProfiles,
+      retry,
       person,
       selectPerson,
       openLive,
       opening,
       openError,
     }),
-    [mode, user, profiles, reloadProfiles, person, selectPerson, openLive, opening, openError],
+    [mode, user, profiles, reloadProfiles, retry, person, selectPerson, openLive, opening, openError],
   );
 
   return <ShellContext.Provider value={value}>{children}</ShellContext.Provider>;
 }
 
 // Pages that read the same signed in or out. Everything else, in the sample, needs the demo account.
-const OPEN_PATHS = ["/about", "/privacy", "/accuracy", "/login", "/signup"];
+export const OPEN_PATHS = ["/privacy", "/accuracy", "/login", "/signup"];
 
 function needsAccount(href: string): boolean {
   if (!href.startsWith("/")) return false;
-  if (href === "/") return false;
+  // The landing page and the sample dashboard itself are open to everyone; a person's dashboard opens the demo.
+  if (href === "/" || href === "/dashboard") return false;
   const path = href.split(/[?#]/)[0];
   return !OPEN_PATHS.includes(path);
 }

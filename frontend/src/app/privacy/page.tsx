@@ -6,13 +6,22 @@ import { PageHeader } from "@/components/PageHeader";
 export const metadata: Metadata = {
   title: "Privacy",
   description: "What ReportSaathi keeps, why, where, for how long, and your rights under India's DPDP Act 2023.",
+  alternates: { canonical: "/privacy" },
 };
 
 const ISSUES = "https://github.com/whatalshifa/report-saathi/issues";
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  children,
+  className = "",
+}: {
+  title: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <section className="space-y-3 border-t border-line pt-8">
+    <section className={`space-y-3 border-t border-line pt-8 ${className}`}>
       <h2 className="section-title">{title}</h2>
       <div className="space-y-3 leading-relaxed text-stone-700 dark:text-stone-300">{children}</div>
     </section>
@@ -21,7 +30,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 export default function PrivacyPage() {
   return (
-    <article className="max-w-2xl space-y-8">
+    <article className="space-y-8">
       <PageHeader
         eyebrow="Privacy"
         title="How we look after your reports"
@@ -34,68 +43,72 @@ export default function PrivacyPage() {
         }
       />
 
-      <Section title="What we keep">
-        <ul className="list-disc space-y-1.5 pl-5 marker:text-stone-400">
-          <li>Your name, email and password. The password is kept only as a scrambled hash, never as text.</li>
-          <li>The family members you add: name, relation, and, if you give them, birth year and sex.</li>
-          <li>
-            The report files you upload, and what is read from them: the lab, the date, the name printed on it, and
-            every test value.
-          </li>
-          <li>The explanations and doctor briefs written for you, any values you correct, and the doctor links you make.</li>
-          <li>One cookie that keeps you signed in. No advertising, no tracking, and we never sell your data.</li>
-        </ul>
-      </Section>
+      {/* Short answers side by side on wide screens, read down each column, so the page is a glance, not a scroll. */}
+      <div className="max-w-2xl space-y-8 lg:max-w-none lg:columns-2 lg:gap-12 lg:space-y-0 [&>section]:break-inside-avoid lg:[&>section]:mb-8">
+        <Section title="What we keep">
+          <ul className="list-disc space-y-1.5 pl-5 marker:text-stone-400">
+            <li>Your name, email and password. The password is kept only as a scrambled hash, never as text.</li>
+            <li>The family members you add: name, relation, and, if you give them, birth year and sex.</li>
+            <li>
+              The report files you upload, and what is read from them: the lab, the date, the name printed on it, and
+              every test value.
+            </li>
+            <li>The explanations and doctor briefs written for you, any values you correct, and the doctor links you make.</li>
+            <li>One cookie that keeps you signed in. No advertising, no tracking, and we never sell your data.</li>
+          </ul>
+        </Section>
 
-      <Section title="Why we keep it">
-        <p>
-          Only to do what you ask: read your reports, explain them, show how results change over time, and make a
-          summary for your doctor. Before your first upload we ask you to agree to this, and we note which version
-          of this notice you agreed to and when.
-        </p>
-        <p>
-          When you add a family member, please make sure they are happy for their reports to be kept here. For a
-          child, that is you as their parent.
-        </p>
-      </Section>
+        <Section title="Why we keep it">
+          <p>
+            Only to do what you ask: read your reports, explain them, show how results change over time, and make a
+            summary for your doctor. Before your first upload we ask you to agree to this, and we note which version
+            of this notice you agreed to and when.
+          </p>
+          <p>
+            When you add a family member, please make sure they are happy for their reports to be kept here. For a
+            child, that is you as their parent.
+          </p>
+        </Section>
 
-      <Section title="Where it is stored">
-        <p>
-          The database and the report files are kept with Neon, in Singapore. Every file is encrypted before it is
-          stored, each with its own key, so the files are unreadable without our server. Only your account can see
-          your family&apos;s reports.
-        </p>
-      </Section>
+        <Section title="Where it is stored">
+          <p>
+            The database and the report files are kept with Neon, in Singapore. Every file is encrypted before it is
+            stored, each with its own key, so the files are unreadable without our server. Only your account can see
+            your family&apos;s reports.
+          </p>
+        </Section>
 
-      <Section title="Who else handles it">
-        <ul className="list-disc space-y-1.5 pl-5 marker:text-stone-400">
-          <li>
-            <strong>Anthropic</strong>, when reading is switched on: each report is sent to Claude, Anthropic&apos;s
-            AI, to be read and explained. Anthropic does not use it to train its models. On the public demo the AI is
-            switched off, so no report is sent anywhere.
-          </li>
-          <li>
-            <strong>Render</strong> runs our server and <strong>Vercel</strong> runs the website. Your data passes
-            through them on its way to and from the database.
-          </li>
-        </ul>
-      </Section>
+        <Section title="Who else handles it">
+          <ul className="list-disc space-y-1.5 pl-5 marker:text-stone-400">
+            <li>
+              <strong>Anthropic</strong>, when reading is switched on: each report is sent to Claude, Anthropic&apos;s
+              AI, to be read and explained. Anthropic does not use it to train its models. On the public demo the AI is
+              switched off, so no report is sent anywhere.
+            </li>
+            <li>
+              <strong>Render</strong> runs our server and <strong>Vercel</strong> runs the website. Your data passes
+              through them on its way to and from the database.
+            </li>
+          </ul>
+        </Section>
 
-      <Section title="How long we keep it">
-        <ul className="list-disc space-y-1.5 pl-5 marker:text-stone-400">
-          <li>Demo accounts, and everything in them, are deleted after 24 hours.</li>
-          <li>
-            Your own account is kept until you delete it. Deleting a report, a family member or the whole account
-            removes it, and its files, straight away.
-          </li>
-          <li>
-            A doctor link shows the values it was made with. So deleting a report, or moving it to someone else,
-            also turns off every doctor link for that person. You can make a new one.
-          </li>
-        </ul>
-      </Section>
+        <Section title="How long we keep it">
+          <ul className="list-disc space-y-1.5 pl-5 marker:text-stone-400">
+            <li>Demo accounts, and everything in them, are deleted after 24 hours.</li>
+            <li>
+              Your own account is kept until you delete it. Deleting a report, a family member or the whole account
+              removes it, and its files, straight away.
+            </li>
+            <li>
+              A doctor link shows the values it was made with. So deleting a report, or moving it to someone else,
+              also turns off every doctor link for that person. You can make a new one.
+            </li>
+          </ul>
+        </Section>
 
-      <Section title="Your rights, and how to use them">
+      </div>
+
+      <Section title="Your rights, and how to use them" className="max-w-2xl lg:max-w-none">
         <p>
           India&apos;s Digital Personal Data Protection Act, 2023 gives you these rights. Most of them are a button
           in the app.
@@ -137,7 +150,7 @@ export default function PrivacyPage() {
         </dl>
       </Section>
 
-      <Section title="Contact">
+      <Section title="Contact" className="max-w-2xl">
         <p>
           For anything about your data, open an issue on the{" "}
           <a href={ISSUES} className="link">

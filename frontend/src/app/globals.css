@@ -1,36 +1,54 @@
 @import "tailwindcss";
 
 /* Dark mode follows a class on <html>, set before the first paint by the script in layout.tsx.
-   "System" (the default) copies the device setting; the switch in the header can pin light or dark. */
+   "System" (the default) copies the device setting; the sun/moon switch can pin light or dark. */
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  /* ReportSaathi's look: a warm family health notebook. Cream paper, plum ink, a coral highlighter. */
-  --background: #fbf7f2;
-  --foreground: #2a1d28;
+  /* ReportSaathi: a friendly family health companion. Blush paper, plum ink, coral warmth.
+     Surfaces are told apart by tint and soft coloured shadow, not by lines. */
+  --background: #fff7f3;
+  --foreground: #2b1a29;
   --surface: #ffffff;
-  --muted: #6e5f69;
-  --border: #ebe1da;
+  --tint: #f9ecf3;
+  --tint-strong: #f2dcea;
+  --tint-coral: #ffede5;
+  --muted: #6b5867;
+  --border: #f0dfe4;
   --focus: #82457f;
   --highlight: #ffd9c7;
-  /* The app sidebar: a shade deeper than the page, so the work area reads as the paper on top. */
-  --sidebar: #f5ede6;
-  --sidebar-hover: #ede3db;
+  --sidebar: #f8eaf2;
+  --sidebar-hover: #f1dbe8;
   --sidebar-active: #ffffff;
+  /* The duotone icons' soft fill, unless a container sets its own. */
+  --duo-coral: #ffcdb8;
+  --duo-plum: #ecd0e8;
+  --glow: 107 55 104;
+  --shadow-soft: 0 1px 2px rgb(107 55 104 / 0.06), 0 16px 36px -20px rgb(107 55 104 / 0.38);
+  --shadow-lift: 0 2px 4px rgb(107 55 104 / 0.06), 0 28px 56px -24px rgb(107 55 104 / 0.45);
   color-scheme: light;
 }
 
+/* Dark is "plum night": deep aubergine surfaces, lifted with warm light, coral used as a glow. */
 .dark {
-  --background: #141015;
-  --foreground: #f1e9ee;
-  --surface: #1e1820;
-  --muted: #b5a6af;
-  --border: #382c37;
-  --focus: #d3abd0;
+  --background: #1a1118;
+  --foreground: #f7ebf2;
+  --surface: #251923;
+  --tint: #2e1f2b;
+  --tint-strong: #3b2738;
+  --tint-coral: #3a211d;
+  --muted: #c3adbc;
+  --border: #3a2836;
+  --focus: #eab9e5;
   --highlight: #6b2f22;
-  --sidebar: #100c11;
-  --sidebar-hover: #1f1820;
-  --sidebar-active: #241c26;
+  --sidebar: #221620;
+  --sidebar-hover: #30202d;
+  --sidebar-active: #3b2838;
+  --duo-coral: rgb(240 106 72 / 0.42);
+  --duo-plum: rgb(192 140 188 / 0.34);
+  --glow: 0 0 0;
+  --shadow-soft: 0 1px 0 rgb(255 255 255 / 0.04) inset, 0 18px 40px -22px rgb(0 0 0 / 0.85);
+  --shadow-lift: 0 1px 0 rgb(255 255 255 / 0.05) inset, 0 30px 60px -24px rgb(0 0 0 / 0.9);
   color-scheme: dark;
 }
 
@@ -38,43 +56,71 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-surface: var(--surface);
+  --color-tint: var(--tint);
+  --color-tint-strong: var(--tint-strong);
+  --color-tint-coral: var(--tint-coral);
   --color-muted: var(--muted);
   --color-line: var(--border);
   --color-highlight: var(--highlight);
   --color-sidebar: var(--sidebar);
   --color-sidebar-hover: var(--sidebar-hover);
   --color-sidebar-active: var(--sidebar-active);
-  /* Inter for Latin; Devanagari letters fall through to Noto Sans Devanagari, drawn to match it. */
-  --font-sans: var(--font-inter), var(--font-devanagari), ui-sans-serif, system-ui, sans-serif;
+  --shadow-soft: var(--shadow-soft);
+  --shadow-lift: var(--shadow-lift);
+  /* Figtree for Latin; Devanagari letters fall through to Noto Sans Devanagari. */
+  --font-sans: var(--font-figtree), var(--font-devanagari), ui-rounded, ui-sans-serif, system-ui, sans-serif;
 }
 
-/* Plum: white text on brand-700 is 8.9:1, and brand-400 text on the dark background is 6.9:1. */
+/* Plum: white text on brand-700 is 8.9:1; brand-950 text on brand-300 (the dark-mode button) is 8.4:1. */
 @theme {
-  --color-brand-50: #faf4f9;
-  --color-brand-100: #f3e6f1;
-  --color-brand-200: #e7cfe4;
-  --color-brand-300: #d3abd0;
-  --color-brand-400: #c08cbc;
+  --color-brand-50: #fcf3f8;
+  --color-brand-100: #f6e4f0;
+  --color-brand-200: #ebcde5;
+  --color-brand-300: #d9aed4;
+  --color-brand-400: #c48cbf;
   --color-brand-500: #9c5a98;
   --color-brand-600: #82457f;
   --color-brand-700: #6b3768;
   --color-brand-800: #572d55;
   --color-brand-900: #482646;
   --color-brand-950: #2c122a;
+  --color-coral-100: #ffede5;
+  --color-coral-200: #ffd5c4;
   --color-coral-300: #ffb39a;
   --color-coral-400: #fb8f6f;
   --color-coral-500: #f06a48;
+  --color-coral-600: #d4502f;
+  --color-coral-700: #a93c21;
+  --color-coral-800: #80301b;
 
-  /* One radius scale: controls 10px, cards 16px, full pills only for small status badges. */
-  --radius-ctl: 10px;
-  --radius-card: 16px;
+  /* The greys are mauve, warmed toward plum, so no cold neutral ever shows up. */
+  --color-stone-50: #fcf6f8;
+  --color-stone-100: #f6ecf1;
+  --color-stone-200: #ecdbe3;
+  --color-stone-300: #dcc6d1;
+  --color-stone-400: #ae94a3;
+  --color-stone-500: #85697b;
+  --color-stone-600: #6c5263;
+  --color-stone-700: #543f4d;
+  --color-stone-800: #3b2b37;
+  --color-stone-900: #271b24;
+  --color-stone-950: #180f16;
+
+  /* Soft and generous: controls 16px, cards 24px, every button a full pill. */
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
+  --radius-3xl: 32px;
+  --radius-ctl: 16px;
+  --radius-card: 24px;
 }
 
-/* Phones have a sticky top bar and a fixed tab bar: whatever is scrolled to stays clear of both. */
+/* Phones have a sticky top bar and a floating tab bar: whatever is scrolled to stays clear of both. */
 @media (max-width: 1023px) {
   html {
-    scroll-padding-top: 4rem;
-    scroll-padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+    scroll-padding-top: 4.5rem;
+    scroll-padding-bottom: calc(6rem + env(safe-area-inset-bottom));
   }
 }
 
@@ -85,23 +131,26 @@ body {
   font-size: 1rem;
   line-height: 1.6;
   text-rendering: optimizeLegibility;
-  font-feature-settings: "cv11", "ss01";
 }
 
 h1,
 h2,
 h3 {
-  font-weight: 600;
-  line-height: 1.2;
-  letter-spacing: -0.011em;
+  font-weight: 750;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
 }
 
-/* One visible focus ring for everything you can tab to, in both themes. Elements that draw their own
-   (inputs) turn the outline off themselves. */
+/* The duotone icons: the soft shape takes the container's tint, or a wash of the line colour. */
+.rs-duo {
+  fill: var(--duo, color-mix(in srgb, currentColor 20%, transparent));
+}
+
+/* One visible focus ring for everything you can tab to, in both themes: a thick plum halo. */
 @layer base {
   :where(a, button, summary, select, [role="tab"], [tabindex]):focus-visible {
-    outline: 2px solid var(--focus);
-    outline-offset: 2px;
+    outline: 3px solid var(--focus);
+    outline-offset: 3px;
   }
 }
 
@@ -117,27 +166,34 @@ h3 {
   }
 }
 
-/* The few building blocks every page shares, so buttons and cards look the same everywhere. */
 @layer components {
+  /* A card is a soft white (or plum-night) cushion: no outline, just a tinted shadow. */
   .card {
-    @apply rounded-card border border-line bg-surface;
+    @apply rounded-card bg-surface shadow-soft;
+  }
+  /* A quieter grouping inside a page: a tinted pad instead of a box. */
+  .well {
+    @apply rounded-card bg-tint;
   }
 
-  /* Buttons: one height per size, so buttons side by side always line up. */
+  /* Buttons are pills, with one height per size so buttons side by side line up. */
   .btn {
-    @apply inline-flex h-10 items-center justify-center gap-2 rounded-ctl border border-transparent px-4 text-sm
-      font-medium whitespace-nowrap transition-colors select-none
+    @apply inline-flex h-11 items-center justify-center gap-2 rounded-full border-2 border-transparent px-5 text-[15px]
+      font-semibold whitespace-nowrap transition select-none active:translate-y-px
       disabled:cursor-not-allowed disabled:opacity-60;
   }
-  /* White on brand-700 is 8.9:1, in both themes. */
   .btn-primary {
-    @apply bg-brand-700 text-white hover:bg-brand-800;
+    --duo: rgb(255 179 154 / 0.55);
+    @apply bg-brand-700 text-white shadow-[0_10px_22px_-10px_rgb(107_55_104/0.75)] hover:bg-brand-800
+      dark:bg-brand-300 dark:text-brand-950 dark:shadow-[0_10px_26px_-12px_rgb(217_174_212/0.55)] dark:hover:bg-brand-200;
   }
   .btn-secondary {
-    @apply border-line bg-surface text-foreground hover:bg-stone-50 dark:hover:bg-stone-800/60;
+    --duo: var(--duo-coral);
+    @apply bg-tint-strong text-brand-900 hover:bg-brand-200 dark:text-brand-100 dark:hover:bg-[#4a3346];
   }
   .btn-ghost {
-    @apply text-muted hover:bg-stone-100 hover:text-foreground dark:hover:bg-stone-800;
+    --duo: var(--duo-coral);
+    @apply text-muted hover:bg-tint hover:text-foreground;
   }
   /* Only in a confirm step: the destructive action itself. */
   .btn-danger {
@@ -148,68 +204,107 @@ h3 {
     @apply text-muted hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/40 dark:hover:text-rose-300;
   }
   .btn-sm {
-    @apply h-8 px-3 text-[13px];
+    @apply h-9 px-4 text-[13.5px];
   }
   .btn-lg {
-    @apply h-11 px-5 text-[15px];
+    @apply h-12 px-6 text-base;
   }
 
-  /* Square buttons that hold only an icon (theme switch, pencil, page icon, close). */
+  /* Round buttons that hold only an icon (pencil, page icon, close). */
   .icon-btn {
-    @apply inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-ctl text-muted transition-colors
-      hover:bg-stone-100 hover:text-foreground dark:hover:bg-stone-800;
+    --duo: var(--duo-coral);
+    @apply inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-muted transition-colors
+      hover:bg-tint hover:text-foreground;
   }
 
   /* Small rounded labels: flags, statuses, "Sample". Colour comes from the caller. */
   .badge {
-    @apply inline-flex items-center rounded-full px-2 py-px text-xs leading-5 font-medium whitespace-nowrap;
+    @apply inline-flex items-center rounded-full px-2.5 py-px text-xs leading-5 font-semibold whitespace-nowrap;
   }
 
+  /* Fields sit in a tinted well and turn white with a plum halo while you type. */
   .input {
-    @apply mt-1.5 block h-11 w-full rounded-ctl border border-line bg-surface px-3 text-[15px] text-foreground
-      outline-none transition placeholder:text-stone-400
-      focus:border-brand-600 focus:ring-3 focus:ring-brand-600/15 focus-visible:outline-none dark:focus:border-brand-400
-      dark:focus:ring-brand-400/20;
+    @apply mt-2 block h-12 w-full rounded-ctl border-2 border-transparent bg-tint px-4 text-[15px] text-foreground
+      outline-none transition placeholder:text-muted/70
+      hover:bg-tint-strong focus:border-brand-500 focus:bg-surface focus:ring-4 focus:ring-brand-500/15 focus-visible:outline-none
+      dark:focus:border-brand-300 dark:focus:ring-brand-300/20;
   }
   .label {
-    @apply block text-sm font-medium;
+    @apply block text-sm font-semibold;
   }
   .hint {
     @apply mt-1.5 block text-[13px] font-normal text-muted;
   }
 
   .link {
-    @apply font-medium text-brand-700 underline-offset-4 hover:underline dark:text-brand-400;
+    @apply font-semibold text-brand-700 underline decoration-coral-400 decoration-2 underline-offset-4 hover:decoration-coral-500 dark:text-brand-300;
   }
 
-  /* A quiet "see more" link at the end of a dashboard heading or card. */
+  /* A "see more" link at the end of a dashboard heading or card. */
   .dash-link {
-    @apply inline-flex items-center gap-1 text-[13px] font-medium text-brand-700 underline-offset-4 hover:underline
-      dark:text-brand-300;
+    --duo: var(--duo-coral);
+    @apply inline-flex items-center gap-1 text-[13.5px] font-semibold text-brand-700 decoration-coral-400 decoration-2
+      underline-offset-4 hover:underline dark:text-brand-300;
   }
 
   .back-link {
-    @apply inline-flex items-center gap-1 text-sm font-medium text-muted hover:text-foreground;
+    --duo: var(--duo-plum);
+    @apply -ml-2 inline-flex h-9 items-center gap-1 rounded-full pr-3.5 pl-2 text-sm font-semibold text-muted
+      hover:bg-tint hover:text-foreground;
   }
 
   /* Every page title, and the line under it, share one size and rhythm. */
   .page-title {
-    @apply text-[24px] leading-tight font-semibold tracking-[-0.015em] text-balance sm:text-[28px];
+    @apply text-[27px] leading-[1.1] font-extrabold tracking-[-0.025em] text-balance sm:text-[32px];
   }
   .page-lead {
-    @apply mt-2 max-w-2xl text-[15px] text-pretty text-muted;
+    @apply mt-2 max-w-2xl text-base text-pretty text-muted;
   }
   .section-title {
-    @apply text-lg leading-snug font-semibold tracking-[-0.01em];
+    @apply text-lg leading-snug font-bold tracking-[-0.015em];
   }
 
-  /* A short label above a heading. Plain, small and used sparingly. */
+  /* A small coral sticker above a heading, in sentence case. Used sparingly. */
   .eyebrow {
-    @apply text-[13px] font-medium text-brand-700 dark:text-brand-300;
+    @apply inline-flex items-center rounded-full bg-tint-coral px-3 py-0.5 text-[13px] font-semibold text-coral-700
+      dark:text-coral-300;
+  }
+
+  /* The landing page: big, round, friendly headings. */
+  .landing-h2 {
+    @apply text-[34px] leading-[1.04] font-extrabold tracking-[-0.035em] text-balance sm:text-[50px];
+  }
+  .landing-lead {
+    @apply max-w-2xl text-[17px] leading-relaxed text-pretty text-muted sm:text-[19px];
+  }
+  /* A sticker with an icon, set a little askew, above a section heading. */
+  .landing-sticker {
+    --duo: var(--duo-coral);
+    @apply inline-flex -rotate-2 items-center gap-2 rounded-full bg-surface py-1.5 pr-4 pl-2 text-sm font-bold
+      text-brand-800 shadow-soft dark:text-brand-200;
+  }
+  .landing-sticker > svg {
+    @apply h-7 w-7 rounded-full bg-tint-coral p-1 text-coral-700 dark:text-coral-300;
+  }
+
+  /* A hand-drawn coral underline under a word or two. */
+  .scribble {
+    @apply relative whitespace-nowrap;
+  }
+  .scribble::after {
+    content: "";
+    position: absolute;
+    left: -0.04em;
+    right: -0.04em;
+    bottom: -0.12em;
+    height: 0.32em;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 16' preserveAspectRatio='none'%3E%3Cpath d='M3 11C40 4 92 3 197 6M30 13c46-4 98-5 150-3' fill='none' stroke='%23f06a48' stroke-width='4.5' stroke-linecap='round'/%3E%3C/svg%3E")
+      no-repeat center / 100% 100%;
+    pointer-events: none;
   }
 
   .skeleton {
-    @apply animate-pulse rounded-ctl bg-stone-200/80 dark:bg-stone-800/80;
+    @apply animate-pulse rounded-ctl bg-tint-strong/80;
   }
 }
 
@@ -220,9 +315,11 @@ h3 {
     --background: #ffffff;
     --foreground: #0f172a;
     --surface: #ffffff;
+    --tint: #ffffff;
     --muted: #475569;
     --border: #cbd5e1;
     --highlight: #ffe7dc;
+    --shadow-soft: none;
     color-scheme: light;
   }
 }
