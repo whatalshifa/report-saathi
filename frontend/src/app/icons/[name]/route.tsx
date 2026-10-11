@@ -22,8 +22,9 @@ export async function GET(_request: Request, { params }: RouteContext<"/icons/[n
   const icon = ICONS[name as Name];
   if (!icon) return new Response("Not found", { status: 404 });
   const { size, maskable } = icon;
-  // icon.svg's 32-unit drawing, shrunk on the maskable icon so it sits inside the safe zone.
-  const glyph = maskable ? size * 0.8 : size;
+  // icon.svg's 32-unit drawing; on the maskable icon the heart is drawn larger, inside the safe zone.
+  const glyph = maskable ? size * 1.15 : size;
+  // Maskable: the plum fills the square and the heart sits in the safe zone. Otherwise the soft round blob.
   return new ImageResponse(
     (
       <div
@@ -33,18 +34,22 @@ export async function GET(_request: Request, { params }: RouteContext<"/icons/[n
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "#6b3768",
-          borderRadius: maskable ? 0 : size / 2,
+          background: maskable ? "#6b3768" : "transparent",
         }}
       >
         <svg width={glyph} height={glyph} viewBox="0 0 32 32">
-          <path d="M10 7.5h8.5L23 12v12.5a1 1 0 0 1-1 1H10a1 1 0 0 1-1-1v-16a1 1 0 0 1 1-1Z" fill="#fff" />
-          <path d="M18.5 7.5V12H23" fill="none" stroke="#e7cfe4" strokeWidth={1.5} strokeLinejoin="round" />
+          {!maskable && (
+            <path
+              d="M16.6 1.2c7 .3 13.7 5 14.2 12.3.6 8.4-5.6 16.8-14.4 17.3C7.6 31.3 1 25.6 1.2 16.9 1.4 8 8.6.9 16.6 1.2Z"
+              fill="#6b3768"
+            />
+          )}
+          <path d="M16 24.5s-8.2-5-8.2-10.6a4.3 4.3 0 0 1 8.2-2 4.3 4.3 0 0 1 8.2 2c0 5.6-8.2 10.6-8.2 10.6Z" fill="#fff" />
           <path
-            d="M11 18.5h2.6l1.5-3.5 2.2 6 1.5-2.5H21"
+            d="M9.6 16.6h3l1.5-2.6 2.4 5 1.6-2.4h4.4"
             fill="none"
             stroke="#f06a48"
-            strokeWidth={1.8}
+            strokeWidth={2}
             strokeLinecap="round"
             strokeLinejoin="round"
           />

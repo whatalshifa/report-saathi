@@ -1,6 +1,5 @@
 "use client";
 
-import { ChevronRight } from "lucide-react";
 import { useState } from "react";
 
 import { PageHeader } from "@/components/PageHeader";
@@ -11,6 +10,7 @@ import { AppLink, useShell } from "@/components/shell/ShellContext";
 import { listReports, type ReportSummary } from "@/lib/api";
 import { formatDate } from "@/lib/format";
 import { usePoll } from "@/lib/usePoll";
+import { IconChevronRight } from "@/components/icons";
 
 const STATUS: Record<ReportSummary["status"], string> = {
   queued: "Waiting",
@@ -70,7 +70,7 @@ export function ReportsIndex() {
           Reports you add from a person&apos;s dashboard show up here.
         </StatusPanel>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-line bg-surface">
+        <div className="overflow-hidden card">
           <div className="hidden grid-cols-[7.5rem_minmax(0,1fr)_12rem_7rem_1rem] gap-4 border-b border-line px-4 py-2.5 text-xs font-medium text-muted md:grid">
             <span>Date</span>
             <span>Lab</span>
@@ -101,7 +101,7 @@ export function ReportsIndex() {
                     >
                       {STATUS[r.status]}
                     </span>
-                    <ChevronRight
+                    <IconChevronRight
                       aria-hidden
                       className="order-3 row-span-2 h-4 w-4 text-stone-400 md:order-none md:row-span-1 dark:text-stone-500"
                     />

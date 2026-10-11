@@ -1,6 +1,5 @@
 "use client";
 
-import { AlertTriangle, Square, Volume2 } from "lucide-react";
 import { useCallback, useId, useState } from "react";
 
 import { SkeletonLines } from "@/components/Skeleton";
@@ -15,6 +14,7 @@ import {
 import { serverTime } from "@/lib/format";
 import { usePoll } from "@/lib/usePoll";
 import { useSpeech } from "@/lib/useSpeech";
+import { IconAlert, IconSpeaker, IconStop } from "@/components/icons";
 
 const LANGUAGES = [
   {
@@ -99,16 +99,16 @@ export function ExplanationPanel({ reportId, correctedAt = null }: { reportId: s
         <h2 id={headingId} className="section-title">
           What does this mean?
         </h2>
-        <div role="tablist" aria-label="Language" className="flex rounded-ctl bg-stone-100 p-0.5 dark:bg-stone-800">
+        <div role="tablist" aria-label="Language" className="flex rounded-full bg-tint p-1">
           {LANGUAGES.map((l) => (
             <button
               key={l.code}
               role="tab"
               aria-selected={language === l.code}
               onClick={() => setLanguage(l.code)}
-              className={`h-8 rounded-lg px-3 text-sm transition-colors ${
+              className={`h-9 rounded-full px-3.5 text-sm transition-colors ${
                 language === l.code
-                  ? "bg-surface font-medium text-foreground shadow-[0_1px_2px_rgb(42_29_40/0.12)] dark:bg-stone-950"
+                  ? "bg-surface font-semibold text-foreground shadow-soft dark:bg-brand-800"
                   : "text-muted hover:text-foreground"
               }`}
             >
@@ -160,7 +160,7 @@ function ExplanationBody({ content, text }: { content: ReportExplanation; text: 
           role="alert"
           className="flex gap-2.5 rounded-ctl border border-rose-200 bg-rose-50 p-3 text-rose-900 dark:border-rose-900 dark:bg-rose-950/60 dark:text-rose-100"
         >
-          <AlertTriangle aria-hidden className="mt-1 h-4 w-4 shrink-0" />
+          <IconAlert aria-hidden className="mt-1 h-4 w-4 shrink-0" />
           <span>{content.see_doctor_reason}</span>
         </p>
       )}
@@ -235,9 +235,9 @@ function ListenButton({ content, text }: { content: ReportExplanation; text: Tex
       className="btn btn-secondary btn-sm"
     >
       {speaking ? (
-        <Square aria-hidden className="h-3.5 w-3.5" />
+        <IconStop aria-hidden className="h-3.5 w-3.5" />
       ) : (
-        <Volume2 aria-hidden className="h-4 w-4" />
+        <IconSpeaker aria-hidden className="h-4 w-4" />
       )}
       {speaking ? text.stop : text.listen}
     </button>

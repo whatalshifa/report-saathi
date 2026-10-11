@@ -1,6 +1,5 @@
 "use client";
 
-import { Check } from "lucide-react";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 
 import { ErrorNote } from "@/components/Skeleton";
@@ -15,6 +14,7 @@ import {
   type ShareLink,
 } from "@/lib/api";
 import { formatDate } from "@/lib/format";
+import { IconCheck } from "@/components/icons";
 
 // The phone's own share sheet (WhatsApp, SMS, email...). Most phones have it; many computers don't.
 const noSubscribe = () => () => {};
@@ -131,7 +131,7 @@ export function SharePanel({
           <div className="mt-3 flex flex-wrap gap-2">
             <button onClick={copy} className="btn btn-primary btn-sm">
               {copied ? (
-                <Check aria-hidden className="h-4 w-4" />
+                <IconCheck aria-hidden className="h-4 w-4" />
               ) : null}
               {copied ? "Copied" : "Copy link"}
             </button>

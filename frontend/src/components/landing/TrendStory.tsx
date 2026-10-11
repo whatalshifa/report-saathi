@@ -1,6 +1,5 @@
 "use client";
 
-import { ArrowRight, CheckCircle2, TriangleAlert } from "lucide-react";
 import { useState } from "react";
 
 import { TrendChart } from "@/components/TrendChart";
@@ -9,6 +8,7 @@ import { formatDate, formatNumber, formatShortDate } from "@/lib/format";
 import { direction } from "@/lib/trends";
 
 import { GLANCES, REPORTS, TRENDS } from "./sample";
+import { IconAlert, IconArrowRight, IconCheckCircle } from "@/components/icons";
 
 const KEYS = ["hba1c", "hemoglobin", "vitamin_d", "tsh", "ferritin", "ldl"];
 const SERIES = KEYS.map((k) => TRENDS.series.find((s) => s.key === k)).filter((s): s is TrendSeries => !!s);
@@ -35,20 +35,20 @@ export function TrendStory() {
   const last = series.points[series.points.length - 1];
 
   return (
-    <div className="overflow-hidden rounded-[22px] border border-line bg-surface shadow-[0_30px_60px_-40px_rgb(72_38_70/0.4)]">
+    <div className="overflow-hidden rounded-[32px] bg-surface shadow-lift">
       {/* The reports, oldest first */}
       <ol className="grid grid-cols-3 border-b border-line">
         {REPORTS_OLDEST_FIRST.map((r, i) => {
           const glance = GLANCES[r.id];
           return (
             <li key={r.id} className={`relative px-3 py-4 sm:px-6 sm:py-5 ${i > 0 ? "border-l border-line" : ""}`}>
-              <p className="text-[13px] font-semibold tabular-nums sm:text-sm">{formatDate(r.report_date)}</p>
+              <p className="text-[13px] font-bold tabular-nums sm:text-[15px]">{formatDate(r.report_date)}</p>
               <p className="mt-0.5 line-clamp-2 text-xs text-muted sm:text-[13px]">{r.lab_name}</p>
-              <div aria-hidden className="mt-3 flex h-2 gap-px overflow-hidden rounded-full">
+              <div aria-hidden className="mt-3 flex h-2.5 gap-[3px] overflow-hidden">
                 {Array.from({ length: glance.total }, (_, j) => (
                   <span
                     key={j}
-                    className={`flex-1 ${j < glance.out_of_range ? "bg-coral-500" : "bg-emerald-500/40 dark:bg-emerald-400/35"}`}
+                    className={`flex-1 rounded-full ${j < glance.out_of_range ? "bg-coral-500" : "bg-emerald-500/40 dark:bg-emerald-400/35"}`}
                   />
                 ))}
               </div>
@@ -81,7 +81,7 @@ export function TrendStory() {
                     onClick={() => setKey(s.key)}
                     className={`flex w-full items-center gap-3 rounded-ctl px-3 py-2 text-left transition-colors max-lg:h-9 max-lg:rounded-full max-lg:border max-lg:py-0 ${
                       active
-                        ? "bg-brand-50 ring-1 ring-brand-200 max-lg:border-brand-700 max-lg:bg-brand-700 max-lg:text-white max-lg:ring-0 dark:bg-brand-950/60 dark:ring-brand-800 max-lg:dark:border-brand-300 max-lg:dark:bg-brand-300 max-lg:dark:text-brand-950"
+                        ? "bg-tint-coral max-lg:border-brand-700 max-lg:bg-brand-700 max-lg:text-white max-lg:ring-0 max-lg:dark:border-brand-300 max-lg:dark:bg-brand-300 max-lg:dark:text-brand-950"
                         : "hover:bg-stone-50 max-lg:border-line dark:hover:bg-stone-800/50"
                     }`}
                   >
@@ -93,9 +93,9 @@ export function TrendStory() {
                     </span>
                     <span className="hidden lg:block">
                       {story.good ? (
-                        <CheckCircle2 aria-label="Back in range" className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                        <IconCheckCircle aria-label="Back in range" className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                       ) : (
-                        <TriangleAlert aria-label="Still out of range" className="h-4 w-4 text-coral-500" />
+                        <IconAlert aria-label="Still out of range" className="h-4 w-4 text-coral-500" />
                       )}
                     </span>
                   </button>
@@ -107,10 +107,10 @@ export function TrendStory() {
 
         <div className="min-w-0 px-4 py-5 sm:px-6 sm:py-6">
           <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
-            <p className="text-lg font-semibold tracking-[-0.01em]">{series.name}</p>
+            <p className="text-xl font-extrabold tracking-[-0.02em]">{series.name}</p>
             <p className="text-sm text-muted tabular-nums">
               {formatNumber(first.value)} in {formatShortDate(first.date)}
-              <ArrowRight aria-hidden className="mx-1.5 inline h-3.5 w-3.5 align-[-2px]" />
+              <IconArrowRight aria-hidden className="mx-1.5 inline h-3.5 w-3.5 align-[-2px]" />
               <span className="font-semibold text-foreground">
                 {formatNumber(last.value)} {series.unit}
               </span>{" "}

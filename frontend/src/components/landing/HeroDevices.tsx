@@ -1,15 +1,15 @@
 "use client";
 
-import { Activity, FileText, House, LayoutDashboard, Stethoscope, Users, BadgeCheck, type LucideIcon } from "lucide-react";
 
 import { AttentionPanel, ImprovedPanel, MarkerTile } from "@/components/DashboardView";
-import { Logo, LogoMark } from "@/components/Logo";
+import { Logo } from "@/components/Logo";
 import { PersonAvatar } from "@/components/shell/PersonAvatar";
 import { isOutOfRange } from "@/lib/api";
 import { formatAge, formatDate, formatSex } from "@/lib/format";
 import { direction, keyMarkers } from "@/lib/trends";
 
 import { MEERA, TRENDS } from "./sample";
+import { IconBadge, IconDashboard, IconFamily, IconHome, IconReport, IconStethoscope, IconTimeline, type IconComponent } from "@/components/icons";
 
 const attention = TRENDS.series.filter((s) => isOutOfRange(s.latest_flag));
 const improved = TRENDS.series.filter((s) => direction(s) === "back");
@@ -57,18 +57,18 @@ function Laptop() {
                   <div className="flex items-center gap-3.5">
                     <PersonAvatar name={MEERA.name} size="lg" />
                     <div>
-                      <p className="text-[13px] font-medium text-muted">Sample person</p>
-                      <p className="text-2xl leading-tight font-semibold tracking-[-0.015em]">{MEERA.name}</p>
+                      <p className="text-[13px] font-semibold text-muted">Sample person</p>
+                      <p className="text-[28px] leading-tight font-extrabold tracking-[-0.025em]">{MEERA.name}</p>
                       <p className="mt-0.5 text-[13px] text-muted">{facts}</p>
                     </div>
                   </div>
                   <div className="flex gap-2">
                     <span className="btn btn-secondary btn-sm">
-                      <Activity aria-hidden className="h-3.5 w-3.5" />
+                      <IconTimeline aria-hidden className="h-3.5 w-3.5" />
                       Timeline
                     </span>
                     <span className="btn btn-primary btn-sm">
-                      <Stethoscope aria-hidden className="h-3.5 w-3.5" />
+                      <IconStethoscope aria-hidden className="h-3.5 w-3.5" />
                       Doctor brief
                     </span>
                   </div>
@@ -78,7 +78,7 @@ function Laptop() {
                   <ImprovedPanel person={MEERA} improved={improved} loading={false} />
                 </div>
                 <div>
-                  <p className="mb-3 text-[15px] font-semibold tracking-[-0.01em]">Key markers</p>
+                  <p className="mb-3 text-[17px] font-bold tracking-[-0.015em]">Key markers</p>
                   <ul className="grid grid-cols-3 gap-2.5">
                     {markers.map((s) => (
                       <li key={s.key} className="min-w-0">
@@ -102,52 +102,56 @@ function Laptop() {
 
 function BrowserBar() {
   return (
-    <div className="flex h-10 items-center gap-2 border-b border-line bg-sidebar px-4">
+    <div className="flex h-10 items-center gap-2 bg-background px-4">
       <span className="h-3 w-3 rounded-full bg-[#ff5f57]" />
       <span className="h-3 w-3 rounded-full bg-[#febc2e]" />
       <span className="h-3 w-3 rounded-full bg-[#28c840]" />
-      <span className="mx-auto flex h-6 w-80 items-center justify-center rounded-md bg-background text-xs text-muted">
+      <span className="mx-auto flex h-6 w-80 items-center justify-center rounded-full bg-tint text-xs font-medium text-muted">
         report-saathi · Dashboard
       </span>
     </div>
   );
 }
 
-const NAV: [string, LucideIcon][] = [
-  ["Dashboard", LayoutDashboard],
-  ["Reports", FileText],
-  ["Timeline", Activity],
-  ["Doctor briefs", Stethoscope],
-  ["Family", Users],
-  ["Accuracy", BadgeCheck],
+const NAV: [string, IconComponent][] = [
+  ["Dashboard", IconDashboard],
+  ["Reports", IconReport],
+  ["Timeline", IconTimeline],
+  ["Doctor briefs", IconStethoscope],
+  ["Family", IconFamily],
+  ["Accuracy", IconBadge],
 ];
 
 function FakeSidebar() {
   return (
-    <div className="w-56 shrink-0 border-r border-line bg-sidebar px-2.5">
-      <div className="flex h-14 items-center px-1.5">
-        <Logo size="sm" />
+    <div className="my-3 ml-3 w-56 shrink-0 rounded-[26px] bg-sidebar px-2.5">
+      <div className="flex h-16 items-center px-3">
+        <Logo />
       </div>
-      <ul className="space-y-px">
+      <ul className="space-y-1">
         {NAV.map(([label, Icon], i) => (
           <li
             key={label}
-            className={`flex h-8 items-center gap-2.5 rounded-lg px-2 text-[13.5px] ${
-              i === 0
-                ? "bg-sidebar-active font-medium text-foreground shadow-[0_0_0_1px_var(--border)]"
-                : "text-muted"
+            className={`flex h-10 items-center gap-2.5 rounded-full pl-1.5 text-[14px] font-semibold ${
+              i === 0 ? "bg-sidebar-active text-brand-800 shadow-soft dark:text-brand-100" : "text-muted"
             }`}
           >
-            <Icon aria-hidden className={`h-4 w-4 ${i === 0 ? "text-brand-700 dark:text-brand-300" : ""}`} strokeWidth={1.85} />
+            <span
+              className={`grid h-7 w-7 place-items-center rounded-full ${
+                i === 0 ? "bg-tint-coral text-coral-700 [--duo:var(--duo-coral)] dark:text-coral-300" : "[--duo:var(--duo-plum)]"
+              }`}
+            >
+              <Icon aria-hidden className="h-[18px] w-[18px]" />
+            </span>
             {label}
           </li>
         ))}
       </ul>
-      <p className="mt-6 px-2 pb-1.5 text-xs font-medium text-muted">Sample family</p>
-      <div className="flex items-center gap-2.5 rounded-lg bg-sidebar-active px-2 py-1.5 shadow-[0_0_0_1px_var(--border)]">
-        <PersonAvatar name={MEERA.name} />
+      <p className="mt-6 px-3 pb-2 text-xs font-bold text-muted">Sample family</p>
+      <div className="flex items-center gap-2.5 rounded-full bg-sidebar-active py-1.5 pr-3 pl-1.5 shadow-soft">
+        <PersonAvatar name={MEERA.name} size="chip" ring />
         <span className="leading-tight">
-          <span className="block text-[13px] font-medium">{MEERA.name}</span>
+          <span className="block text-[13px] font-semibold">{MEERA.name}</span>
           <span className="block text-xs text-muted">Sample · {MEERA.report_count} reports</span>
         </span>
       </div>
@@ -155,12 +159,12 @@ function FakeSidebar() {
   );
 }
 
-const TABS: [string, LucideIcon][] = [
-  ["Home", House],
-  ["Reports", FileText],
-  ["Timeline", Activity],
-  ["Briefs", Stethoscope],
-  ["Family", Users],
+const TABS: [string, IconComponent][] = [
+  ["Home", IconHome],
+  ["Reports", IconReport],
+  ["Timeline", IconTimeline],
+  ["Briefs", IconStethoscope],
+  ["Family", IconFamily],
 ];
 
 function Phone() {
@@ -181,23 +185,20 @@ function PhoneScreen() {
   return (
     <div className="relative w-[375px] [zoom:0.86] sm:[zoom:1] lg:[zoom:0.613] xl:[zoom:0.65]">
       <div className="h-11" />
-      <div className="flex h-12 items-center justify-between border-b border-line px-4">
-        <span className="flex items-center gap-2">
-          <LogoMark className="h-6 w-6" />
-          <span className="text-[15px] font-semibold tracking-[-0.01em]">ReportSaathi</span>
-        </span>
-        <PersonAvatar name="Demo account" />
+      <div className="flex h-14 items-center justify-between px-4">
+        <Logo size="sm" />
+        <PersonAvatar name="Demo account" size="chip" />
       </div>
       <div className="h-[620px] space-y-4 overflow-hidden px-4 pt-4">
         <div className="flex gap-2">
-          <span className="flex h-10 items-center gap-2 rounded-full border border-brand-600 bg-surface py-1 pr-3.5 pl-1.5 text-[13px] ring-1 ring-brand-600 ring-inset dark:border-brand-400 dark:ring-brand-400">
-            <PersonAvatar name={MEERA.name} />
+          <span className="flex h-11 items-center gap-2 rounded-full bg-surface py-1 pr-4 pl-1 text-[13px] shadow-soft">
+            <PersonAvatar name={MEERA.name} size="chip" />
             <span className="font-medium">{MEERA.name}</span>
             <span className="text-muted">Sample</span>
           </span>
         </div>
         <div>
-          <p className="text-[22px] leading-tight font-semibold tracking-[-0.015em]">{MEERA.name}</p>
+          <p className="text-[24px] leading-tight font-extrabold tracking-[-0.025em]">{MEERA.name}</p>
           <p className="mt-0.5 text-[13px] text-muted">{facts.split(" · last")[0]}</p>
         </div>
         <AttentionPanel person={MEERA} attention={attention} rechecks={[]} loading={false} />
@@ -209,17 +210,21 @@ function PhoneScreen() {
           ))}
         </ul>
       </div>
-      <div className="absolute inset-x-0 bottom-0 border-t border-line bg-surface/95 pb-5">
-        <ul className="grid h-16 grid-cols-5">
+      <div className="absolute inset-x-3 bottom-5 rounded-full bg-surface shadow-lift">
+        <ul className="grid h-16 grid-cols-5 px-1">
           {TABS.map(([label, Icon], i) => (
             <li
               key={label}
-              className={`flex flex-col items-center justify-center gap-1 text-[11px] leading-none font-medium ${
-                i === 0 ? "text-brand-700 dark:text-brand-300" : "text-muted"
+              className={`flex flex-col items-center justify-center gap-1 text-[11px] leading-none font-bold ${
+                i === 0 ? "text-brand-800 dark:text-brand-100" : "text-muted"
               }`}
             >
-              <span className={`grid h-7 w-12 place-items-center rounded-full ${i === 0 ? "bg-brand-100 dark:bg-brand-900/70" : ""}`}>
-                <Icon aria-hidden className="h-[18px] w-[18px]" strokeWidth={i === 0 ? 2.1 : 1.8} />
+              <span
+                className={`grid h-7 w-11 place-items-center rounded-full ${
+                  i === 0 ? "bg-tint-coral text-coral-700 [--duo:var(--duo-coral)] dark:text-coral-300" : "[--duo:var(--duo-plum)]"
+                }`}
+              >
+                <Icon aria-hidden className="h-[18px] w-[18px]" />
               </span>
               {label}
             </li>

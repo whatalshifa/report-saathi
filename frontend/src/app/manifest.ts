@@ -16,8 +16,8 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: "/",
     display: "standalone",
     // --background in globals.css, so the splash screen matches the first page.
-    background_color: "#fbf7f2",
-    theme_color: "#fbf7f2",
+    background_color: "#fff7f3",
+    theme_color: "#fff7f3",
     lang: "en-IN",
     categories: ["health", "medical"],
     icons: [

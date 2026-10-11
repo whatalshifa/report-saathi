@@ -1,11 +1,11 @@
 "use client";
 
-import { Printer } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { FlagBadge } from "@/components/FlagBadge";
 import type { BriefContent } from "@/lib/api";
 import { formatAge, formatDate, formatNumber, formatRange, formatSex } from "@/lib/format";
+import { IconPrinter } from "@/components/icons";
 
 /**
  * The doctor brief as one printable page. Shared by the owner's brief page and the
@@ -146,7 +146,7 @@ export function BriefSheet({
 export function PrintButton() {
   return (
     <button onClick={() => window.print()} className="btn btn-primary">
-      <Printer aria-hidden className="h-4 w-4" />
+      <IconPrinter aria-hidden className="h-4 w-4" />
       Print or save as PDF
     </button>
   );

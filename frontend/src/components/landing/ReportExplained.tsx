@@ -1,6 +1,5 @@
 "use client";
 
-import { ArrowRight, MousePointerClick, ScanSearch } from "lucide-react";
 import Link from "next/link";
 import { Fragment, useEffect, useRef, useState } from "react";
 
@@ -11,6 +10,7 @@ import type { TestResult } from "@/lib/api";
 import { formatRange } from "@/lib/format";
 
 import { EXPLANATIONS, JANUARY, JANUARY_ID, LAB_ROWS, SCAN, type ExplainLanguage, type LabRow } from "./sample";
+import { IconArrowRight, IconScan, IconTap } from "@/components/icons";
 
 const LANGUAGES: { code: ExplainLanguage; label: string; note: string }[] = [
   { code: "en", label: "English", note: "Written by AI from the report. It is not medical advice." },
@@ -59,10 +59,10 @@ export function ReportExplained() {
                 type="button"
                 onClick={() => setPicked(row)}
                 aria-pressed={row === picked}
-                className={`flex h-9 items-center gap-1.5 rounded-full border px-3.5 text-[13px] whitespace-nowrap transition-colors ${
+                className={`flex h-10 items-center gap-1.5 rounded-full border-2 px-4 text-[13px] whitespace-nowrap transition-colors ${
                   row === picked
                     ? "border-brand-700 bg-brand-700 text-white dark:border-brand-300 dark:bg-brand-300 dark:text-brand-950"
-                    : "border-line bg-surface"
+                    : "border-transparent bg-surface shadow-soft"
                 }`}
               >
                 <span className="font-medium">{shortName(row.name)}</span>
@@ -203,17 +203,17 @@ export function ReportExplained() {
           <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-10 rounded-b-[6px] bg-gradient-to-t from-[#fffdf9] to-transparent lg:hidden dark:from-[#1c171d]" />
         </div>
         <p className="mt-3 hidden items-center gap-2 text-[13px] text-muted lg:flex">
-          <MousePointerClick aria-hidden className="h-4 w-4" />
+          <IconTap aria-hidden className="h-4 w-4" />
           Pick any value marked L or H.
         </p>
       </div>
 
       {/* ReportSaathi's side */}
       <div className="min-w-0 lg:sticky lg:top-24 lg:self-start">
-        <article className="card overflow-hidden shadow-[0_24px_48px_-28px_rgb(72_38_70/0.35)]">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-3 sm:px-6">
-            <p className="text-[13px] font-medium text-muted">What does this mean?</p>
-            <div role="group" aria-label="Language" className="flex rounded-ctl bg-stone-100 p-0.5 dark:bg-stone-800">
+        <article className="card overflow-hidden rounded-[32px] shadow-lift">
+          <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-4 sm:px-6">
+            <p className="text-sm font-bold text-coral-700 dark:text-coral-300">What does this mean?</p>
+            <div role="group" aria-label="Language" className="flex rounded-full bg-tint p-1">
               {LANGUAGES.map((l) => (
                 <button
                   key={l.code}
@@ -221,9 +221,9 @@ export function ReportExplained() {
                   lang={l.code}
                   aria-pressed={language === l.code}
                   onClick={() => setLanguage(l.code)}
-                  className={`h-8 rounded-lg px-3 text-sm transition-colors ${
+                  className={`h-9 rounded-full px-3.5 text-sm font-semibold transition-colors ${
                     language === l.code
-                      ? "bg-surface font-medium text-foreground shadow-[0_1px_2px_rgb(42_29_40/0.12)] dark:bg-stone-950"
+                      ? "bg-surface text-foreground shadow-soft dark:bg-brand-800"
                       : "text-muted hover:text-foreground"
                   }`}
                 >
@@ -234,9 +234,9 @@ export function ReportExplained() {
           </div>
 
           <div className="px-5 pt-5 pb-6 sm:px-6" lang={language}>
-            <h3 className="text-xl leading-snug tracking-[-0.015em]">{item.test_name}</h3>
+            <h3 className="text-[22px] leading-snug font-extrabold tracking-[-0.02em]">{item.test_name}</h3>
             <div className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1" lang="en">
-              <p className="text-[32px] leading-none font-semibold tracking-[-0.02em] tabular-nums">
+              <p className="text-[40px] leading-none font-black tracking-[-0.03em] tabular-nums">
                 {picked.value_text}
                 <span className="ml-1.5 text-base font-normal tracking-normal text-muted">{picked.unit}</span>
               </p>
@@ -269,7 +269,7 @@ export function ReportExplained() {
                 ))}
               </ul>
             )}
-            <p className="mt-4 rounded-r-md border-l-2 border-brand-600 bg-brand-50/70 px-3 py-2 text-[15px] text-brand-950 dark:border-brand-500 dark:bg-brand-950/40 dark:text-brand-50">
+            <p className="mt-4 rounded-[20px] bg-tint px-4 py-3 text-[15px] font-medium text-brand-950 dark:text-brand-50">
               {item.what_you_can_do}
             </p>
             <p className="mt-3 text-xs text-muted">{note}</p>
@@ -292,16 +292,16 @@ function SourceLoupe({ row }: { row: LabRow }) {
   const viewW = 0.89 * W;
   const pad = 6;
   return (
-    <div className="border-t border-line bg-sidebar/60 px-5 py-4 sm:px-6">
-      <p className="flex items-center gap-2 text-[13px] font-medium">
-        <ScanSearch aria-hidden className="h-4 w-4 text-brand-700 dark:text-brand-300" />
+    <div className="m-2 rounded-[24px] bg-tint px-4 py-4 sm:px-5">
+      <p className="flex items-center gap-2 text-[13.5px] font-bold">
+        <IconScan aria-hidden className="h-4 w-4 text-brand-700 dark:text-brand-300" />
         Read from the original report
       </p>
       <svg
         viewBox={`${left} ${cy - viewH / 2} ${viewW} ${viewH}`}
         role="img"
         aria-label={`The line on the scanned report where ${row.name} reads ${row.value_text} ${row.unit}, outlined.`}
-        className="mt-2.5 block w-full overflow-hidden rounded-md bg-white ring-1 ring-line"
+        className="mt-2.5 block w-full overflow-hidden rounded-2xl bg-white"
       >
         <image href={SCAN.src} width={W} height={H} />
         <rect
@@ -325,18 +325,18 @@ function SourceLoupe({ row }: { row: LabRow }) {
 
 function OpenReport() {
   const { mode } = useShell();
-  const className = "dash-link mt-4 text-sm";
+  const className = "dash-link mt-4 text-[15px]";
   if (mode === "live")
     return (
       <Link href="/dashboard" className={className}>
         Open your dashboard
-        <ArrowRight aria-hidden className="h-3.5 w-3.5" />
+        <IconArrowRight aria-hidden className="h-3.5 w-3.5" />
       </Link>
     );
   return (
     <AppLink href={`/reports/${JANUARY_ID}`} className={className}>
       Open this report in the demo
-      <ArrowRight aria-hidden className="h-3.5 w-3.5" />
+      <IconArrowRight aria-hidden className="h-3.5 w-3.5" />
     </AppLink>
   );
 }

@@ -12,6 +12,7 @@ import { getFeatures, listProfiles, type Profile } from "@/lib/api";
 import { formatFileSize, possessive, RELATION_LABEL } from "@/lib/format";
 import { clearSharedFile, readSharedFile, type SharedFile } from "@/lib/sharedFile";
 import { usePoll } from "@/lib/usePoll";
+import { IconReport } from "@/components/icons";
 
 const noRepeat = () => false;
 
@@ -89,12 +90,9 @@ export function ShareView({ error: shareError }: { error?: string }) {
           <section aria-label="Shared file" className="card flex items-center gap-4 p-5">
             <span
               aria-hidden
-              className="grid h-11 w-11 shrink-0 place-items-center rounded-ctl bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300"
+              className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300"
             >
-              <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.6}>
-                <path strokeLinejoin="round" d="M7 3h7l5 5v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" />
-                <path strokeLinejoin="round" d="M14 3v5h5" />
-              </svg>
+              <IconReport className="h-6 w-6" />
             </span>
             <div className="min-w-0">
               <p className="font-semibold break-words">{shared.file.name}</p>

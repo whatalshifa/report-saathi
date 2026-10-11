@@ -1,6 +1,5 @@
 "use client";
 
-import { ArrowDown, ArrowUp, CalendarClock, FileText, Minus } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
@@ -25,6 +24,7 @@ import {
 import { formatAge, formatDate, formatNumber, formatRange, formatSex, possessive } from "@/lib/format";
 import { direction, type Direction } from "@/lib/trends";
 import { usePoll } from "@/lib/usePoll";
+import { IconArrowDown, IconArrowUp, IconMinus, IconRecheck, IconReport } from "@/components/icons";
 
 export function TimelineView({ profileId }: { profileId: string }) {
   const router = useRouter();
@@ -71,7 +71,7 @@ export function TimelineView({ profileId }: { profileId: string }) {
         }
         actions={
           <button onClick={startBrief} disabled={starting} className="btn btn-primary">
-            <FileText aria-hidden className="h-4 w-4" />
+            <IconReport aria-hidden className="h-4 w-4" />
             {starting ? "Starting…" : "Prepare doctor brief"}
           </button>
         }
@@ -158,17 +158,17 @@ function TrendCard({ series }: { series: TrendSeries }) {
           <span className="inline-flex items-center gap-1 text-[13px] text-muted">
             {series.change > 0 ? (
               <>
-                <ArrowUp aria-hidden className="h-3.5 w-3.5" />
+                <IconArrowUp aria-hidden className="h-3.5 w-3.5" />
                 <span className="sr-only">Up</span>
               </>
             ) : series.change < 0 ? (
               <>
-                <ArrowDown aria-hidden className="h-3.5 w-3.5" />
+                <IconArrowDown aria-hidden className="h-3.5 w-3.5" />
                 <span className="sr-only">Down</span>
               </>
             ) : (
               <>
-                <Minus aria-hidden className="h-3.5 w-3.5" />
+                <IconMinus aria-hidden className="h-3.5 w-3.5" />
                 <span className="sr-only">No change</span>
               </>
             )}
@@ -236,7 +236,7 @@ function RecheckCard({ person, due }: { person: TimelineSummary; due: RecheckDue
       aria-labelledby="recheck-heading"
       className="flex gap-3 rounded-card border border-amber-200 bg-amber-50/70 p-5 dark:border-amber-900 dark:bg-amber-950/30"
     >
-      <CalendarClock aria-hidden className="mt-0.5 h-5 w-5 shrink-0 text-amber-800 dark:text-amber-300" />
+      <IconRecheck aria-hidden className="mt-0.5 h-5 w-5 shrink-0 text-amber-800 dark:text-amber-300" />
       <div className="min-w-0">
       <h2 id="recheck-heading" className="section-title text-amber-950 dark:text-amber-100">
         Due for a recheck

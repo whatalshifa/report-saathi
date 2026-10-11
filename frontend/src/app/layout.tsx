@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Noto_Sans_Devanagari } from "next/font/google";
+import { Figtree, Noto_Sans_Devanagari } from "next/font/google";
 import { cookies } from "next/headers";
 
 import { ServerWaking } from "@/components/ServerWaking";
@@ -8,13 +8,13 @@ import { AppShell } from "@/components/shell/AppShell";
 import { THEME_SCRIPT } from "@/components/ThemeToggle";
 import "./globals.css";
 
-// One calm sans for everything. Inter has no Devanagari, so Hindi and Marathi fall through to
-// Noto Sans Devanagari, which is drawn to the same proportions.
-const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
+// Figtree, a warm and rounded sans, for everything. It has no Devanagari, so Hindi and Marathi fall
+// through to Noto Sans Devanagari.
+const figtree = Figtree({ variable: "--font-figtree", subsets: ["latin"] });
 const devanagari = Noto_Sans_Devanagari({
   variable: "--font-devanagari",
   subsets: ["devanagari"],
-  weight: ["400", "500", "600"],
+  weight: ["400", "500", "600", "700"],
 });
 
 const DESCRIPTION =
@@ -37,22 +37,22 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#fbf7f2" },
-    { media: "(prefers-color-scheme: dark)", color: "#141015" },
+    { media: "(prefers-color-scheme: light)", color: "#fff7f3" },
+    { media: "(prefers-color-scheme: dark)", color: "#1a1118" },
   ],
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const signedIn = (await cookies()).has("rs_session");
   return (
-    <html lang="en" className={`${inter.variable} ${devanagari.variable} h-full antialiased`} suppressHydrationWarning>
+    <html lang="en" className={`${figtree.variable} ${devanagari.variable} h-full antialiased`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
       <body className="flex min-h-full flex-col">
         <a
           href="#main"
-          className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-lg focus:bg-surface focus:px-3 focus:py-2"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-full focus:bg-surface focus:px-4 focus:py-2 focus:font-semibold focus:shadow-soft"
         >
           Skip to content
         </a>

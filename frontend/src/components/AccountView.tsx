@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Download } from "lucide-react";
 import Link from "next/link";
 
 import { PageHeader } from "@/components/PageHeader";
 import { ErrorNote } from "@/components/Skeleton";
 import { deleteAccount, downloadExport, getFeatures, getMe, logout, type User } from "@/lib/api";
 import { clearSharedFile } from "@/lib/sharedFile";
+import { IconDownload } from "@/components/icons";
 
 type Download =
   | { state: "idle" }
@@ -56,7 +56,7 @@ function YourData() {
         Something read wrongly? Tap the pencil beside the value on the report to fix it.
       </p>
       <button type="button" onClick={start} disabled={working} className="btn btn-secondary mt-4">
-        <Download aria-hidden className="h-4 w-4" />
+        <IconDownload aria-hidden className="h-4 w-4" />
         {working ? "Preparing…" : "Download all my data"}
       </button>
       <div aria-live="polite" className="mt-3 text-sm">

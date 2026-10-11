@@ -205,7 +205,7 @@ export function TrendChart({ series }: { series: TrendSeries }) {
       )}
       {shown && active !== null && (
         <div
-          className="pointer-events-none absolute top-0 z-10 w-48 rounded-lg border border-line bg-surface p-3 text-sm shadow-lg"
+          className="pointer-events-none absolute top-0 z-10 w-48 rounded-2xl bg-surface p-3.5 text-sm shadow-lift"
           style={{ left: Math.min(Math.max(x(times[active]) - 96, 0), Math.max(width - 192, 0)) }}
         >
           <div className="flex items-center justify-between gap-2">

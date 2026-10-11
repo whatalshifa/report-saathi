@@ -1,6 +1,5 @@
 "use client";
 
-import { ChevronRight, FileText } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -8,6 +7,7 @@ import { ErrorNote, SkeletonList } from "@/components/Skeleton";
 import { StatusPanel } from "@/components/StatusPanel";
 import { listReports, type ReportSummary } from "@/lib/api";
 import { formatDate } from "@/lib/format";
+import { IconChevronRight, IconReport } from "@/components/icons";
 
 // A read report needs no label (it is the usual case); only the others say where they are.
 const STATUS: Record<ReportSummary["status"], { label: string; className: string } | null> = {
@@ -45,13 +45,13 @@ export function ReportList({ profileId }: { profileId: string }) {
           <li key={report.id}>
             <Link
               href={`/reports/${report.id}`}
-              className="group flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-stone-50 focus-visible:-outline-offset-2 sm:px-5 dark:hover:bg-stone-800/50"
+              className="group flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-tint focus-visible:-outline-offset-2 sm:px-5"
             >
               <span
                 aria-hidden
                 className="grid h-9 w-9 shrink-0 place-items-center rounded-ctl bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-300"
               >
-                <FileText className="h-[18px] w-[18px]" strokeWidth={1.75} />
+                <IconReport className="h-[18px] w-[18px]" strokeWidth={1.75} />
               </span>
               <div className="min-w-0 flex-1">
                 <p className="line-clamp-2 text-[15px] font-medium break-words">{report.lab_name ?? report.filename}</p>
@@ -68,7 +68,7 @@ export function ReportList({ profileId }: { profileId: string }) {
                 </p>
               </div>
               {status && <span className={`badge shrink-0 ${status.className}`}>{status.label}</span>}
-              <ChevronRight
+              <IconChevronRight
                 aria-hidden
                 className="h-4 w-4 shrink-0 text-stone-400 transition-transform group-hover:translate-x-0.5 dark:text-stone-500"
               />

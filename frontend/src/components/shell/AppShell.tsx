@@ -1,26 +1,15 @@
 "use client";
 
-import {
-  Activity,
-  BadgeCheck,
-  FileText,
-  House,
-  Info,
-  LayoutDashboard,
-  Plus,
-  Stethoscope,
-  Users,
-  type LucideIcon,
-} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
-import { Logo, LogoMark } from "@/components/Logo";
+import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { PersonAvatar } from "@/components/shell/PersonAvatar";
 import { AppLink, ShellProvider, useShell } from "@/components/shell/ShellContext";
 import { RELATION_LABEL } from "@/lib/format";
+import { IconBadge, IconDashboard, IconFamily, IconHome, IconInfo, IconPlus, IconReport, IconStethoscope, IconTimeline, type IconComponent } from "@/components/icons";
 
 const BARE_PAGES = ["/login", "/signup"];
 
@@ -38,8 +27,8 @@ export function AppShell({ signedIn, children }: { signedIn: boolean; children: 
   if (pathname === "/shared") {
     return (
       <>
-        <header className="border-b border-line bg-background print:hidden">
-          <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-4 px-4 sm:px-6">
+        <header className="print:hidden">
+          <div className="mx-auto flex h-16 max-w-5xl items-center justify-between gap-4 px-4 sm:px-6">
             <Logo />
             <ThemeToggle />
           </div>
@@ -56,7 +45,7 @@ export function AppShell({ signedIn, children }: { signedIn: boolean; children: 
       <>
         <header className="print:hidden">
           <div className="mx-auto flex h-16 max-w-5xl items-center justify-between gap-4 px-4 sm:px-6">
-            <Link href="/" aria-label="ReportSaathi home" className="rounded-ctl">
+            <Link href="/" aria-label="ReportSaathi home" className="rounded-full p-1">
               <Logo />
             </Link>
             <ThemeToggle />
@@ -72,17 +61,17 @@ export function AppShell({ signedIn, children }: { signedIn: boolean; children: 
   return (
     <ShellProvider signedIn={signedIn}>
       <Sidebar />
-      <div className="flex min-h-screen min-w-0 flex-1 flex-col lg:pl-60 print:pl-0">
+      <div className="flex min-h-screen min-w-0 flex-1 flex-col lg:pl-[272px] print:pl-0">
         <Notice />
         <PhoneBar />
         <main id="main" className="mx-auto w-full max-w-[1100px] flex-1 px-4 pt-5 pb-10 sm:px-6 lg:px-10 lg:pt-8 print:p-0">
           {children}
         </main>
-        <footer className="border-t border-line print:hidden">
-          <div className="mx-auto flex max-w-[1100px] flex-col gap-3 px-4 py-5 text-[13px] text-muted sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-10">
+        <footer className="px-3 pb-3 print:hidden">
+          <div className="mx-auto flex max-w-[1100px] flex-col gap-3 rounded-card bg-tint px-5 py-4 text-[13px] text-muted sm:px-6 lg:flex-row lg:items-center lg:justify-between">
             <p>ReportSaathi explains lab reports. It is not medical advice; always check with your doctor.</p>
             <nav aria-label="About ReportSaathi">
-              <ul className="flex flex-wrap gap-x-5 gap-y-1">
+              <ul className="flex flex-wrap gap-x-5 gap-y-1 font-semibold">
                 <li>
                   <Link href="/" className="hover:text-foreground">
                     About ReportSaathi
@@ -114,7 +103,7 @@ export function AppShell({ signedIn, children }: { signedIn: boolean; children: 
   );
 }
 
-type NavItem = { label: string; short: string; href: string; active: boolean; Icon: LucideIcon };
+type NavItem = { label: string; short: string; href: string; active: boolean; Icon: IconComponent };
 
 function useNav(): NavItem[] {
   const pathname = usePathname();
@@ -126,24 +115,24 @@ function useNav(): NavItem[] {
       short: "Home",
       href: id && mode === "live" ? `/dashboard?profile=${id}` : "/dashboard",
       active: pathname === "/dashboard",
-      Icon: LayoutDashboard,
+      Icon: IconDashboard,
     },
-    { label: "Reports", short: "Reports", href: "/reports", active: pathname.startsWith("/reports"), Icon: FileText },
+    { label: "Reports", short: "Reports", href: "/reports", active: pathname.startsWith("/reports"), Icon: IconReport },
     {
       label: "Timeline",
       short: "Timeline",
       href: id ? `/profiles/${id}` : "/family",
       active: pathname.startsWith("/profiles"),
-      Icon: Activity,
+      Icon: IconTimeline,
     },
     {
       label: "Doctor briefs",
       short: "Briefs",
       href: "/briefs",
       active: pathname.startsWith("/briefs"),
-      Icon: Stethoscope,
+      Icon: IconStethoscope,
     },
-    { label: "Family", short: "Family", href: "/family", active: pathname === "/family", Icon: Users },
+    { label: "Family", short: "Family", href: "/family", active: pathname === "/family", Icon: IconFamily },
   ];
 }
 
@@ -155,16 +144,17 @@ function Sidebar() {
   return (
     <aside
       aria-label="App"
-      className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-line bg-sidebar lg:flex print:hidden"
+      className="fixed top-3 bottom-3 left-3 z-30 hidden w-[248px] flex-col rounded-[28px] bg-sidebar lg:flex print:hidden"
     >
-      <div className="flex h-14 shrink-0 items-center px-4">
-        <Link href="/dashboard" aria-label="ReportSaathi dashboard" className="rounded-ctl">
-          <Logo size="sm" />
+      <div className="flex h-[68px] shrink-0 items-center justify-between pr-3 pl-5">
+        <Link href="/dashboard" aria-label="ReportSaathi dashboard" className="rounded-full">
+          <Logo />
         </Link>
+        <ThemeToggle />
       </div>
 
-      <nav aria-label="Main" className="px-2.5 pt-1">
-        <ul className="space-y-px">
+      <nav aria-label="Main" className="px-3">
+        <ul className="space-y-1">
           {nav.map((item) => (
             <li key={item.label}>
               <SideLink {...item} />
@@ -176,33 +166,33 @@ function Sidebar() {
               short="Accuracy"
               href="/accuracy"
               active={pathname === "/accuracy"}
-              Icon={BadgeCheck}
+              Icon={IconBadge}
             />
           </li>
         </ul>
       </nav>
 
-      <section aria-labelledby="people-heading" className="mt-6 min-h-0 flex-1 overflow-y-auto px-2.5">
-        <div className="flex items-center justify-between px-2 pb-1.5">
-          <h2 id="people-heading" className="text-xs font-medium text-muted">
+      <section aria-labelledby="people-heading" className="mt-6 min-h-0 flex-1 overflow-y-auto px-3">
+        <div className="flex items-center justify-between pr-1 pb-2 pl-3">
+          <h2 id="people-heading" className="text-[13px] font-bold tracking-normal text-muted">
             {mode === "sample" ? "Sample family" : "Family"}
           </h2>
           <AppLink
             href="/family"
             aria-label="Add family member"
             title="Add family member"
-            className="grid h-6 w-6 place-items-center rounded-md text-muted hover:bg-sidebar-hover hover:text-foreground"
+            className="grid h-8 w-8 place-items-center rounded-full text-brand-700 [--duo:var(--duo-coral)] hover:bg-sidebar-hover dark:text-brand-300"
           >
-            <Plus aria-hidden className="h-3.5 w-3.5" />
+            <IconPlus aria-hidden className="h-[18px] w-[18px]" />
           </AppLink>
         </div>
         {profiles === null ? (
-          <div className="space-y-2 px-2 pt-1" aria-hidden>
-            <div className="skeleton h-8" />
-            <div className="skeleton h-8" />
+          <div className="space-y-2 px-1 pt-1" aria-hidden>
+            <div className="skeleton h-11 rounded-full" />
+            <div className="skeleton h-11 rounded-full" />
           </div>
         ) : (
-          <ul className="space-y-px">
+          <ul className="space-y-1">
             {profiles.map((p) => {
               const selected = p.id === person?.id;
               return (
@@ -210,13 +200,13 @@ function Sidebar() {
                   <AppLink
                     href={`/dashboard?profile=${p.id}`}
                     aria-current={selected && pathname === "/dashboard" ? "page" : undefined}
-                    className={`flex items-center gap-2.5 rounded-lg px-2 py-1.5 transition-colors ${
-                      selected ? "bg-sidebar-active shadow-[0_0_0_1px_var(--border)]" : "hover:bg-sidebar-hover"
+                    className={`flex items-center gap-2.5 rounded-full py-1.5 pr-3 pl-1.5 transition ${
+                      selected ? "bg-sidebar-active shadow-soft" : "hover:bg-sidebar-hover"
                     }`}
                   >
-                    <PersonAvatar name={p.name} />
+                    <PersonAvatar name={p.name} size="chip" ring={selected} />
                     <span className="min-w-0 flex-1 leading-tight">
-                      <span className="block truncate text-[13px] font-medium">{p.name}</span>
+                      <span className="block truncate text-sm font-semibold">{p.name}</span>
                       <span className="block truncate text-xs text-muted">
                         {p.is_sample ? "Sample" : RELATION_LABEL[p.relation]}
                         {p.report_count > 0 && ` · ${p.report_count} report${p.report_count === 1 ? "" : "s"}`}
@@ -230,37 +220,34 @@ function Sidebar() {
         )}
       </section>
 
-      <div className="shrink-0 space-y-2 border-t border-line p-2.5">
-        <SideLink label="About ReportSaathi" short="About" href="/" active={false} Icon={Info} />
-        <div className="flex items-center gap-1">
+      <div className="shrink-0 space-y-2 p-3">
+        <SideLink label="About ReportSaathi" short="About" href="/" active={false} Icon={IconInfo} />
+        <div className="flex items-center gap-2 rounded-[22px] bg-sidebar-hover/70 p-1.5 empty:hidden">
           {mode === "live" && user ? (
             <Link
               href="/account"
               aria-label="Your account"
               aria-current={pathname === "/account" ? "page" : undefined}
-              className={`flex min-w-0 flex-1 items-center gap-2.5 rounded-lg px-2 py-1.5 transition-colors ${
-                pathname === "/account" ? "bg-sidebar-active" : "hover:bg-sidebar-hover"
+              className={`flex min-w-0 flex-1 items-center gap-2 rounded-full py-1 pr-2 pl-1 transition-colors ${
+                pathname === "/account" ? "bg-sidebar-active" : "hover:bg-sidebar-active/70"
               }`}
             >
-              <PersonAvatar name={user.name} size="sm" />
+              <PersonAvatar name={user.name} size="md" />
               <span className="min-w-0 leading-tight">
-                <span className="block truncate text-[13px] font-medium">{user.is_guest ? "Demo account" : user.name}</span>
+                <span className="block truncate text-[13px] font-semibold">{user.is_guest ? "Demo account" : user.name}</span>
                 <span className="block truncate text-xs text-muted">Account and data</span>
               </span>
             </Link>
           ) : mode === "sample" ? (
-            <div className="flex flex-1 gap-1.5">
-              <Link href="/signup" className="btn btn-primary btn-sm flex-1">
+            <div className="flex flex-1 gap-1">
+              <Link href="/signup" className="btn btn-primary btn-sm flex-1 px-3">
                 Sign up free
               </Link>
-              <Link href="/login" className="btn btn-ghost btn-sm">
+              <Link href="/login" className="btn btn-ghost btn-sm px-3">
                 Sign in
               </Link>
             </div>
-          ) : (
-            <div className="flex-1" />
-          )}
-          <ThemeToggle />
+          ) : null}
         </div>
       </div>
     </aside>
@@ -272,17 +259,21 @@ function SideLink({ label, href, active, Icon }: NavItem) {
     <AppLink
       href={href}
       aria-current={active ? "page" : undefined}
-      className={`flex h-8 items-center gap-2.5 rounded-lg px-2 text-[13.5px] transition-colors ${
+      className={`flex h-11 items-center gap-3 rounded-full pr-3 pl-1.5 text-[15px] font-semibold transition ${
         active
-          ? "bg-sidebar-active font-medium text-foreground shadow-[0_0_0_1px_var(--border)]"
+          ? "bg-sidebar-active text-brand-800 shadow-soft dark:text-brand-100"
           : "text-muted hover:bg-sidebar-hover hover:text-foreground"
       }`}
     >
-      <Icon
-        aria-hidden
-        className={`h-4 w-4 shrink-0 ${active ? "text-brand-700 dark:text-brand-300" : ""}`}
-        strokeWidth={1.85}
-      />
+      <span
+        className={`grid h-8 w-8 shrink-0 place-items-center rounded-full ${
+          active
+            ? "bg-tint-coral text-coral-700 [--duo:var(--duo-coral)] dark:text-coral-300"
+            : "[--duo:var(--duo-plum)]"
+        }`}
+      >
+        <Icon aria-hidden className="h-[19px] w-[19px]" />
+      </span>
       {label}
     </AppLink>
   );
@@ -291,10 +282,12 @@ function SideLink({ label, href, active, Icon }: NavItem) {
 function Notice() {
   const { mode, user } = useShell();
   const linkClass =
-    "font-medium text-brand-800 underline underline-offset-2 hover:text-brand-950 dark:text-brand-200 dark:hover:text-white";
+    "font-bold text-coral-800 underline decoration-2 underline-offset-2 hover:text-brand-950 dark:text-coral-200 dark:hover:text-white";
+  const boxClass =
+    "mx-3 mt-3 rounded-2xl bg-tint-coral px-4 py-2.5 text-[13.5px] leading-5 font-medium text-coral-800 sm:mx-6 sm:rounded-full sm:px-5 lg:mx-10 lg:mt-4 dark:text-coral-200 print:hidden";
   if (mode === "sample") {
     return (
-      <p className="border-b border-brand-100 bg-brand-50 px-4 py-2 text-[13px] leading-5 text-brand-900 sm:px-6 lg:px-10 dark:border-brand-900/60 dark:bg-brand-950/50 dark:text-brand-100 print:hidden">
+      <p className={boxClass}>
         You&apos;re exploring a sample family.{" "}
         <Link href="/signup" className={linkClass}>
           Sign up free
@@ -305,7 +298,7 @@ function Notice() {
   }
   if (mode === "live" && user?.is_guest) {
     return (
-      <p className="border-b border-brand-100 bg-brand-50 px-4 py-2 text-[13px] leading-5 text-brand-900 sm:px-6 lg:px-10 dark:border-brand-900/60 dark:bg-brand-950/50 dark:text-brand-100 print:hidden">
+      <p className={boxClass}>
         You&apos;re exploring a demo account.
         <span className="hidden sm:inline"> It&apos;s deleted after 24 hours.</span>{" "}
         <Link href="/signup" className={linkClass}>
@@ -318,30 +311,29 @@ function Notice() {
   return null;
 }
 
-/** Phones: a slim bar with the logo, the theme switch and the account. The tab bar does the moving around. */
+/** Phones: a slim bar with the wordmark, the theme switch and the account. The tab bar does the moving around. */
 function PhoneBar() {
   const pathname = usePathname();
   const { mode, user } = useShell();
   return (
-    <header className="sticky top-0 z-30 border-b border-line bg-background/90 backdrop-blur-md lg:hidden print:hidden">
-      <div className="flex h-12 items-center justify-between gap-3 px-4 sm:px-6">
-        <Link href="/dashboard" aria-label="ReportSaathi dashboard" className="flex items-center gap-2 rounded-ctl">
-          <LogoMark className="h-6 w-6" />
-          <span className="text-[15px] font-semibold tracking-[-0.01em]">ReportSaathi</span>
+    <header className="sticky top-0 z-30 bg-background/85 backdrop-blur-md lg:hidden print:hidden">
+      <div className="flex h-14 items-center justify-between gap-3 px-4 sm:px-6">
+        <Link href="/dashboard" aria-label="ReportSaathi dashboard" className="rounded-full">
+          <Logo size="sm" />
         </Link>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
           <ThemeToggle />
           {mode === "live" && user ? (
             <Link
               href="/account"
               aria-label="Your account"
               aria-current={pathname === "/account" ? "page" : undefined}
-              className="grid h-9 w-9 place-items-center rounded-full"
+              className="grid h-10 w-10 place-items-center rounded-full"
             >
-              <PersonAvatar name={user.name} />
+              <PersonAvatar name={user.name} size="chip" />
             </Link>
           ) : mode === "sample" ? (
-            <Link href="/login" className="btn btn-ghost btn-sm">
+            <Link href="/login" className="btn btn-secondary btn-sm">
               Sign in
             </Link>
           ) : null}
@@ -351,19 +343,19 @@ function PhoneBar() {
   );
 }
 
-const TAB_ICONS: Record<string, LucideIcon> = { Home: House };
+const TAB_ICONS: Record<string, IconComponent> = { Home: IconHome };
 
-/** Phones move around the app from a tab bar at the bottom, where a thumb reaches, like an installed app. */
+/** Phones move around the app from a floating tab bar at the bottom, where a thumb reaches. */
 function PhoneTabs() {
   const nav = useNav();
   return (
     <>
-      <div aria-hidden className="h-16 lg:hidden print:hidden" />
+      <div aria-hidden className="h-24 lg:hidden print:hidden" />
       <nav
         aria-label="Sections"
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden print:hidden"
+        className="fixed inset-x-3 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-40 rounded-full bg-surface/95 shadow-lift backdrop-blur-md lg:hidden print:hidden"
       >
-        <ul className="mx-auto grid h-16 max-w-lg grid-cols-5">
+        <ul className="mx-auto grid h-[68px] max-w-lg grid-cols-5 px-1.5">
           {nav.map(({ short, href, active, Icon }) => {
             const TabIcon = TAB_ICONS[short] ?? Icon;
             return (
@@ -371,16 +363,18 @@ function PhoneTabs() {
                 <AppLink
                   href={href}
                   aria-current={active ? "page" : undefined}
-                  className={`flex h-full flex-col items-center justify-center gap-1 text-[11px] leading-none font-medium transition-colors ${
-                    active ? "text-brand-700 dark:text-brand-300" : "text-muted hover:text-foreground"
+                  className={`flex h-full flex-col items-center justify-center gap-1 rounded-full text-[11.5px] leading-none font-bold transition-colors ${
+                    active ? "text-brand-800 dark:text-brand-100" : "text-muted hover:text-foreground"
                   }`}
                 >
                   <span
-                    className={`grid h-7 w-12 place-items-center rounded-full transition-colors ${
-                      active ? "bg-brand-100 dark:bg-brand-900/70" : ""
+                    className={`grid h-8 w-12 place-items-center rounded-full transition-colors ${
+                      active
+                        ? "bg-tint-coral text-coral-700 [--duo:var(--duo-coral)] dark:text-coral-300"
+                        : "[--duo:var(--duo-plum)]"
                     }`}
                   >
-                    <TabIcon aria-hidden className="h-[18px] w-[18px]" strokeWidth={active ? 2.1 : 1.8} />
+                    <TabIcon aria-hidden className="h-5 w-5" />
                   </span>
                   {short}
                 </AppLink>
@@ -399,7 +393,7 @@ export function OpeningToast() {
   return (
     <div
       role={openError ? "alert" : "status"}
-      className="fixed inset-x-0 bottom-20 z-50 mx-auto flex w-fit max-w-[calc(100%-2rem)] items-center gap-3 rounded-ctl border border-line bg-surface px-4 py-2.5 text-sm shadow-lg lg:bottom-6 print:hidden"
+      className="fixed inset-x-0 bottom-24 z-50 mx-auto flex w-fit max-w-[calc(100%-2rem)] items-center gap-3 rounded-full bg-surface px-5 py-3 text-sm font-medium shadow-lift lg:bottom-6 print:hidden"
     >
       {openError ? (
         <span className="text-rose-700 dark:text-rose-300">{openError}</span>
@@ -407,7 +401,7 @@ export function OpeningToast() {
         <>
           <span
             aria-hidden
-            className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-brand-600 border-r-transparent"
+            className="h-4 w-4 shrink-0 animate-spin rounded-full border-[3px] border-coral-500 border-r-transparent"
           />
           Opening the sample family in a private demo account…
         </>

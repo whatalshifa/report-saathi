@@ -1,6 +1,5 @@
 "use client";
 
-import { ArrowRight, ExternalLink, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -31,6 +30,7 @@ import {
 } from "@/lib/api";
 import { formatAge, formatDate, formatRange, formatSex, possessive, serverTime } from "@/lib/format";
 import { usePdfViewer } from "@/lib/usePdfViewer";
+import { IconArrowRight, IconExternal, IconTrash } from "@/components/icons";
 
 const POLL_MS = 2000;
 
@@ -154,7 +154,7 @@ export function ReportView({ id }: { id: string }) {
             <p className="mt-2 text-sm">
               <Link href={`/profiles/${report.profile.id}`} className="link inline-flex items-center gap-1">
                 See {possessive(report.profile.name)} results over time
-                <ArrowRight aria-hidden className="h-4 w-4" />
+                <IconArrowRight aria-hidden className="h-4 w-4" />
               </Link>
             </p>
           </>
@@ -169,12 +169,12 @@ export function ReportView({ id }: { id: string }) {
                 className="btn btn-secondary btn-sm"
                 title={downloadsPdf ? "This phone saves the PDF to its downloads to open it" : undefined}
               >
-                <ExternalLink aria-hidden className="h-3.5 w-3.5" />
+                <IconExternal aria-hidden className="h-3.5 w-3.5" />
                 {downloadsPdf ? "Download original" : "View original"}
               </a>
             )}
             <MoreMenu label="More actions for this report">
-              <MoreMenuItem danger onSelect={handleDelete} icon={<Trash2 aria-hidden className="h-4 w-4" />}>
+              <MoreMenuItem danger onSelect={handleDelete} icon={<IconTrash aria-hidden className="h-4 w-4" />}>
                 Delete
               </MoreMenuItem>
             </MoreMenu>
@@ -198,7 +198,7 @@ export function ReportView({ id }: { id: string }) {
           {/* One list on phones; two columns of cards from tablets up. */}
           <ul className="card divide-y divide-line overflow-hidden sm:grid sm:grid-cols-2 sm:gap-3 sm:divide-y-0 sm:overflow-visible sm:rounded-none sm:border-0 sm:bg-transparent">
             {flagged.map((r) => (
-              <li key={r.id} className="p-4 sm:rounded-card sm:border sm:border-line sm:bg-surface">
+              <li key={r.id} className="p-4 sm:rounded-card sm:bg-surface sm:shadow-soft">
                 <div className="flex items-start justify-between gap-2">
                   <p className="text-[15px] font-medium">{r.name}</p>
                   <FlagBadge flag={r.flag} />

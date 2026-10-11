@@ -1,4 +1,3 @@
-import { ArrowRight, Plus } from "lucide-react";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import Image from "next/image";
@@ -15,6 +14,7 @@ import { Logo } from "@/components/Logo";
 import { AppLink } from "@/components/shell/ShellContext";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { formatDate } from "@/lib/format";
+import { IconArrowRight, IconLock, IconPlus, IconReport, IconSpeaker, IconStethoscope, IconTimeline } from "@/components/icons";
 
 export const metadata: Metadata = {
   title: { absolute: "ReportSaathi: your family's lab reports, explained" },
@@ -89,30 +89,35 @@ export default async function Landing({ searchParams }: PageProps<"/">) {
 
   return (
     <LandingFrame signedIn={signedIn}>
-      <header className="sticky top-0 z-40 border-b border-line/70 bg-background/85 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-[1240px] items-center justify-between gap-4 px-4 sm:px-6">
-          <Link href="/" aria-label="ReportSaathi home" className="rounded-ctl">
-            <Logo />
+      {/* A floating pill, centred over the page, like the top bar of a phone app. */}
+      <header className="sticky top-0 z-40 px-3 pt-3 sm:px-5 sm:pt-4">
+        <div className="mx-auto flex h-[60px] max-w-[1060px] items-center gap-2 rounded-full bg-tint/85 pr-2 pl-5 shadow-lift ring-1 ring-white/70 backdrop-blur-xl sm:h-16 dark:ring-white/[0.06]">
+          <Link href="/" aria-label="ReportSaathi home" className="shrink-0 rounded-full">
+            <Logo size="sm" className="sm:hidden" />
+            <Logo className="max-sm:hidden" />
           </Link>
-          <nav aria-label="On this page" className="hidden lg:block">
-            <ul className="flex gap-7 text-sm text-muted">
+          <nav aria-label="On this page" className="mx-auto hidden lg:block">
+            <ul className="flex gap-0.5 text-[15px] font-semibold text-muted">
               {NAV.map(([href, label]) => (
                 <li key={href}>
-                  <a href={href} className="hover:text-foreground">
+                  <a
+                    href={href}
+                    className="inline-flex h-10 items-center rounded-full px-3.5 transition-colors hover:bg-surface hover:text-foreground xl:px-4"
+                  >
                     {label}
                   </a>
                 </li>
               ))}
             </ul>
           </nav>
-          <div className="flex items-center gap-1 sm:gap-2">
-            <ThemeToggle />
+          <div className="ml-auto flex items-center gap-1.5 sm:gap-2 lg:ml-0">
+            <ThemeToggle className="max-sm:hidden" />
             {!signedIn && (
-              <Link href="/login" className="btn btn-ghost hidden sm:inline-flex">
+              <Link href="/login" className="btn btn-ghost hidden xl:inline-flex">
                 Sign in
               </Link>
             )}
-            <Link href="/dashboard" className="btn btn-primary max-sm:h-9 max-sm:px-3 max-sm:text-[13px]">
+            <Link href="/dashboard" className="btn btn-primary max-sm:h-10 max-sm:px-4 max-sm:text-sm">
               <span className="sm:hidden">{signedIn ? "Open the app" : "Try the demo"}</span>
               <span className="hidden sm:inline">{cta}</span>
             </Link>
@@ -123,41 +128,40 @@ export default async function Landing({ searchParams }: PageProps<"/">) {
       <main id="main">
         {/* Hero */}
         <section aria-labelledby="hero-title" className="relative overflow-x-clip">
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_55%_at_78%_38%,rgb(231_207_228/0.75),transparent_70%),radial-gradient(40%_40%_at_8%_100%,rgb(255_179_154/0.35),transparent_70%)] dark:bg-[radial-gradient(60%_55%_at_78%_38%,rgb(87_45_85/0.55),transparent_70%),radial-gradient(40%_40%_at_8%_100%,rgb(107_47_34/0.35),transparent_70%)]"
-          />
+          {/* Two soft blobs, plum behind the devices and coral low on the left. */}
+          <svg aria-hidden viewBox="0 0 600 520" className="pointer-events-none absolute top-6 right-[-12%] hidden w-[64%] max-w-[920px] lg:block">
+            <path
+              d="M318 18c104-10 238 40 268 150s-30 236-140 290-268 66-356 10S-12 316 26 214 214 28 318 18Z"
+              className="fill-brand-100 dark:fill-brand-950"
+            />
+          </svg>
+          <span aria-hidden className="pointer-events-none absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-coral-200/60 blur-3xl dark:bg-coral-800/25" />
           <div className="relative mx-auto grid max-w-[1240px] gap-10 px-4 pt-7 pb-16 sm:px-6 sm:pt-16 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1fr)] lg:items-center lg:gap-6 lg:pt-14 lg:pb-20 xl:gap-10">
             <div className="max-w-xl">
-              <p className="inline-flex items-center gap-2 rounded-full border border-brand-200 bg-surface/70 px-3 py-1 text-[13px] font-medium text-brand-800 dark:border-brand-800 dark:bg-brand-950/50 dark:text-brand-200">
-                <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-coral-500" />
+              <p className="inline-flex -rotate-2 items-center gap-2 rounded-full bg-surface py-1.5 pr-4 pl-1.5 text-sm font-bold text-brand-800 shadow-soft dark:text-brand-200">
+                <span className="grid h-7 w-7 place-items-center rounded-full bg-coral-500 text-white [--duo:rgb(255_255_255/0.3)] dark:text-brand-950">
+                  <IconSpeaker aria-hidden className="h-4 w-4" />
+                </span>
                 English, <span lang="hi">हिन्दी</span> and <span lang="mr">मराठी</span>
               </p>
               <h1
                 id="hero-title"
-                className="mt-4 text-[40px] leading-[1.02] sm:mt-5 font-semibold tracking-[-0.035em] text-balance sm:text-[56px] xl:text-[64px]"
+                className="mt-5 text-[44px] leading-[0.98] font-black tracking-[-0.045em] text-balance sm:mt-6 sm:text-[62px] xl:text-[74px]"
               >
-                Your family&apos;s lab reports,{" "}
-                <span className="relative whitespace-nowrap">
-                  <span
-                    aria-hidden
-                    className="absolute inset-x-[-0.08em] bottom-[0.06em] h-[0.36em] -skew-x-6 rounded-[0.12em] bg-coral-300/80 dark:bg-coral-500/45"
-                  />
-                  <span className="relative">explained.</span>
-                </span>
+                Your family&apos;s lab reports, <span className="scribble text-brand-700 dark:text-brand-300">explained.</span>
               </h1>
-              <p className="mt-5 max-w-[34rem] text-[17px] sm:mt-6 leading-relaxed text-pretty text-muted sm:text-lg">
+              <p className="mt-6 max-w-[34rem] text-lg leading-relaxed text-pretty text-muted sm:mt-7 sm:text-[19px]">
                 Add a photo or PDF from any lab. ReportSaathi reads every value, flags what&apos;s outside the
                 lab&apos;s own range, explains it in plain words, and follows each result over time, for everyone in
                 the family.
               </p>
               <div className="mt-7 flex flex-col gap-3 sm:mt-8 sm:flex-row sm:items-center">
-                <Link href="/dashboard" className="btn btn-primary btn-lg h-12 px-6 text-base">
+                <Link href="/dashboard" className="btn btn-primary btn-lg h-14 px-7 text-[17px]">
                   {cta}
-                  <ArrowRight aria-hidden className="h-4 w-4" />
+                  <IconArrowRight aria-hidden className="h-5 w-5" />
                 </Link>
                 {!signedIn && (
-                  <Link href="/signup" className="btn btn-secondary btn-lg h-12 px-6 text-base">
+                  <Link href="/signup" className="btn btn-secondary btn-lg h-14 px-7 text-[17px]">
                     Create a free account
                   </Link>
                 )}
@@ -178,13 +182,16 @@ export default async function Landing({ searchParams }: PageProps<"/">) {
         <section
           id="how"
           aria-labelledby="how-title"
-          className="scroll-mt-16 border-y border-line bg-surface py-16 sm:py-24 dark:bg-[#18131a]"
+          className="mx-3 scroll-mt-24 rounded-[36px] bg-surface py-14 shadow-soft sm:mx-5 sm:rounded-[48px] sm:py-24"
         >
           <div className="mx-auto max-w-[1240px] px-4 sm:px-6">
             <div className="grid gap-4 lg:grid-cols-[minmax(0,1.04fr)_minmax(0,1fr)] lg:gap-14">
               <div>
-                <p className="landing-eyebrow">From the report to plain words</p>
-                <h2 id="how-title" className="landing-h2 mt-3">
+                <p className="landing-sticker">
+                  <IconReport aria-hidden />
+                  From the report to plain words
+                </p>
+                <h2 id="how-title" className="landing-h2 mt-5">
                   The lab prints numbers. You get what they mean.
                 </h2>
               </div>
@@ -201,13 +208,16 @@ export default async function Landing({ searchParams }: PageProps<"/">) {
         </section>
 
         {/* Trends across labs */}
-        <section id="trends" aria-labelledby="trends-title" className="scroll-mt-16 py-16 sm:py-24">
+        <section id="trends" aria-labelledby="trends-title" className="scroll-mt-24 py-16 sm:py-28">
           <div className="mx-auto max-w-[1240px] px-4 sm:px-6">
             <div className="max-w-3xl">
-              <p className="landing-eyebrow">Across labs, over time</p>
-              <h2 id="trends-title" className="landing-h2 mt-3">
+              <p className="landing-sticker">
+                <IconTimeline aria-hidden />
+                Across labs, over time
+              </p>
+              <h2 id="trends-title" className="landing-h2 mt-5">
                 <span className="capitalize">{word(firstOut)}</span> values out of range in {monthOf(firstReport.report_date)}.{" "}
-                <span className="text-brand-700 dark:text-brand-300">
+                <span className="text-coral-600 dark:text-coral-300">
                   <span className="capitalize">{word(lastOut)}</span> in {monthOf(lastReport.report_date)}.
                 </span>
               </h2>
@@ -227,44 +237,47 @@ export default async function Landing({ searchParams }: PageProps<"/">) {
         <section
           id="brief"
           aria-labelledby="brief-title"
-          className="scroll-mt-16 overflow-x-clip border-t border-line bg-[linear-gradient(180deg,var(--sidebar),var(--background))] py-16 sm:py-24"
+          className="mx-3 scroll-mt-24 overflow-x-clip rounded-[36px] bg-tint py-16 sm:mx-5 sm:rounded-[48px] sm:py-24"
         >
           <div className="mx-auto grid max-w-[1240px] gap-14 px-4 sm:px-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-center lg:gap-16">
             <div className="order-2 lg:order-1">
               <BriefPreview />
             </div>
             <div className="order-1 lg:order-2">
-              <p className="landing-eyebrow">For the doctor&apos;s visit</p>
-              <h2 id="brief-title" className="landing-h2 mt-3">
+              <p className="landing-sticker">
+                <IconStethoscope aria-hidden />
+                For the doctor&apos;s visit
+              </p>
+              <h2 id="brief-title" className="landing-h2 mt-5">
                 Walk in with one page, not a folder of reports.
               </h2>
               <p className="landing-lead mt-5">
                 The doctor brief turns every report into a single summary a doctor can read in a minute.
               </p>
-              <ul className="mt-8 divide-y divide-line border-y border-line text-[15px] sm:text-base">
-                <li className="py-3.5">
+              <ul className="mt-8 space-y-2 text-[15px] sm:text-base">
+                <li className="rounded-2xl bg-surface px-5 py-3.5 shadow-soft">
                   <span className="font-semibold">An overview and key findings,</span>{" "}
                   <span className="text-muted">each test with its values over time.</span>
                 </li>
-                <li className="py-3.5">
+                <li className="rounded-2xl bg-surface px-5 py-3.5 shadow-soft">
                   <span className="font-semibold">Latest and previous values,</span>{" "}
                   <span className="text-muted">with the normal range and the LOINC code for each test.</span>
                 </li>
-                <li className="py-3.5">
+                <li className="rounded-2xl bg-surface px-5 py-3.5 shadow-soft">
                   <span className="font-semibold">Your questions, written down,</span>{" "}
                   <span className="text-muted">so none are forgotten in the room.</span>
                 </li>
-                <li className="py-3.5">
+                <li className="rounded-2xl bg-surface px-5 py-3.5 shadow-soft">
                   <span className="font-semibold">Print it, save it as a PDF,</span>{" "}
                   <span className="text-muted">or send a private link that expires.</span>
                 </li>
               </ul>
               <AppLink
                 href={`/briefs?profile=${MEERA.id}`}
-                className="btn btn-secondary btn-lg mt-8"
+                className="btn btn-primary btn-lg mt-8"
               >
                 See {MEERA.name.split(" ")[0]}&apos;s brief in the demo
-                <ArrowRight aria-hidden className="h-4 w-4" />
+                <IconArrowRight aria-hidden className="h-5 w-5" />
               </AppLink>
             </div>
           </div>
@@ -274,12 +287,15 @@ export default async function Landing({ searchParams }: PageProps<"/">) {
         <section
           id="privacy"
           aria-labelledby="privacy-title"
-          className="scroll-mt-16 bg-brand-800 py-16 text-white sm:py-24 dark:bg-brand-950"
+          className="mx-3 mt-16 scroll-mt-24 rounded-[36px] bg-brand-800 py-16 text-white sm:mx-5 sm:mt-24 sm:rounded-[48px] sm:py-24 dark:bg-brand-950"
         >
           <div className="mx-auto grid max-w-[1240px] gap-10 px-4 sm:px-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-20">
             <div>
-              <p className="text-[13px] font-semibold tracking-[0.08em] text-coral-300 uppercase">Private by design</p>
-              <h2 id="privacy-title" className="landing-h2 mt-3 text-white">
+              <p className="inline-flex -rotate-2 items-center gap-2 rounded-full bg-white/10 py-1.5 pr-4 pl-2 text-sm font-bold text-coral-200">
+                <IconLock aria-hidden className="h-7 w-7 rounded-full bg-coral-500/25 p-1 text-coral-200 [--duo:rgb(255_179_154/0.3)]" />
+                Private by design
+              </p>
+              <h2 id="privacy-title" className="landing-h2 mt-5 text-white">
                 Health reports are personal. They stay yours.
               </h2>
               <p className="mt-5 max-w-md text-[17px] leading-relaxed text-brand-100">
@@ -288,16 +304,16 @@ export default async function Landing({ searchParams }: PageProps<"/">) {
               </p>
               <Link
                 href="/privacy"
-                className="mt-8 inline-flex items-center gap-1.5 font-medium text-white underline decoration-white/40 underline-offset-4 hover:decoration-white"
+                className="mt-8 inline-flex items-center gap-1.5 font-medium text-white underline decoration-coral-300 decoration-2 underline-offset-4 hover:decoration-white"
               >
                 Read how we look after your reports
-                <ArrowRight aria-hidden className="h-4 w-4" />
+                <IconArrowRight aria-hidden className="h-5 w-5" />
               </Link>
             </div>
-            <ul className="divide-y divide-white/15 border-y border-white/15">
+            <ul className="grid gap-3 sm:grid-cols-2">
               {PROMISES.map(([title, text]) => (
-                <li key={title} className="py-6 sm:py-7">
-                  <p className="text-xl leading-snug font-semibold tracking-[-0.015em] sm:text-2xl">{title}</p>
+                <li key={title} className="rounded-[28px] bg-white/[0.08] p-6 sm:p-7">
+                  <p className="text-xl leading-snug font-extrabold tracking-[-0.02em]">{title}</p>
                   <p className="mt-2 text-base text-brand-100">{text}</p>
                 </li>
               ))}
@@ -306,7 +322,7 @@ export default async function Landing({ searchParams }: PageProps<"/">) {
         </section>
 
         {/* FAQ */}
-        <section id="faq" aria-labelledby="faq-title" className="scroll-mt-16 py-16 sm:py-24">
+        <section id="faq" aria-labelledby="faq-title" className="scroll-mt-24 py-16 sm:py-28">
           <div className="mx-auto grid max-w-[1240px] gap-8 px-4 sm:px-6 lg:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)] lg:gap-20">
             <div>
               <h2 id="faq-title" className="landing-h2">
@@ -320,17 +336,16 @@ export default async function Landing({ searchParams }: PageProps<"/">) {
                 .
               </p>
             </div>
-            <div className="divide-y divide-line border-y border-line">
+            <div className="space-y-2.5">
               {FAQ.map(([q, a], i) => (
-                <details key={q} className="group" open={i === 0}>
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-6 py-5 text-[17px] font-medium [&::-webkit-details-marker]:hidden">
+                <details key={q} className="group rounded-[26px] bg-surface shadow-soft open:bg-tint open:shadow-none" open={i === 0}>
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-6 rounded-[26px] py-4 pr-4 pl-6 text-[17px] font-bold [&::-webkit-details-marker]:hidden">
                     {q}
-                    <Plus
-                      aria-hidden
-                      className="h-5 w-5 shrink-0 text-muted transition-transform group-open:rotate-45"
-                    />
+                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-tint-coral text-coral-700 [--duo:var(--duo-coral)] dark:text-coral-300">
+                      <IconPlus aria-hidden className="h-5 w-5 transition-transform group-open:rotate-45" />
+                    </span>
                   </summary>
-                  <p className="-mt-1 max-w-2xl pb-6 text-base leading-relaxed text-muted">{a}</p>
+                  <p className="-mt-1 max-w-2xl px-6 pb-6 text-base leading-relaxed text-muted">{a}</p>
                 </details>
               ))}
             </div>
@@ -338,8 +353,8 @@ export default async function Landing({ searchParams }: PageProps<"/">) {
         </section>
 
         {/* Final call to action */}
-        <section aria-labelledby="end-title" className="overflow-x-clip px-4 pb-16 sm:px-6 sm:pb-24">
-          <div className="relative mx-auto grid max-w-[1240px] items-center gap-10 overflow-hidden rounded-[28px] bg-[linear-gradient(135deg,var(--color-brand-100),#ffe9df)] px-6 py-12 sm:px-12 sm:py-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)] dark:bg-[linear-gradient(135deg,#2c122a,#3a1a17)]">
+        <section aria-labelledby="end-title" className="overflow-x-clip px-3 pb-6 sm:px-5 sm:pb-8">
+          <div className="relative mx-auto grid max-w-[1400px] items-center gap-10 overflow-hidden rounded-[36px] bg-[linear-gradient(135deg,var(--color-brand-100),#ffe2d5)] px-6 py-12 sm:rounded-[48px] sm:px-12 sm:py-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)] dark:bg-[linear-gradient(135deg,#2c122a,#3a1a17)]">
             <div className="relative">
               <h2 id="end-title" className="landing-h2">
                 {MEERA.name.split(" ")[0]}&apos;s {word(MEERA.report_count)} reports are already in.
@@ -349,12 +364,12 @@ export default async function Landing({ searchParams }: PageProps<"/">) {
                 add your own family when you&apos;re ready.
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Link href="/dashboard" className="btn btn-primary btn-lg h-12 px-6 text-base">
+                <Link href="/dashboard" className="btn btn-primary btn-lg h-14 px-7 text-[17px]">
                   {cta}
-                  <ArrowRight aria-hidden className="h-4 w-4" />
+                  <IconArrowRight aria-hidden className="h-5 w-5" />
                 </Link>
                 {!signedIn && (
-                  <Link href="/signup" className="btn btn-secondary btn-lg h-12 px-6 text-base">
+                  <Link href="/signup" className="btn btn-secondary btn-lg h-14 px-7 text-[17px]">
                     Create a free account
                   </Link>
                 )}
@@ -365,45 +380,42 @@ export default async function Landing({ searchParams }: PageProps<"/">) {
         </section>
       </main>
 
-      <footer className="border-t border-line">
-        <div className="mx-auto flex max-w-[1240px] flex-col gap-6 px-4 py-10 text-sm text-muted sm:px-6 lg:flex-row lg:items-center lg:justify-between">
-          <div className="space-y-2">
-            <Logo size="sm" />
-            <p className="max-w-md">
-              ReportSaathi explains lab reports. It is not medical advice; always check with your doctor.
-            </p>
-          </div>
-          <nav aria-label="ReportSaathi">
-            <ul className="flex flex-wrap gap-x-6 gap-y-2">
-              <li>
-                <Link href="/dashboard" className="hover:text-foreground">
-                  Open the app
-                </Link>
-              </li>
-              <li>
-                <Link href="/accuracy" className="hover:text-foreground">
-                  Accuracy
-                </Link>
-              </li>
-              <li>
-                <Link href="/privacy" className="hover:text-foreground">
-                  Privacy
-                </Link>
-              </li>
-              {!signedIn && (
-                <li>
-                  <Link href="/login" className="hover:text-foreground">
-                    Sign in
+      {/* A warm block to end on: the wordmark big, one line of links and a goodbye. */}
+      <footer className="px-3 pb-3 sm:px-5 sm:pb-5">
+        <div className="relative mx-auto max-w-[1400px] overflow-hidden rounded-[36px] bg-coral-100 px-6 pt-12 pb-8 sm:rounded-[48px] sm:px-12 sm:pt-16 dark:bg-[#2b1820]">
+          <Logo size="xl" />
+          <p className="mt-6 max-w-xl text-lg font-semibold text-pretty text-coral-800 sm:text-xl dark:text-coral-200">
+            Made for the family member who keeps everyone&apos;s reports. Look after yourself too.
+          </p>
+          <nav aria-label="ReportSaathi" className="mt-10">
+            <ul className="flex flex-wrap gap-x-2 gap-y-2 text-[15px] font-semibold">
+              {(
+                [
+                  ["/dashboard", "Open the app"],
+                  ["/accuracy", "Accuracy"],
+                  ["/privacy", "Privacy"],
+                  ...(signedIn ? [] : [["/login", "Sign in"]]),
+                ] as [string, string][]
+              ).map(([href, label]) => (
+                <li key={href}>
+                  <Link href={href} className="inline-flex h-10 items-center rounded-full bg-surface/70 px-4 hover:bg-surface">
+                    {label}
                   </Link>
                 </li>
-              )}
+              ))}
               <li>
-                <a href="https://github.com/whatalshifa/report-saathi" className="hover:text-foreground">
+                <a
+                  href="https://github.com/whatalshifa/report-saathi"
+                  className="inline-flex h-10 items-center rounded-full bg-surface/70 px-4 hover:bg-surface"
+                >
                   Source code
                 </a>
               </li>
             </ul>
           </nav>
+          <p className="mt-8 text-sm text-coral-800/90 dark:text-coral-200/85">
+            ReportSaathi explains lab reports. It is not medical advice; always check with your doctor.
+          </p>
         </div>
       </footer>
     </LandingFrame>

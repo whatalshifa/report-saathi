@@ -1,12 +1,12 @@
 "use client";
 
-import { PauseCircle, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
 import { ConsentDialog } from "@/components/ConsentDialog";
 import { ErrorNote } from "@/components/Skeleton";
 import { ApiError, getMe, uploadReport, type Profile, type ReportDetail } from "@/lib/api";
+import { IconPause, IconUpload } from "@/components/icons";
 
 const ACCEPTED = "application/pdf,image/jpeg,image/png,image/webp";
 
@@ -55,8 +55,8 @@ export function useReportUpload(onUploaded: (report: ReportDetail) => void) {
 /** Shown instead of the upload box when the server has no AI key (demo mode). */
 export function ReadingPaused() {
   return (
-    <div className="flex gap-3 rounded-ctl border border-line bg-surface px-4 py-3 text-sm">
-      <PauseCircle aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-muted" />
+    <div className="flex gap-3 well px-4 py-3.5 text-sm">
+      <IconPause aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-muted" />
       <div>
         <p className="font-medium">Reading new reports is paused on this demo</p>
         <p className="mt-0.5 text-[13px] text-muted">
@@ -117,7 +117,7 @@ export function UploadCard({
           aria-hidden
           className="grid h-10 w-10 place-items-center rounded-ctl bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300"
         >
-          <Upload className="h-5 w-5" strokeWidth={1.75} />
+          <IconUpload className="h-5 w-5" strokeWidth={1.75} />
         </span>
         <span className="mt-1 font-semibold">
           {uploading ? "Uploading…" : `Upload a report for ${profile.name}`}

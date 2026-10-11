@@ -19,30 +19,22 @@ export default function Image() {
           width: "100%",
           height: "100%",
           display: "flex",
-          background: "linear-gradient(135deg, #fbf7f2 0%, #fbf7f2 55%, #ffe7dc 100%)",
+          background: "linear-gradient(135deg, #fff7f3 0%, #fff7f3 55%, #ffe2d5 100%)",
           padding: 72,
           fontFamily: "sans-serif",
         }}
       >
         <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", width: 600 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-            <div
-              style={{
-                width: 64,
-                height: 64,
-                borderRadius: 32,
-                background: "#6b3768",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <div style={{ width: 30, height: 38, background: "white", borderRadius: 4, display: "flex" }} />
+          {/* The wordmark: "report" light, "saathi" heavy in plum over a coral stroke. */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+            <div style={{ display: "flex", fontSize: 56, letterSpacing: -2.5, lineHeight: 1 }}>
+              <span style={{ color: "#4a3346", fontWeight: 400 }}>report</span>
+              <span style={{ color: "#6b3768", fontWeight: 800 }}>saathi</span>
             </div>
-            <div style={{ display: "flex", fontSize: 40, fontWeight: 700, color: "#6b3768" }}>ReportSaathi</div>
+            <div style={{ display: "flex", marginLeft: 160, marginTop: 4, width: 150, height: 8, borderRadius: 8, background: "#f06a48", transform: "rotate(-2deg)" }} />
           </div>
           <div style={{ display: "flex", flexDirection: "column" }}>
-            <div style={{ fontSize: 60, fontWeight: 700, color: "#2a1d28", lineHeight: 1.1 }}>
+            <div style={{ fontSize: 62, fontWeight: 800, color: "#2b1a29", lineHeight: 1.05, letterSpacing: -2 }}>
               Understand every lab report your family gets.
             </div>
             <div style={{ fontSize: 28, color: "#6e5f69", marginTop: 24 }}>
@@ -56,8 +48,8 @@ export default function Image() {
             alignSelf: "center",
             width: 400,
             background: "white",
-            borderRadius: 28,
-            padding: 32,
+            borderRadius: 40,
+            padding: 36,
             display: "flex",
             flexDirection: "column",
             gap: 18,

@@ -1,11 +1,11 @@
 "use client";
 
-import { FileSearch, X } from "lucide-react";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 import { CorrectedChip } from "@/components/ValueFix";
 import { reportFileUrl, reportPageUrl, type SourceBox, type TestResult } from "@/lib/api";
 import { usePdfViewer } from "@/lib/usePdfViewer";
+import { IconClose, IconFileSearch } from "@/components/icons";
 
 // "Where did this number come from?": a page icon beside a value opens the original report
 // with that value highlighted, so people can check the AI's reading with their own eyes.
@@ -20,7 +20,7 @@ export function SourceButton({ name, onClick }: { name: string; onClick: (trigge
       title="Where did this number come from?"
       className="icon-btn -my-1 h-8 w-8 align-middle hover:text-brand-700 dark:hover:text-brand-300"
     >
-      <FileSearch aria-hidden className="h-4 w-4" strokeWidth={1.75} />
+      <IconFileSearch aria-hidden className="h-4 w-4" strokeWidth={1.75} />
     </button>
   );
 }
@@ -81,7 +81,7 @@ export function SourceDialog({
       onClick={(e) => {
         if (e.target === e.currentTarget) e.currentTarget.close();
       }}
-      className="m-auto w-[calc(100%-2rem)] max-w-3xl overflow-hidden rounded-card border border-line bg-surface p-0 text-foreground shadow-xl backdrop:bg-stone-950/60"
+      className="m-auto w-[calc(100%-2rem)] max-w-3xl overflow-hidden card p-0 text-foreground shadow-lift backdrop:bg-brand-950/55 backdrop:backdrop-blur-sm"
     >
       <div className="flex max-h-[calc(100dvh-2rem)] flex-col gap-3 p-4 sm:p-5">
         <div className="flex items-start justify-between gap-3">
@@ -100,12 +100,12 @@ export function SourceDialog({
             aria-label="Close"
             className="icon-btn -mr-1"
           >
-            <X aria-hidden className="h-5 w-5" />
+            <IconClose aria-hidden className="h-5 w-5" />
           </button>
         </div>
 
         {isPdf && failed ? (
-          <div className="rounded-ctl border border-line bg-background p-6 text-center">
+          <div className="rounded-2xl bg-tint p-6 text-center">
             <p className="font-semibold">Page {box.page} of the original PDF</p>
             <p className="mt-1 text-sm text-muted">
               {showsPdf
@@ -122,7 +122,7 @@ export function SourceDialog({
             </a>
           </div>
         ) : failed ? (
-          <p role="alert" className="rounded-ctl border border-line bg-background p-6 text-center text-sm text-muted">
+          <p role="alert" className="rounded-2xl bg-tint p-6 text-center text-sm text-muted">
             The original report couldn&apos;t be loaded. Please try again in a moment.
           </p>
         ) : (
